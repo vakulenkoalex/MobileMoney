@@ -1,0 +1,853 @@
+# Архитектура приложения "Учет личных денег"
+
+## 1. Общая архитектура: Clean Architecture + MVVM
+
+```
+app/
+├── presentation/     # UI слой (Jetpack Compose + ViewModel)
+├── domain/           # Бизнес-логика (UseCases, Entities, Repository Interfaces)
+├── data/             # Data слой (Repository Impl, Remote/Local DataSources)
+├── di/               # Dependency Injection (Hilt)
+├── core/             # Утилиты, константы, расширения
+└── security/         # Безопасность (шифрование, биометрия)
+```
+
+---
+
+## 2. Domain слой (Бизнес-логика)
+
+### 2.1 Сущности (Entities)
+
+```kotlin
+// Пользователь
+data class User(
+    val id: UUID,
+    val email: String,
+    val name: String?,
+    val baseCurrency: String = "RUB",
+    val createdAt: Instant
+)
+
+// Кошелек
+data class Wallet(
+    val id: UUID,
+    val name: String,
+    val currency: Currency,
+    val icon: String?,
+    val color: String?,
+    val tags: List<Tag> = emptyList(),
+    val userId: UUID
+)
+
+// Категория
+data class Category(
+    val id: UUID,
+    val name: String,
+    val type: CategoryType, // INCOME, EXPENSE
+    val icon: String?,
+    val color: String?,
+    val tags: List<Tag> = emptyList(),
+    val userId: UUID,
+    val isDefault: Boolean = false
+)
+
+// Тег (для группировки)
+data class Tag(
+    val id: UUID,
+    val name: String,
+    val color: String?,
+    val userId: UUID
+)
+
+// Операция
+data class Transaction(
+    val id: UUID,
+    val type: TransactionType, // INCOME, EXPENSE, TRANSFER
+    val amount: BigDecimal,
+    val currency: Currency,
+    val walletId: UUID,
+    val categoryId: UUID?, // Nullable для TRANSFER
+    val targetWalletId: UUID?, // Для TRANSFER
+    val description: String?,
+    val date: Instant,
+    val userId: UUID,
+    val source: TransactionSource = TransactionSource.MANUAL, // MANUAL, SMS, PUSH
+    val sourceId: String? = null, // ID источника (для дедупликации)
+    val createdAt: Instant,
+    val updatedAt: Instant
+)
+
+// Валюта
+data class Currency(
+    val code: String, // RUB, USD, EUR
+    val name: String,
+    val symbol: String,
+    val exchangeRate: BigDecimal, // Относительно базовой валюты
+    val isDefault: Boolean
+)
+```
+
+### 2.2 Типы операций
+
+```kotlin
+enum class TransactionType { INCOME, EXPENSE, TRANSFER }
+enum class CategoryType { INCOME, EXPENSE }
+enum class TransactionSource { MANUAL, SMS, PUSH }
+```
+
+### 2.3 Repository Interfaces
+
+```kotlin
+interface UserRepository {
+    fun getUser(userId: UUID): Flow<User>
+    suspend fun updateUser(user: User): User
+    suspend fun logout()
+}
+
+interface WalletRepository {
+    fun getWallets(userId: UUID): Flow<List<Wallet>>
+    suspend fun getWalletById(id: UUID): Wallet?
+    suspend fun createWallet(wallet: Wallet): Wallet
+    suspend fun updateWallet(wallet: Wallet): Wallet
+    suspend fun deleteWallet(id: UUID)
+}
+
+interface CategoryRepository {
+    fun getCategories(userId: UUID): Flow<List<Category>>
+    suspend fun getCategoryById(id: UUID): Category?
+    suspend fun createCategory(category: Category): Category
+    suspend fun updateCategory(category: Category): Category
+    suspend fun deleteCategory(id: UUID)
+    fun getCategoriesByType(userId: UUID, type: CategoryType): Flow<List<Category>>
+}
+
+interface TransactionRepository {
+    fun getTransactions(userId: UUID): Flow<List<Transaction>>
+    fun getTransactionsPaged(userId: UUID, pageSize: Int, offset: Int): Flow<List<Transaction>>
+    fun getTransactionsByPeriod(userId: UUID, start: Instant, end: Instant): Flow<List<Transaction>>
+    fun getTransactionsByWallet(userId: UUID, walletId: UUID): Flow<List<Transaction>>
+    fun getTransactionsByCategory(userId: UUID, categoryId: UUID): Flow<List<Transaction>>
+    fun getTransactionsByTags(userId: UUID, tagIds: List<UUID>): Flow<List<Transaction>>
+    suspend fun createTransaction(transaction: Transaction): Transaction
+    suspend fun updateTransaction(transaction: Transaction): Transaction
+    suspend fun deleteTransaction(id: UUID)
+    suspend fun getTransactionBySourceId(sourceId: String): Transaction?
+}
+
+interface TagRepository {
+    fun getTags(userId: UUID): Flow<List<Tag>>
+    suspend fun getTagById(id: UUID): Tag?
+    suspend fun createTag(tag: Tag): Tag
+    suspend fun updateTag(tag: Tag): Tag
+    suspend fun deleteTag(id: UUID)
+}
+
+interface ReportRepository {
+    fun getCurrentBalance(walletId: UUID): Flow<BigDecimal>
+    fun getBalanceByWallet(userId: UUID, walletId: UUID, start: Instant, end: Instant): Flow<BigDecimal>
+    fun getTotalBalance(userId: UUID): Flow<Map<Currency, BigDecimal>>
+    fun getExpensesByCategory(userId: UUID, start: Instant, end: Instant): Flow<Map<Category, BigDecimal>>
+    fun getIncomesByCategory(userId: UUID, start: Instant, end: Instant): Flow<Map<Category, BigDecimal>>
+    fun getWalletSummary(userId: UUID, start: Instant, end: Instant): Flow<List<WalletSummary>>
+    fun getCategorySummary(userId: UUID, start: Instant, end: Instant): Flow<List<CategorySummary>>
+}
+
+interface ExchangeRateRepository {
+    fun getRates(baseCurrency: String): Flow<Map<String, BigDecimal>>
+    suspend fun updateRates()
+    fun getRate(from: String, to: String): Flow<BigDecimal>
+    fun isRatesExpired(): Boolean
+}
+
+interface PreferencesRepository {
+    fun getPreferences(): Flow<AppPreferences>
+    suspend fun updatePreferences(preferences: AppPreferences)
+}
+
+data class AppPreferences(
+    val baseCurrency: String = "RUB",
+    val biometricEnabled: Boolean = false,
+    val smsAutoImportEnabled: Boolean = false,
+    val notificationAutoImportEnabled: Boolean = false,
+    val theme: String = "SYSTEM"
+)
+```
+
+### 2.4 Use Cases
+
+```kotlin
+// Пользователь
+class GetUserUseCase(private val repository: UserRepository)
+class UpdateUserUseCase(private val repository: UserRepository)
+class LogoutUseCase(private val repository: UserRepository)
+
+// Кошельки
+class GetWalletsUseCase(private val repository: WalletRepository)
+class CreateWalletUseCase(private val repository: WalletRepository)
+class UpdateWalletUseCase(private val repository: WalletRepository)
+class DeleteWalletUseCase(private val repository: WalletRepository)
+class GetWalletBalanceUseCase(private val reportRepository: ReportRepository)
+
+// Категории
+class GetCategoriesUseCase(private val repository: CategoryRepository)
+class CreateCategoryUseCase(private val repository: CategoryRepository)
+class UpdateCategoryUseCase(private val repository: CategoryRepository)
+class DeleteCategoryUseCase(private val repository: CategoryRepository)
+
+// Операции
+class CreateTransactionUseCase(private val repository: TransactionRepository)
+class GetTransactionsUseCase(private val repository: TransactionRepository)
+class GetTransactionsByPeriodUseCase(private val repository: TransactionRepository)
+class UpdateTransactionUseCase(private val repository: TransactionRepository)
+class DeleteTransactionUseCase(private val repository: TransactionRepository)
+
+// Отчеты
+class GetWalletSummaryUseCase(private val repository: ReportRepository)
+class GetCategorySummaryUseCase(private val repository: ReportRepository)
+class GetTotalBalanceUseCase(private val repository: ReportRepository)
+
+// Теги
+class ManageTagsUseCase(private val repository: TagRepository)
+
+// Курсы валют
+class GetExchangeRatesUseCase(private val repository: ExchangeRateRepository)
+class UpdateExchangeRatesUseCase(private val repository: ExchangeRateRepository)
+
+// Настройки
+class GetPreferencesUseCase(private val repository: PreferencesRepository)
+class UpdatePreferencesUseCase(private val repository: PreferencesRepository)
+```
+
+### 2.5 Domain Aggregates
+
+```kotlin
+// Кошелек с вычисленным балансом
+data class WalletWithBalance(
+    val wallet: Wallet,
+    val balance: BigDecimal
+)
+
+// Категория с суммой операций за период
+data class CategoryWithSum(
+    val category: Category,
+    val totalAmount: BigDecimal
+)
+
+// Операция с прикрепленными тегами
+data class TransactionWithTags(
+    val transaction: Transaction,
+    val tags: List<Tag>
+)
+```
+
+### 2.6 Domain Events
+
+```kotlin
+sealed class TransactionEvent {
+    data class Created(val transaction: Transaction) : TransactionEvent()
+    data class Updated(val transaction: Transaction) : TransactionEvent()
+    data class Deleted(val id: UUID) : TransactionEvent()
+}
+
+sealed class WalletEvent {
+    data class BalanceChanged(val walletId: UUID, val newBalance: BigDecimal) : WalletEvent()
+}
+
+sealed class SyncEvent {
+    data object Started : SyncEvent()
+    data class Completed(val syncedCount: Int) : SyncEvent()
+    data class Failed(val error: Throwable) : SyncEvent()
+}
+```
+
+### 2.7 Result Wrapper
+
+```kotlin
+sealed class Result<out T> {
+    data class Success<T>(val data: T) : Result<T>()
+    data class Error(val exception: Throwable, val message: String? = null) : Result<Nothing>()
+    data object Loading : Result<Nothing>()
+
+    val isSuccess: Boolean get() = this is Success
+    val isError: Boolean get() = this is Error
+    val isLoading: Boolean get() = this is Loading
+
+    fun getOrNull(): T? = (this as? Success)?.data
+    fun exceptionOrNull(): Throwable? = (this as? Error)?.exception
+
+    inline fun <R> map(transform: (T) -> R): Result<R> = when (this) {
+        is Success -> Success(transform(data))
+        is Error -> Error(exception, message)
+        is Loading -> Loading
+    }
+
+    inline fun onSuccess(action: (T) -> Unit): Result<T> {
+        if (this is Success) action(data)
+        return this
+    }
+
+    inline fun onError(action: (Throwable, String?) -> Unit): Result<T> {
+        if (this is Error) action(exception, message)
+        return this
+    }
+}
+
+inline fun <T> runCatchingResult(block: () -> T): Result<T> {
+    return try {
+        Result.Success(block())
+    } catch (e: Exception) {
+        Result.Error(e, e.message)
+    }
+}
+```
+
+---
+
+## 3. Data слой
+
+### 3.1 Remote DataSource (API)
+
+```kotlin
+interface RemoteDataSource {
+    // Auth
+    suspend fun login(credentials: LoginRequest): AuthResponse
+    suspend fun register(data: RegisterRequest): AuthResponse
+    suspend fun refreshToken(token: String): AuthResponse
+    
+    // User
+    suspend fun getUser(): UserDto
+    suspend fun updateUser(user: UserDto): UserDto
+    
+    // Sync
+    suspend fun syncWallets(wallets: List<WalletDto>): SyncResponse
+    suspend fun syncCategories(categories: List<CategoryDto>): SyncResponse
+    suspend fun syncTransactions(transactions: List<TransactionDto>): SyncResponse
+    suspend fun getChanges(since: Instant): ChangesResponse
+    
+    // Exchange Rates
+    suspend fun getExchangeRates(): ExchangeRatesResponse
+}
+```
+
+### 3.2 Local DataSource (Room)
+
+```kotlin
+@Entity(tableName = "users")
+data class UserEntity(
+    @PrimaryKey val id: String,
+    val email: String,
+    val name: String?,
+    val baseCurrency: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val isSynced: Boolean = false
+)
+
+@Entity(tableName = "wallets")
+data class WalletEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val currencyCode: String,
+    val icon: String?,
+    val color: String?,
+    val properties: String = "{}",
+    val userId: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val isSynced: Boolean = false
+)
+
+@Entity(tableName = "categories")
+data class CategoryEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val type: String,
+    val icon: String?,
+    val color: String?,
+    val properties: String = "{}",
+    val userId: String,
+    val isDefault: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val isSynced: Boolean = false
+)
+
+@Entity(tableName = "transactions")
+data class TransactionEntity(
+    @PrimaryKey val id: String,
+    val type: String,
+    val amount: String,
+    val currencyCode: String,
+    val walletId: String,
+    val categoryId: String?,
+    val targetWalletId: String?,
+    val description: String?,
+    val date: Long,
+    val userId: String,
+    val source: String,
+    val sourceId: String?,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val version: Int = 1,
+    val pendingOperation: String? = null,
+    val isSynced: Boolean = false
+)
+
+@Entity(tableName = "tags")
+data class TagEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val color: String?,
+    val userId: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val isSynced: Boolean = false
+)
+
+@Entity(
+    tableName = "wallet_tags",
+    primaryKeys = ["walletId", "tagId"]
+)
+data class WalletTagCrossRef(val walletId: String, val tagId: String)
+
+@Entity(
+    tableName = "category_tags",
+    primaryKeys = ["categoryId", "tagId"]
+)
+data class CategoryTagCrossRef(val categoryId: String, val tagId: String)
+
+@Entity(
+    tableName = "transaction_tags",
+    primaryKeys = ["transactionId", "tagId"]
+)
+data class TransactionTagCrossRef(val transactionId: String, val tagId: String)
+
+@Entity(tableName = "exchange_rates")
+data class ExchangeRateEntity(
+    @PrimaryKey val id: String,
+    val fromCurrency: String,
+    val toCurrency: String,
+    val rate: String,
+    val cachedAt: Long,
+    val expiresAt: Long
+)
+
+@Entity(tableName = "app_preferences")
+data class PreferencesEntity(
+    @PrimaryKey val id: String = "default",
+    val baseCurrency: String,
+    val biometricEnabled: Boolean,
+    val smsAutoImportEnabled: Boolean,
+    val notificationAutoImportEnabled: Boolean,
+    val theme: String,
+    val updatedAt: Long
+)
+```
+
+### 3.3 Repository Implementation
+
+```kotlin
+class WalletRepositoryImpl(
+    private val localDataSource: WalletLocalDataSource,
+    private val remoteDataSource: RemoteDataSource,
+    private val syncManager: SyncManager
+) : WalletRepository {
+    // Реализация с offline-first подходом
+}
+```
+
+---
+
+## 4. Presentation слой (UI)
+
+### 4.1 Структура экранов
+
+```
+presentation/
+├── navigation/
+│   ├── AppNavigation.kt
+│   └── Screen.kt
+├── screens/
+│   ├── auth/
+│   │   ├── LoginScreen.kt
+│   │   └── RegisterScreen.kt
+│   ├── main/
+│   │   ├── HomeScreen.kt (дашборд)
+│   │   ├── WalletListScreen.kt
+│   │   ├── WalletDetailScreen.kt
+│   │   ├── AddWalletScreen.kt
+│   │   ├── CategoryListScreen.kt
+│   │   ├── AddCategoryScreen.kt
+│   │   ├── TransactionListScreen.kt
+│   │   ├── AddTransactionScreen.kt
+│   │   ├── TransferScreen.kt
+│   │   ├── ReportsScreen.kt
+│   │   ├── TagsScreen.kt
+│   │   └── SettingsScreen.kt
+│   └── autoimport/
+│       ├── SmsImportScreen.kt
+│       ├── NotificationImportScreen.kt
+│       └── AutoTransactionScreen.kt
+├── components/
+│   ├── WalletCard.kt
+│   ├── CategoryChip.kt
+│   ├── TransactionItem.kt
+│   ├── BalanceDisplay.kt
+│   ├── DateRangePicker.kt
+│   └── ChartComponent.kt
+├── viewmodels/
+│   ├── AuthViewModel.kt
+│   ├── HomeViewModel.kt
+│   ├── WalletViewModel.kt
+│   ├── CategoryViewModel.kt
+│   ├── TransactionViewModel.kt
+│   ├── ReportViewModel.kt
+│   ├── SettingsViewModel.kt
+│   └── AutoImportViewModel.kt
+└── theme/
+    ├── Theme.kt
+    ├── Color.kt
+    └── Typography.kt
+```
+
+### 4.2 ViewModel State
+
+```kotlin
+data class HomeUiState(
+    val totalBalance: Map<Currency, BigDecimal> = emptyMap(),
+    val wallets: List<Wallet> = emptyList(),
+    val recentTransactions: List<Transaction> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+data class TransactionListUiState(
+    val transactions: List<Transaction> = emptyList(),
+    val filteredByWallet: UUID? = null,
+    val filteredByCategory: UUID? = null,
+    val dateRange: DateRange? = null,
+    val filteredByTags: List<UUID> = emptyList(),
+    val isLoading: Boolean = false
+)
+
+data class ReportUiState(
+    val period: DateRange = DateRange(),
+    val walletSummaries: List<WalletSummary> = emptyList(),
+    val categorySummaries: List<CategorySummary> = emptyList(),
+    val expenseByCategory: Map<Category, BigDecimal> = emptyMap(),
+    val incomeByCategory: Map<Category, BigDecimal> = emptyMap(),
+    val isLoading: Boolean = false
+)
+```
+
+### 4.3 Paging Integration
+
+```kotlin
+class TransactionListViewModel(
+    private val transactionRepository: TransactionRepository
+) : ViewModel() {
+    val transactions: Flow<PagingData<Transaction>> = Pager(
+        config = PagingConfig(
+            pageSize = 20,
+            enablePlaceholders = false,
+            prefetchDistance = 5
+        ),
+        pagingSourceFactory = { TransactionPagingSource(transactionRepository) }
+    ).flow.cachedIn(viewModelScope)
+}
+
+class TransactionPagingSource(
+    private val repository: TransactionRepository
+) : PagingSource<Int, Transaction>() {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Transaction> {
+        return try {
+            val page = params.key ?: 0
+            val data = repository.getTransactionsPaged(
+                userId = currentUserId,
+                pageSize = params.loadSize,
+                offset = page * params.loadSize
+            )
+            LoadResult.Page(
+                data = data,
+                prevKey = if (page == 0) null else page - 1,
+                nextKey = if (data.isEmpty()) null else page + 1
+            )
+        } catch (e: Exception) {
+            LoadResult.Error(e)
+        }
+    }
+}
+```
+
+---
+
+## 5. Автоматизация операций (SMS/Push)
+
+### 5.1 SMS Listener (Restricted Permission)
+
+```kotlin
+class SmsReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Sms.Intents.SMS_RECEIVED_ACTION) {
+            val messages = Sms.Intents.getMessagesFromIntent(intent)
+            // Обработка SMS и создание транзакции
+        }
+    }
+}
+```
+
+> **Важно:** `READ_SMS` — restricted permission на Android 14+. Google Play может отклонить приложение.
+> Для sideload/личного использования работает. Для публикации в Google Play рекомендуется Notification Listener.
+
+### 5.2 Notification Listener (Fallback для push от банков)
+
+```kotlin
+class BankNotificationListener : NotificationListenerService() {
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        val packageName = sbn.packageName
+        val extras = sbn.notification.extras
+        val title = extras?.getString(Notification.EXTRA_TITLE)
+        val text = extras?.getString(Notification.EXTRA_TEXT)
+        // Парсинг уведомления банка и создание транзакции
+    }
+}
+```
+
+### 5.3 Push Listener (Firebase)
+
+```kotlin
+class PushMessageService : FirebaseMessagingService() {
+    override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        // Обработка push-уведомлений от собственного сервера
+        val payload = remoteMessage.data
+        // Синхронизация данных
+    }
+}
+```
+
+### 5.4 Parser SMS/Push
+
+```kotlin
+interface TransactionParser {
+    fun parseSms(sender: String, body: String): ParsedTransaction?
+    fun parseNotification(packageName: String, title: String, body: String): ParsedTransaction?
+    fun parsePush(title: String, body: String): ParsedTransaction?
+}
+
+class BankSmsParser : TransactionParser {
+    // Парсинг SMS от известных банков (Сбербанк, Тинькофф, Альфа и др.)
+    // Определение типа операции, суммы, валюты
+}
+```
+
+### 5.5 Permission Handling
+
+```kotlin
+object PermissionManager {
+    fun requestSmsPermission(activity: Activity)
+    fun requestNotificationPermission(activity: Activity)
+    fun requestNotificationListener(context: Context)
+    fun checkSmsPermission(): Boolean
+    fun checkNotificationPermission(): Boolean
+    fun isNotificationListenerEnabled(context: Context): Boolean
+}
+```
+
+---
+
+## 6. Безопасность
+
+### 6.1 Требования
+
+- Шифрование данных (EncryptedSharedPreferences, Room с SQLCipher или androidx.security:security-crypto)
+- Биометрическая аутентификация
+- Logout с очисткой данных
+
+### 6.2 Security Module
+
+```kotlin
+interface SecurityManager {
+    fun encrypt(data: String): String
+    fun decrypt(encrypted: String): String
+    fun getSecureKey(): String
+    fun isBiometricEnabled(): Boolean
+    fun authenticateWithBiometric(onSuccess: () -> Unit, onError: (Exception) -> Unit)
+    fun clearSensitiveData()
+    fun getEncryptedDatabaseKey(): ByteArray
+}
+```
+
+---
+
+## 7. Синхронизация
+
+### 7.1 Sync Strategy: Offline-First
+
+```
+1. Запись в локальную БД (Room)
+2. Пометка как "несинхронизировано" (isSynced = false)
+3. Фоновая синхронизация с сервером через WorkManager
+4. Разрешение конфликтов: last-write-wins по updatedAt
+   - Все Entity имеют updatedAt: Long
+   - При конфликте побеждает запись с более свежим updatedAt
+   - Сервер возвращает актуальные изменения с момента lastSync
+5. Optimistic Locking через поле version
+   - При обновлении инкрементируется version
+   - Если version на сервере выше - конфликт
+```
+
+### 7.2 WorkManager
+
+```kotlin
+class SyncWorker(
+    appContext: Context,
+    workerParams: WorkerParameters,
+    private val remoteDataSource: RemoteDataSource
+) : CoroutineWorker(appContext, workerParams) {
+    override suspend fun doWork(): Result {
+        // Синхронизация изменений с сервера
+    }
+}
+```
+
+---
+
+## 8. Технологический стек
+
+| Компонент | Технология |
+|-----------|------------|
+| Language | Kotlin 1.9+ |
+| Min SDK | API 34 (Android 14) |
+| UI | Jetpack Compose + Material 3 |
+| DI | Hilt |
+| Networking | Retrofit + OkHttp + Kotlin Serialization |
+| Local DB | Room + SQLCipher (или androidx.security:security-crypto) |
+| Async | Kotlin Coroutines + Flow |
+| Navigation | Navigation Compose |
+| Images | Coil |
+| Charts | Vico |
+| Auth | Firebase Auth |
+| Push | Firebase Cloud Messaging |
+| Background | WorkManager |
+| Security | BiometricPrompt, EncryptedSharedPreferences |
+| Pagination | Paging 3 |
+| Testing | JUnit, MockK, Turbine |
+
+---
+
+## 9. База данных (Room Schema)
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│      users       │     │     wallets      │     │    categories    │
+├──────────────────┤     ├──────────────────┤     ├──────────────────┤
+│ id (PK)          │     │ id (PK)          │     │ id (PK)          │
+│ email            │     │ name             │     │ name             │
+│ name             │     │ currency         │     │ type             │
+│ base_currency    │     │ icon             │     │ icon             │
+│ created_at       │     │ properties       │     │ properties       │
+│ updated_at       │     │ user_id          │     │ user_id          │
+│ is_synced        │     │ created_at       │     │ is_default       │
+└──────────────────┘     │ updated_at       │     │ created_at       │
+                          │ is_synced        │     │ updated_at       │
+                          └──────────────────┘     │ is_synced        │
+                                │                  └──────────────────┘
+                                │                           │
+                                ▼                           ▼
+┌──────────────────┐    ┌──────────────────┐  ┌──────────────────┐
+│   transactions   │    │   wallet_tags    │  │  category_tags   │
+├──────────────────┤    │ (M:N)            │  │ (M:N)            │
+│ id (PK)          │    ├──────────────────┤  ├──────────────────┤
+│ type             │    │ wallet_id (FK)   │  │ category_id (FK) │
+│ amount           │    │ tag_id (FK)      │  │ tag_id (FK)      │
+│ wallet_id        │    └──────────────────┘  └──────────────────┘
+│ category_id      │
+│ target_wallet_id │           │
+│ description      │           ▼
+│ date             │   ┌──────────────────┐
+│ source           │   │ transaction_tags │
+│ source_id        │   │ (M:N)            │
+│ user_id          │   ├──────────────────┤
+│ created_at       │   │ transaction_id   │
+│ updated_at       │   │ tag_id           │
+│ version          │   └──────────────────┘
+│ pending_operation│
+│ is_synced        │
+└──────────────────┘
+
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│      tags        │     │  exchange_rates  │     │ app_preferences  │
+├──────────────────┤     ├──────────────────┤     ├──────────────────┤
+│ id (PK)          │     │ id (PK)          │     │ id (PK)          │
+│ name             │     │ from_currency    │     │ base_currency    │
+│ color            │     │ to_currency      │     │ biometric_enabled│
+│ user_id          │     │ rate             │     │ sms_auto_import  │
+│ created_at       │     │ cached_at        │     │ notif_auto_import│
+│ updated_at       │     │ expires_at       │     │ theme            │
+│ is_synced        │     └──────────────────┘     │ updated_at       │
+└──────────────────┘                              └──────────────────┘
+
+Баланс кошелька вычисляется из транзакций:
+  SUM(INCOME) - SUM(EXPENSE) по wallet_id
+```
+
+---
+
+## 10. API Endpoints (Backend)
+
+```
+POST   /api/v1/auth/login
+POST   /api/v1/auth/register
+POST   /api/v1/auth/refresh
+
+GET    /api/v1/user
+PUT    /api/v1/user
+
+GET    /api/v1/wallets
+POST   /api/v1/wallets
+PUT    /api/v1/wallets/{id}
+DELETE /api/v1/wallets/{id}
+
+GET    /api/v1/categories
+POST   /api/v1/categories
+PUT    /api/v1/categories/{id}
+DELETE /api/v1/categories/{id}
+
+GET    /api/v1/transactions
+POST   /api/v1/transactions
+PUT    /api/v1/transactions/{id}
+DELETE /api/v1/transactions/{id}
+
+GET    /api/v1/tags
+POST   /api/v1/tags
+DELETE /api/v1/tags/{id}
+
+GET    /api/v1/exchange-rates
+
+GET    /api/v1/sync/changes?since={timestamp}
+POST   /api/v1/sync/push
+```
+
+---
+
+## 11. Ключевые сценарии
+
+### 11.1 Создание операции расхода
+1. Пользователь выбирает кошелек, категорию, вводит сумму
+2. Создание транзакции в Room
+3. Баланс кошелька вычисляется из транзакций (SUM INCOME - SUM EXPENSE)
+4. Синхронизация с сервером (фоново)
+
+### 11.2 Автоматическое создание из SMS
+1. Приложение получает SMS
+2. Парсинг текста (поиск суммы, валюты)
+3. Поиск кошелька по ключевым свойствам
+4. Категория подбирается по информации из текста, либо без категории
+5. Создание транзакции без подтверждения
+
+### 11.3 Отчет за период
+1. Выбор периода (дата начало/конец)
+2. Запрос транзакций за период
+3. Группировка по категориям/кошелькам
+4. Расчет итогов
+5. Построение графиков
