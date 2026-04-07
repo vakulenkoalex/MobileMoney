@@ -749,9 +749,6 @@ class SyncWorker(
 
 Баланс кошелька вычисляется из транзакций:
   SUM(INCOME) - SUM(EXPENSE) по wallet_id
-```
-
----
 
 ## 10. API Endpoints (Backend)
 
