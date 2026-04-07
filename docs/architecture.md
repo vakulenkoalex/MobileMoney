@@ -23,32 +23,36 @@ app/
 data class User(
     val id: UUID,
     val email: String,
+    val password: String,
     val name: String?,
-    val baseCurrency: String = "RUB",
-    val createdAt: Instant
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
 )
 
 // Кошелек
 data class Wallet(
     val id: UUID,
     val name: String,
-    val currency: Currency,
+    val accountTypeId: UUID?,
+    val currencyCode: String,
     val icon: String?,
-    val color: String?,
-    val tags: List<Tag> = emptyList(),
-    val userId: UUID
+    val isArchived: Boolean = false,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
 )
 
 // Категория
 data class Category(
     val id: UUID,
     val name: String,
-    val type: CategoryType, // INCOME, EXPENSE
+    val isIncome: Boolean, // true=приход, false=расход
     val icon: String?,
-    val color: String?,
-    val tags: List<Tag> = emptyList(),
-    val userId: UUID,
-    val isDefault: Boolean = false
+    val parentId: UUID? = null,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
 )
 
 // Тег (для группировки)
@@ -56,42 +60,50 @@ data class Tag(
     val id: UUID,
     val name: String,
     val color: String?,
-    val userId: UUID
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
 )
 
 // Операция
 data class Transaction(
     val id: UUID,
-    val type: TransactionType, // INCOME, EXPENSE, TRANSFER
-    val amount: BigDecimal,
-    val currency: Currency,
     val walletId: UUID,
-    val categoryId: UUID?, // Nullable для TRANSFER
-    val targetWalletId: UUID?, // Для TRANSFER
-    val description: String?,
+    val categoryId: UUID? = null,
+    val amount: BigDecimal,
     val date: Instant,
-    val userId: UUID,
+    val description: String?,
     val source: TransactionSource = TransactionSource.MANUAL, // MANUAL, SMS, PUSH
-    val sourceId: String? = null, // ID источника (для дедупликации)
+    val sourceData: String? = null, // Необработанные данные от источника
+    val createdById: UUID,
+    val relatedTransactionId: UUID? = null, // Для переводов между счетами
     val createdAt: Instant,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
 )
 
 // Валюта
 data class Currency(
-    val code: String, // RUB, USD, EUR
+    val code: String, // RUB, USD, EUR (PK)
     val name: String,
     val symbol: String,
-    val exchangeRate: BigDecimal, // Относительно базовой валюты
-    val isDefault: Boolean
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
+)
+
+// Тип счета
+data class AccountType(
+    val id: UUID,
+    val name: String,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val deletedAt: Instant? = null
 )
 ```
 
-### 2.2 Типы операций
+### 2.2 Типы источников операций
 
 ```kotlin
-enum class TransactionType { INCOME, EXPENSE, TRANSFER }
-enum class CategoryType { INCOME, EXPENSE }
 enum class TransactionSource { MANUAL, SMS, PUSH }
 ```
 
@@ -99,47 +111,51 @@ enum class TransactionSource { MANUAL, SMS, PUSH }
 
 ```kotlin
 interface UserRepository {
-    fun getUser(userId: UUID): Flow<User>
+    fun getUser(userId: UUID): Flow<User?>
     suspend fun updateUser(user: User): User
+    suspend fun deleteUser(userId: UUID) // Soft delete
     suspend fun logout()
 }
 
 interface WalletRepository {
-    fun getWallets(userId: UUID): Flow<List<Wallet>>
+    fun getWallets(includeArchived: Boolean = false): Flow<List<Wallet>>
     suspend fun getWalletById(id: UUID): Wallet?
     suspend fun createWallet(wallet: Wallet): Wallet
     suspend fun updateWallet(wallet: Wallet): Wallet
-    suspend fun deleteWallet(id: UUID)
+    suspend fun deleteWallet(id: UUID) // Soft delete
+    suspend fun archiveWallet(id: UUID)
 }
 
 interface CategoryRepository {
-    fun getCategories(userId: UUID): Flow<List<Category>>
+    fun getCategories(): Flow<List<Category>>
+    fun getCategoriesByIncome(isIncome: Boolean): Flow<List<Category>>
+    fun getCategoriesByParent(parentId: UUID?): Flow<List<Category>>
     suspend fun getCategoryById(id: UUID): Category?
     suspend fun createCategory(category: Category): Category
     suspend fun updateCategory(category: Category): Category
-    suspend fun deleteCategory(id: UUID)
-    fun getCategoriesByType(userId: UUID, type: CategoryType): Flow<List<Category>>
+    suspend fun deleteCategory(id: UUID) // Soft delete
 }
 
 interface TransactionRepository {
-    fun getTransactions(userId: UUID): Flow<List<Transaction>>
-    fun getTransactionsPaged(userId: UUID, pageSize: Int, offset: Int): Flow<List<Transaction>>
-    fun getTransactionsByPeriod(userId: UUID, start: Instant, end: Instant): Flow<List<Transaction>>
-    fun getTransactionsByWallet(userId: UUID, walletId: UUID): Flow<List<Transaction>>
-    fun getTransactionsByCategory(userId: UUID, categoryId: UUID): Flow<List<Transaction>>
-    fun getTransactionsByTags(userId: UUID, tagIds: List<UUID>): Flow<List<Transaction>>
+    fun getTransactions(): Flow<List<Transaction>>
+    fun getTransactionsPaged(pageSize: Int, offset: Int): Flow<List<Transaction>>
+    fun getTransactionsByPeriod(start: Instant, end: Instant): Flow<List<Transaction>>
+    fun getTransactionsByWallet(walletId: UUID): Flow<List<Transaction>>
+    fun getTransactionsByCategory(categoryId: UUID): Flow<List<Transaction>>
+    fun getTransactionsByTags(tagIds: List<UUID>): Flow<List<Transaction>>
     suspend fun createTransaction(transaction: Transaction): Transaction
     suspend fun updateTransaction(transaction: Transaction): Transaction
-    suspend fun deleteTransaction(id: UUID)
+    suspend fun deleteTransaction(id: UUID) // Soft delete
     suspend fun getTransactionBySourceId(sourceId: String): Transaction?
+    suspend fun getRelatedTransaction(transactionId: UUID): Transaction?
 }
 
 interface TagRepository {
-    fun getTags(userId: UUID): Flow<List<Tag>>
+    fun getTags(): Flow<List<Tag>>
     suspend fun getTagById(id: UUID): Tag?
     suspend fun createTag(tag: Tag): Tag
     suspend fun updateTag(tag: Tag): Tag
-    suspend fun deleteTag(id: UUID)
+    suspend fun deleteTag(id: UUID) // Soft delete
 }
 
 interface ReportRepository {
@@ -190,6 +206,7 @@ class GetWalletBalanceUseCase(private val reportRepository: ReportRepository)
 
 // Категории
 class GetCategoriesUseCase(private val repository: CategoryRepository)
+class GetCategoriesByIncomeUseCase(private val repository: CategoryRepository)
 class CreateCategoryUseCase(private val repository: CategoryRepository)
 class UpdateCategoryUseCase(private val repository: CategoryRepository)
 class DeleteCategoryUseCase(private val repository: CategoryRepository)
@@ -336,61 +353,53 @@ interface RemoteDataSource {
 data class UserEntity(
     @PrimaryKey val id: String,
     val email: String,
+    val password: String,
     val name: String?,
-    val baseCurrency: String,
     val createdAt: Long,
     val updatedAt: Long,
-    val isSynced: Boolean = false
+    val deletedAt: Long? = null
 )
 
 @Entity(tableName = "wallets")
 data class WalletEntity(
     @PrimaryKey val id: String,
     val name: String,
+    val accountTypeId: String? = null,
     val currencyCode: String,
     val icon: String?,
-    val color: String?,
-    val properties: String = "{}",
-    val userId: String,
+    val isArchived: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
-    val isSynced: Boolean = false
+    val deletedAt: Long? = null
 )
 
 @Entity(tableName = "categories")
 data class CategoryEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val type: String,
+    val isIncome: Boolean,
     val icon: String?,
-    val color: String?,
-    val properties: String = "{}",
-    val userId: String,
-    val isDefault: Boolean,
+    val parentId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
-    val isSynced: Boolean = false
+    val deletedAt: Long? = null
 )
 
 @Entity(tableName = "transactions")
 data class TransactionEntity(
     @PrimaryKey val id: String,
-    val type: String,
-    val amount: String,
-    val currencyCode: String,
     val walletId: String,
-    val categoryId: String?,
-    val targetWalletId: String?,
-    val description: String?,
+    val categoryId: String? = null,
+    val amount: String,
     val date: Long,
-    val userId: String,
+    val description: String?,
     val source: String,
-    val sourceId: String?,
+    val sourceData: String? = null,
+    val createdById: String,
+    val relatedTransactionId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
-    val version: Int = 1,
-    val pendingOperation: String? = null,
-    val isSynced: Boolean = false
+    val deletedAt: Long? = null
 )
 
 @Entity(tableName = "tags")
@@ -398,17 +407,10 @@ data class TagEntity(
     @PrimaryKey val id: String,
     val name: String,
     val color: String?,
-    val userId: String,
     val createdAt: Long,
     val updatedAt: Long,
-    val isSynced: Boolean = false
+    val deletedAt: Long? = null
 )
-
-@Entity(
-    tableName = "wallet_tags",
-    primaryKeys = ["walletId", "tagId"]
-)
-data class WalletTagCrossRef(val walletId: String, val tagId: String)
 
 @Entity(
     tableName = "category_tags",
@@ -428,19 +430,25 @@ data class ExchangeRateEntity(
     val fromCurrency: String,
     val toCurrency: String,
     val rate: String,
-    val cachedAt: Long,
-    val expiresAt: Long
+    val date: Long
 )
 
-@Entity(tableName = "app_preferences")
-data class PreferencesEntity(
-    @PrimaryKey val id: String = "default",
-    val baseCurrency: String,
-    val biometricEnabled: Boolean,
-    val smsAutoImportEnabled: Boolean,
-    val notificationAutoImportEnabled: Boolean,
-    val theme: String,
-    val updatedAt: Long
+@Entity(tableName = "currencies")
+data class CurrencyEntity(
+    @PrimaryKey val code: String,
+    val name: String,
+    val symbol: String,
+    val updatedAt: Long,
+    val deletedAt: Long? = null
+)
+
+@Entity(tableName = "account_types")
+data class AccountTypeEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null
 )
 ```
 
@@ -737,55 +745,7 @@ class SyncWorker(
 
 ## 9. База данных (Room Schema)
 
-```
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│      users       │     │     wallets      │     │    categories    │
-├──────────────────┤     ├──────────────────┤     ├──────────────────┤
-│ id (PK)          │     │ id (PK)          │     │ id (PK)          │
-│ email            │     │ name             │     │ name             │
-│ name             │     │ currency         │     │ type             │
-│ base_currency    │     │ icon             │     │ icon             │
-│ created_at       │     │ properties       │     │ properties       │
-│ updated_at       │     │ user_id          │     │ user_id          │
-│ is_synced        │     │ created_at       │     │ is_default       │
-└──────────────────┘     │ updated_at       │     │ created_at       │
-                          │ is_synced        │     │ updated_at       │
-                          └──────────────────┘     │ is_synced        │
-                                │                  └──────────────────┘
-                                │                           │
-                                ▼                           ▼
-┌──────────────────┐    ┌──────────────────┐  ┌──────────────────┐
-│   transactions   │    │   wallet_tags    │  │  category_tags   │
-├──────────────────┤    │ (M:N)            │  │ (M:N)            │
-│ id (PK)          │    ├──────────────────┤  ├──────────────────┤
-│ type             │    │ wallet_id (FK)   │  │ category_id (FK) │
-│ amount           │    │ tag_id (FK)      │  │ tag_id (FK)      │
-│ wallet_id        │    └──────────────────┘  └──────────────────┘
-│ category_id      │
-│ target_wallet_id │           │
-│ description      │           ▼
-│ date             │   ┌──────────────────┐
-│ source           │   │ transaction_tags │
-│ source_id        │   │ (M:N)            │
-│ user_id          │   ├──────────────────┤
-│ created_at       │   │ transaction_id   │
-│ updated_at       │   │ tag_id           │
-│ version          │   └──────────────────┘
-│ pending_operation│
-│ is_synced        │
-└──────────────────┘
-
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│      tags        │     │  exchange_rates  │     │ app_preferences  │
-├──────────────────┤     ├──────────────────┤     ├──────────────────┤
-│ id (PK)          │     │ id (PK)          │     │ id (PK)          │
-│ name             │     │ from_currency    │     │ base_currency    │
-│ color            │     │ to_currency      │     │ biometric_enabled│
-│ user_id          │     │ rate             │     │ sms_auto_import  │
-│ created_at       │     │ cached_at        │     │ notif_auto_import│
-│ updated_at       │     │ expires_at       │     │ theme            │
-│ is_synced        │     └──────────────────┘     │ updated_at       │
-└──────────────────┘                              └──────────────────┘
+См. [db_schema.md](../docs/db_schema.md)
 
 Баланс кошелька вычисляется из транзакций:
   SUM(INCOME) - SUM(EXPENSE) по wallet_id
