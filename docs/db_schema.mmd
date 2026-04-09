@@ -1,0 +1,105 @@
+%% Иконки - названия из Material Design Icons (https://fonts.google.com/icons)
+erDiagram
+    USERS ||--o{ TRANSACTIONS : creates
+    CURRENCIES ||--o{ ACCOUNTS : belongs
+    ACCOUNT_TYPES ||--o{ ACCOUNTS : has
+    ACCOUNTS ||--o{ TRANSACTIONS : has
+    CATEGORIES ||--o{ TRANSACTIONS : categorizes
+    CATEGORIES ||--o{ CATEGORIES : "parent-child"
+    
+    TRANSACTIONS ||--o| TRANSACTIONS : "transfer link"
+    TRANSACTIONS ||--o{ TRANSACTION_TAGS : has
+    TAGS ||--o{ TRANSACTION_TAGS : has
+    CATEGORIES ||--o{ CATEGORY_TAGS : has
+    TAGS ||--o{ CATEGORY_TAGS : has
+
+    USERS {
+        uuid id PK
+        string email
+        string password_hash
+        string name
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    CURRENCIES {
+        string code PK
+        string name
+        string symbol
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    ACCOUNTS {
+        uuid id PK
+        string name
+        uuid type_id FK
+        string currency_code FK
+        string icon
+        boolean archived
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    ACCOUNT_TYPES {
+        uuid id PK
+        string name
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    CATEGORIES {
+        uuid id PK
+        string name
+        boolean is_income
+        string icon
+        uuid parent_id FK
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    TAGS {
+        uuid id PK
+        string name
+        string color
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    TRANSACTIONS {
+        uuid id PK
+        uuid account_id FK
+        uuid category_id FK
+        decimal amount
+        datetime date
+        string comment
+        string source
+        text source_data
+        uuid creator_id FK
+        uuid related_transaction_id FK
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    EXCHANGE_RATES {
+        string currency_from FK "PK"
+        string currency_to FK "PK"
+        decimal rate
+        date date "PK"
+    }
+
+    TRANSACTION_TAGS {
+        uuid transaction_id FK "PK"
+        uuid tag_id FK "PK"
+    }
+
+    CATEGORY_TAGS {
+        uuid category_id FK "PK"
+        uuid tag_id FK "PK"
+    }
