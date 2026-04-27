@@ -1,0 +1,33 @@
+# Сборка проекта
+
+## Требования
+- Java 17+ (используется Java 21 из Android Studio)
+- Gradle 9.0 (скачивается автоматически)
+- Android SDK 34
+
+## Сборка
+
+```bash
+# Windows
+.\gradlew.bat assembleDebug
+
+# Linux/Mac
+./gradlew assembleDebug
+```
+
+## APK
+- Debug: `app/build/outputs/apk/debug/app-debug.apk`
+- Release: `app/build/outputs/apk/release/app-release.apk`
+
+## minSDK
+Проект использует minSDK 34 (Android 14). Старые версии Android не поддерживаются.
+
+## Версии
+- Gradle: 9.0
+- AGP: 8.5.0
+- Kotlin: 1.9.22
+- Compose BOM: 2023.10.01
+
+## Среда
+- Используется Java из Android Studio: `C:\Program Files\Android\Android Studio\jbr`
+- Настройка в `gradle.properties`: `org.gradle.java.home`

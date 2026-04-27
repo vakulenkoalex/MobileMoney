@@ -1,0 +1,171 @@
+package com.mobilemoney.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mobilemoney.data.model.AccountUi
+import com.mobilemoney.data.model.CategoryUi
+import com.mobilemoney.data.model.TransactionUi
+import com.mobilemoney.data.repository.MockRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import java.util.UUID
+
+enum class TransactionType {
+    EXPENSE, INCOME, TRANSFER
+}
+
+data class TransactionFormState(
+    val amount: String = "",
+    val selectedAccount: AccountUi? = null,
+    val targetAccount: AccountUi? = null,
+    val selectedCategory: CategoryUi? = null,
+    val date: Long = System.currentTimeMillis(),
+    val comment: String = "",
+    val type: TransactionType = TransactionType.EXPENSE,
+    val isEditing: Boolean = false,
+    val transactionId: UUID? = null,
+    val accounts: List<AccountUi> = emptyList(),
+    val categories: List<CategoryUi> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val isSaved: Boolean = false
+)
+
+class TransactionFormViewModel : ViewModel() {
+
+    private val _uiState = MutableStateFlow(TransactionFormState())
+    val uiState: StateFlow<TransactionFormState> = _uiState.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    private fun loadData() {
+        _uiState.value = _uiState.value.copy(
+            accounts = MockRepository.accounts.value,
+            categories = MockRepository.categories.value
+        )
+    }
+
+    fun loadTransaction(transactionId: UUID) {
+        val transaction = MockRepository.getTransactionById(transactionId)
+        if (transaction != null) {
+            val accounts = MockRepository.accounts.value
+            val categories = MockRepository.categories.value
+            _uiState.value = _uiState.value.copy(
+                amount = transaction.amount.toString(),
+                selectedAccount = accounts.find { it.name == transaction.subtitle },
+                selectedCategory = categories.find { it.name == transaction.title },
+                date = transaction.date,
+                comment = transaction.comment,
+                type = when {
+                    transaction.title == "Перевод" -> TransactionType.TRANSFER
+                    transaction.isIncome -> TransactionType.INCOME
+                    else -> TransactionType.EXPENSE
+                },
+                isEditing = true,
+                transactionId = transactionId
+            )
+        }
+    }
+
+    fun updateAmount(value: String) {
+        _uiState.value = _uiState.value.copy(amount = value)
+    }
+
+    fun updateAccount(account: AccountUi) {
+        _uiState.value = _uiState.value.copy(selectedAccount = account)
+    }
+
+    fun updateCategory(category: CategoryUi?) {
+        _uiState.value = _uiState.value.copy(selectedCategory = category)
+    }
+
+    fun updateDate(date: Long) {
+        _uiState.value = _uiState.value.copy(date = date)
+    }
+
+    fun updateComment(comment: String) {
+        _uiState.value = _uiState.value.copy(comment = comment)
+    }
+
+    fun updateType(type: TransactionType) {
+        _uiState.value = _uiState.value.copy(type = type)
+    }
+
+    fun updateTargetAccount(account: AccountUi) {
+        _uiState.value = _uiState.value.copy(targetAccount = account)
+    }
+
+    fun save(): Boolean {
+        val state = _uiState.value
+
+        if (state.amount.isBlank() || state.amount.toDoubleOrNull() == null || state.amount.toDouble() <= 0) {
+            _uiState.value = state.copy(error = "Введите корректную сумму")
+            return false
+        }
+
+        if (state.selectedAccount == null) {
+            _uiState.value = state.copy(error = "Выберите счёт")
+            return false
+        }
+
+        if (state.type == TransactionType.TRANSFER && state.targetAccount == null) {
+            _uiState.value = state.copy(error = "Выберите целевой счёт")
+            return false
+        }
+
+        val isIncome = state.type == TransactionType.INCOME
+        val icon = when (state.type) {
+            TransactionType.TRANSFER -> "swap_horiz"
+            TransactionType.INCOME -> state.selectedCategory?.icon ?: "work"
+            TransactionType.EXPENSE -> state.selectedCategory?.icon ?: "shopping_cart"
+        }
+
+        val title = when (state.type) {
+            TransactionType.TRANSFER -> "Перевод"
+            else -> state.selectedCategory?.name ?: "Без категории"
+        }
+
+        val subtitle = when (state.type) {
+            TransactionType.TRANSFER -> "${state.selectedAccount.name} → ${state.targetAccount?.name}"
+            else -> state.selectedAccount.name
+        }
+
+        val transaction = TransactionUi(
+            id = state.transactionId ?: UUID.randomUUID(),
+            title = title,
+            subtitle = subtitle,
+            comment = state.comment,
+            amount = state.amount.toDouble(),
+            currency = state.selectedAccount.currency,
+            icon = icon,
+            color = when (state.type) {
+                TransactionType.TRANSFER -> 0xFF9C27B0
+                TransactionType.INCOME -> 0xFF2E7D32
+                TransactionType.EXPENSE -> 0xFFD32F2F
+            },
+            isIncome = isIncome,
+            date = state.date
+        )
+
+        if (state.isEditing) {
+            MockRepository.updateTransaction(transaction)
+        } else {
+            MockRepository.addTransaction(transaction)
+        }
+
+        _uiState.value = state.copy(isSaved = true)
+        return true
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun getFilteredCategories(): List<CategoryUi> {
+        val isIncome = _uiState.value.type == TransactionType.INCOME
+        return _uiState.value.categories.filter { it.isIncome == isIncome }
+    }
+}
