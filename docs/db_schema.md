@@ -7,69 +7,69 @@
 ### Пользователи (users)
 - id (PK)
 - email
-- пароль
-- имя
-- создан (timestamp)
-- изменен (timestamp)
-- удален (timestamp, nullable) - пометка на удаление
+- password_hash
+- name
+- created_at (timestamp)
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable) - пометка на удаление
 
 ### Валюты (currencies)
-- код (PK) - RUB, USD, EUR...
-- название
-- символ
-- изменен (timestamp)
-- удален (timestamp, nullable)
+- code (PK) - RUB, USD, EUR...
+- name
+- symbol
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable)
 
 ### Счета (accounts)
 - id (PK)
-- название
-- тип_id (FK -> account_types.id)
-- валюта_id (FK -> currencies.код)
-- иконка (varchar)
-- архивный (boolean) - для скрытия старых счетов
-- создан (timestamp)
-- изменен (timestamp)
-- удален (timestamp, nullable)
+- name
+- type_id (FK -> account_types.id)
+- currency_code (FK -> currencies.code)
+- icon (varchar)
+- archived (boolean) - для скрытия старых счетов
+- created_at (timestamp)
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable)
 
 ### Типы счетов (account_types)
 - id (PK)
-- название
-- создан (timestamp)
-- изменен (timestamp)
-- удален (timestamp, nullable)
+- name
+- created_at (timestamp)
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable)
 
 ### Категории (categories)
 - id (PK)
-- название
-- приход (boolean) - true=приход, false=расход
-- иконка (varchar)
-- родитель_id (FK -> categories.id, nullable)
-- создан (timestamp)
-- изменен (timestamp)
-- удален (timestamp, nullable)
+- name
+- is_income (boolean) - true=приход, false=расход
+- icon (varchar)
+- parent_id (FK -> categories.id, nullable)
+- created_at (timestamp)
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable)
 
 ### Метки (tags)
 - id (PK)
-- название
-- цвет
-- создан (timestamp)
-- изменен (timestamp)
-- удален (timestamp, nullable)
+- name
+- color
+- created_at (timestamp)
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable)
 
 ### Операции (transactions)
 - id (PK)
-- счет_id (FK -> accounts.id)
-- категория_id (FK -> categories.id, nullable)
-- сумма
-- дата (включает время)
-- комментарий
-- источник (varchar) - откуда пришла операция (SMS/push)
-- источник_данные (text) - необработанные данные от источника
-- создал_id (FK -> users.id)
-- связанная_операция_id (FK -> transactions.id, nullable) - для переводов между счетами
-- создан (timestamp)
-- изменен (timestamp)
-- удален (timestamp, nullable)
+- account_id (FK -> accounts.id)
+- category_id (FK -> categories.id, nullable)
+- amount (decimal)
+- date (datetime)
+- comment
+- source (varchar) - откуда пришла операция (SMS/push)
+- source_data (text) - необработанные данные от источника
+- creator_id (FK -> users.id)
+- related_transaction_id (FK -> transactions.id, nullable) - для переводов между счетами
+- created_at (timestamp)
+- updated_at (timestamp)
+- deleted_at (timestamp, nullable)
 
 ### Связь операций и меток (transaction_tags)
 - transaction_id (FK -> transactions.id)
@@ -82,17 +82,17 @@
 - PK (category_id, tag_id)
 
 ### Курсы валют (exchange_rates)
-- валюта_from (FK -> currencies.код)
-- валюта_to (FK -> currencies.код)
-- курс
-- дата (PK)
-- PK (валюта_from, валюта_to, дата)
+- currency_from (FK -> currencies.code)
+- currency_to (FK -> currencies.code)
+- rate (decimal)
+- date (PK)
+- PK (currency_from, currency_to, date)
 
 ## Связи
 
 - Счета принадлежат одной валюте
-- Категории образуют иерархию через родитель_id
+- Категории образуют иерархию через parent_id
 - Операции привязаны к счету, категории, пользователю
 - Метки можно назначить категории или операции
-- Перевод между счетами - две связанные операции (расход с одного счета, приход на другой) через связанная_операция_id
+- Перевод между счетами - две связанные операции (расход с одного счета, приход на другой) через related_transaction_id
 
