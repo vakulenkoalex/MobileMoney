@@ -23,18 +23,18 @@ app/
 data class User(
     val id: UUID,
     val email: String,
-    val password: String,
+    val passwordHash: String,
     val name: String?,
     val createdAt: Instant,
     val updatedAt: Instant,
     val deletedAt: Instant? = null
 )
 
-// Кошелек
-data class Wallet(
+// Счет
+data class Account(
     val id: UUID,
     val name: String,
-    val accountTypeId: UUID?,
+    val typeId: UUID?,
     val currencyCode: String,
     val icon: String?,
     val isArchived: Boolean = false,
@@ -68,14 +68,14 @@ data class Tag(
 // Операция
 data class Transaction(
     val id: UUID,
-    val walletId: UUID,
+val accountId: UUID,
     val categoryId: UUID? = null,
     val amount: BigDecimal,
     val date: Instant,
-    val description: String?,
+    val comment: String?,
     val source: TransactionSource = TransactionSource.MANUAL, // MANUAL, SMS, PUSH
     val sourceData: String? = null, // Необработанные данные от источника
-    val createdById: UUID,
+    val creatorId: UUID,
     val relatedTransactionId: UUID? = null, // Для переводов между счетами
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -117,13 +117,13 @@ interface UserRepository {
     suspend fun logout()
 }
 
-interface WalletRepository {
-    fun getWallets(includeArchived: Boolean = false): Flow<List<Wallet>>
-    suspend fun getWalletById(id: UUID): Wallet?
-    suspend fun createWallet(wallet: Wallet): Wallet
-    suspend fun updateWallet(wallet: Wallet): Wallet
-    suspend fun deleteWallet(id: UUID) // Soft delete
-    suspend fun archiveWallet(id: UUID)
+interface AccountRepository {
+    fun getAccounts(includeArchived: Boolean = false): Flow<List<Account>>
+    suspend fun getAccountById(id: UUID): Account?
+    suspend fun createAccount(wallet: Account): Account
+    suspend fun updateAccount(wallet: Account): Account
+    suspend fun deleteAccount(id: UUID) // Soft delete
+    suspend fun archiveAccount(id: UUID)
 }
 
 interface CategoryRepository {
@@ -140,7 +140,7 @@ interface TransactionRepository {
     fun getTransactions(): Flow<List<Transaction>>
     fun getTransactionsPaged(pageSize: Int, offset: Int): Flow<List<Transaction>>
     fun getTransactionsByPeriod(start: Instant, end: Instant): Flow<List<Transaction>>
-    fun getTransactionsByWallet(walletId: UUID): Flow<List<Transaction>>
+    fun getTransactionsByAccount(walletId: UUID): Flow<List<Transaction>>
     fun getTransactionsByCategory(categoryId: UUID): Flow<List<Transaction>>
     fun getTransactionsByTags(tagIds: List<UUID>): Flow<List<Transaction>>
     suspend fun createTransaction(transaction: Transaction): Transaction
@@ -160,11 +160,11 @@ interface TagRepository {
 
 interface ReportRepository {
     fun getCurrentBalance(walletId: UUID): Flow<BigDecimal>
-    fun getBalanceByWallet(userId: UUID, walletId: UUID, start: Instant, end: Instant): Flow<BigDecimal>
+    fun getBalanceByAccount(userId: UUID, walletId: UUID, start: Instant, end: Instant): Flow<BigDecimal>
     fun getTotalBalance(userId: UUID): Flow<Map<Currency, BigDecimal>>
     fun getExpensesByCategory(userId: UUID, start: Instant, end: Instant): Flow<Map<Category, BigDecimal>>
     fun getIncomesByCategory(userId: UUID, start: Instant, end: Instant): Flow<Map<Category, BigDecimal>>
-    fun getWalletSummary(userId: UUID, start: Instant, end: Instant): Flow<List<WalletSummary>>
+    fun getAccountSummary(userId: UUID, start: Instant, end: Instant): Flow<List<AccountSummary>>
     fun getCategorySummary(userId: UUID, start: Instant, end: Instant): Flow<List<CategorySummary>>
 }
 
@@ -198,11 +198,11 @@ class UpdateUserUseCase(private val repository: UserRepository)
 class LogoutUseCase(private val repository: UserRepository)
 
 // Кошельки
-class GetWalletsUseCase(private val repository: WalletRepository)
-class CreateWalletUseCase(private val repository: WalletRepository)
-class UpdateWalletUseCase(private val repository: WalletRepository)
-class DeleteWalletUseCase(private val repository: WalletRepository)
-class GetWalletBalanceUseCase(private val reportRepository: ReportRepository)
+class GetAccountsUseCase(private val repository: AccountRepository)
+class CreateAccountUseCase(private val repository: AccountRepository)
+class UpdateAccountUseCase(private val repository: AccountRepository)
+class DeleteAccountUseCase(private val repository: AccountRepository)
+class GetAccountBalanceUseCase(private val reportRepository: ReportRepository)
 
 // Категории
 class GetCategoriesUseCase(private val repository: CategoryRepository)
@@ -219,7 +219,7 @@ class UpdateTransactionUseCase(private val repository: TransactionRepository)
 class DeleteTransactionUseCase(private val repository: TransactionRepository)
 
 // Отчеты
-class GetWalletSummaryUseCase(private val repository: ReportRepository)
+class GetAccountSummaryUseCase(private val repository: ReportRepository)
 class GetCategorySummaryUseCase(private val repository: ReportRepository)
 class GetTotalBalanceUseCase(private val repository: ReportRepository)
 
@@ -239,8 +239,8 @@ class UpdatePreferencesUseCase(private val repository: PreferencesRepository)
 
 ```kotlin
 // Кошелек с вычисленным балансом
-data class WalletWithBalance(
-    val wallet: Wallet,
+data class AccountWithBalance(
+    val wallet: Account,
     val balance: BigDecimal
 )
 
@@ -266,8 +266,8 @@ sealed class TransactionEvent {
     data class Deleted(val id: UUID) : TransactionEvent()
 }
 
-sealed class WalletEvent {
-    data class BalanceChanged(val walletId: UUID, val newBalance: BigDecimal) : WalletEvent()
+sealed class AccountEvent {
+    data class BalanceChanged(val walletId: UUID, val newBalance: BigDecimal) : AccountEvent()
 }
 
 sealed class SyncEvent {
@@ -336,7 +336,7 @@ interface RemoteDataSource {
     suspend fun updateUser(user: UserDto): UserDto
     
     // Sync
-    suspend fun syncWallets(wallets: List<WalletDto>): SyncResponse
+    suspend fun syncAccounts(wallets: List<AccountDto>): SyncResponse
     suspend fun syncCategories(categories: List<CategoryDto>): SyncResponse
     suspend fun syncTransactions(transactions: List<TransactionDto>): SyncResponse
     suspend fun getChanges(since: Instant): ChangesResponse
@@ -361,7 +361,7 @@ data class UserEntity(
 )
 
 @Entity(tableName = "wallets")
-data class WalletEntity(
+data class AccountEntity(
     @PrimaryKey val id: String,
     val name: String,
     val accountTypeId: String? = null,
@@ -392,10 +392,10 @@ data class TransactionEntity(
     val categoryId: String? = null,
     val amount: String,
     val date: Long,
-    val description: String?,
+    val comment: String?,
     val source: String,
     val sourceData: String? = null,
-    val createdById: String,
+    val creatorId: String,
     val relatedTransactionId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
@@ -455,11 +455,11 @@ data class AccountTypeEntity(
 ### 3.3 Repository Implementation
 
 ```kotlin
-class WalletRepositoryImpl(
-    private val localDataSource: WalletLocalDataSource,
+class AccountRepositoryImpl(
+    private val localDataSource: AccountLocalDataSource,
     private val remoteDataSource: RemoteDataSource,
     private val syncManager: SyncManager
-) : WalletRepository {
+) : AccountRepository {
     // Реализация с offline-first подходом
 }
 ```
@@ -481,9 +481,9 @@ presentation/
 │   │   └── RegisterScreen.kt
 │   ├── main/
 │   │   ├── HomeScreen.kt (дашборд)
-│   │   ├── WalletListScreen.kt
-│   │   ├── WalletDetailScreen.kt
-│   │   ├── AddWalletScreen.kt
+│   │   ├── AccountListScreen.kt
+│   │   ├── AccountDetailScreen.kt
+│   │   ├── AddAccountScreen.kt
 │   │   ├── CategoryListScreen.kt
 │   │   ├── AddCategoryScreen.kt
 │   │   ├── TransactionListScreen.kt
@@ -497,7 +497,7 @@ presentation/
 │       ├── NotificationImportScreen.kt
 │       └── AutoTransactionScreen.kt
 ├── components/
-│   ├── WalletCard.kt
+│   ├── AccountCard.kt
 │   ├── CategoryChip.kt
 │   ├── TransactionItem.kt
 │   ├── BalanceDisplay.kt
@@ -506,7 +506,7 @@ presentation/
 ├── viewmodels/
 │   ├── AuthViewModel.kt
 │   ├── HomeViewModel.kt
-│   ├── WalletViewModel.kt
+│   ├── AccountViewModel.kt
 │   ├── CategoryViewModel.kt
 │   ├── TransactionViewModel.kt
 │   ├── ReportViewModel.kt
@@ -523,7 +523,7 @@ presentation/
 ```kotlin
 data class HomeUiState(
     val totalBalance: Map<Currency, BigDecimal> = emptyMap(),
-    val wallets: List<Wallet> = emptyList(),
+    val wallets: List<Account> = emptyList(),
     val recentTransactions: List<Transaction> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
@@ -531,7 +531,7 @@ data class HomeUiState(
 
 data class TransactionListUiState(
     val transactions: List<Transaction> = emptyList(),
-    val filteredByWallet: UUID? = null,
+    val filteredByAccount: UUID? = null,
     val filteredByCategory: UUID? = null,
     val dateRange: DateRange? = null,
     val filteredByTags: List<UUID> = emptyList(),
@@ -540,7 +540,7 @@ data class TransactionListUiState(
 
 data class ReportUiState(
     val period: DateRange = DateRange(),
-    val walletSummaries: List<WalletSummary> = emptyList(),
+    val walletSummaries: List<AccountSummary> = emptyList(),
     val categorySummaries: List<CategorySummary> = emptyList(),
     val expenseByCategory: Map<Category, BigDecimal> = emptyMap(),
     val incomeByCategory: Map<Category, BigDecimal> = emptyMap(),
