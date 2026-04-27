@@ -3,7 +3,9 @@
 - Цель: экран списка транзакций с левым значком категории, двумя строками текста и правой суммой. Элементы разделяются линией; сумма окрашена по знаку. Внизу — нижняя навигация, как на скрине.
 
 - Архитектура: MVVM + UI-композиты
-  - Модель: `data class Transaction(val id: String, val title: String, val subtitle: String, val location: String, val amount: Double, val currency: String = "₽", val icon: ImageVector, val color: Color)`
+  - UI модель: `data class TransactionUi(val id: String, val title: String, val subtitle: String, val comment: String, val amount: Double, val currency: String = "₽", val icon: ImageVector, val color: Color, val isIncome: Boolean)`
+  - Domain модель (из db_schema): `data class Transaction(val id: UUID, val accountId: UUID, val categoryId: UUID?, val amount: BigDecimal, val date: Instant, val comment: String?, val source: String, val sourceData: String?, val creatorId: UUID, val relatedTransactionId: UUID?)`
+  - Маппинг: domain -> UI (category name -> title, category icon -> icon, accountId -> subtitle)
   - ViewModel: хранит список транзакций и состояние загрузки/ошибки.
   - Репозиторий: моковые данные на старте (позже Replace with Room/Retrofit).
 
@@ -31,8 +33,8 @@
     )
 
 - Форматирование и стиль
-  - Функция formatAmount(amount: Double, currency: String): String = "${' - ' if amount<0 else '+'}${abs(amount)} $currency"
-  - amountColor(amount): Color = if (amount < 0) Color(0xFFD32F2F) else Color(0xFF2E7D32) // красный/зелёный
+  - Функция formatAmount(amount: Double, currency: String, isIncome: Boolean): String = "${if (isIncome) '+' else '-'}${abs(amount)} $currency"
+  - amountColor(isIncome: Boolean): Color = if (isIncome) Color(0xFF2E7D32) else Color(0xFFD32F2F) // зелёный/красный
   - Иконки: использовать ImageVector или vector resources; можно заменить на Icon с vector.
 
 - Данные и состояние
