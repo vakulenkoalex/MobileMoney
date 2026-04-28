@@ -1,3 +1,4 @@
 .gradle/
 build/
 .idea/caches/
+build/reports/
