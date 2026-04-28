@@ -1,14 +1,18 @@
 package com.mobilemoney.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.data.model.TransactionUi
-import com.mobilemoney.data.repository.MockRepository
+import com.mobilemoney.data.repository.DatabaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 enum class TransactionType {
@@ -32,7 +36,9 @@ data class TransactionFormState(
     val isSaved: Boolean = false
 )
 
-class TransactionFormViewModel : ViewModel() {
+class TransactionFormViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
 
     private val _uiState = MutableStateFlow(TransactionFormState())
     val uiState: StateFlow<TransactionFormState> = _uiState.asStateFlow()
@@ -42,31 +48,46 @@ class TransactionFormViewModel : ViewModel() {
     }
 
     private fun loadData() {
-        _uiState.value = _uiState.value.copy(
-            accounts = MockRepository.accounts.value,
-            categories = MockRepository.categories.value
-        )
+        viewModelScope.launch {
+            repository.getAccounts()
+                .catch { /* handle error */ }
+                .collect { accounts ->
+                    _uiState.value = _uiState.value.copy(accounts = accounts)
+                }
+        }
+        viewModelScope.launch {
+            repository.getCategories()
+                .catch { /* handle error */ }
+                .collect { categories ->
+                    _uiState.value = _uiState.value.copy(categories = categories)
+                }
+        }
     }
 
     fun loadTransaction(transactionId: UUID) {
-        val transaction = MockRepository.getTransactionById(transactionId)
-        if (transaction != null) {
-            val accounts = MockRepository.accounts.value
-            val categories = MockRepository.categories.value
-            _uiState.value = _uiState.value.copy(
-                amount = transaction.amount.toString(),
-                selectedAccount = accounts.find { it.name == transaction.subtitle },
-                selectedCategory = categories.find { it.name == transaction.title },
-                date = transaction.date,
-                comment = transaction.comment,
-                type = when {
-                    transaction.title == "Перевод" -> TransactionType.TRANSFER
-                    transaction.isIncome -> TransactionType.INCOME
-                    else -> TransactionType.EXPENSE
-                },
-                isEditing = true,
-                transactionId = transactionId
-            )
+        viewModelScope.launch {
+            val transaction = repository.getTransactionById(transactionId.toString())
+            if (transaction != null) {
+                var selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId }
+                while (selectedAccount == null && _uiState.value.accounts.isEmpty()) {
+                    kotlinx.coroutines.delay(100)
+                    selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId }
+                }
+                _uiState.value = _uiState.value.copy(
+                    amount = transaction.amount.toString(),
+                    selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId },
+                    selectedCategory = _uiState.value.categories.find { it.id == transaction.categoryId },
+                    date = transaction.date,
+                    comment = transaction.comment,
+                    type = when {
+                        transaction.title == "Перевод" -> TransactionType.TRANSFER
+                        transaction.isIncome -> TransactionType.INCOME
+                        else -> TransactionType.EXPENSE
+                    },
+                    isEditing = true,
+                    transactionId = transactionId
+                )
+            }
         }
     }
 
@@ -147,13 +168,17 @@ class TransactionFormViewModel : ViewModel() {
                 TransactionType.EXPENSE -> 0xFFD32F2F
             },
             isIncome = isIncome,
-            date = state.date
+            date = state.date,
+            accountId = state.selectedAccount.id,
+            categoryId = state.selectedCategory?.id
         )
 
-        if (state.isEditing) {
-            MockRepository.updateTransaction(transaction)
-        } else {
-            MockRepository.addTransaction(transaction)
+        viewModelScope.launch {
+            if (state.isEditing) {
+                repository.updateTransaction(transaction)
+            } else {
+                repository.addTransaction(transaction)
+            }
         }
 
         _uiState.value = state.copy(isSaved = true)

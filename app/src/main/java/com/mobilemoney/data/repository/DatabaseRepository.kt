@@ -1,0 +1,250 @@
+package com.mobilemoney.data.repository
+
+import android.content.Context
+import com.mobilemoney.data.local.AccountDao
+import com.mobilemoney.data.local.AccountEntity
+import com.mobilemoney.data.local.AccountTypeDao
+import com.mobilemoney.data.local.AccountTypeEntity
+import com.mobilemoney.data.local.AppDatabase
+import com.mobilemoney.data.local.CategoryDao
+import com.mobilemoney.data.local.CategoryEntity
+import com.mobilemoney.data.local.CurrencyDao
+import com.mobilemoney.data.local.CurrencyEntity
+import com.mobilemoney.data.local.ExchangeRateDao
+import com.mobilemoney.data.local.TagDao
+import com.mobilemoney.data.local.TagEntity
+import com.mobilemoney.data.local.TransactionDao
+import com.mobilemoney.data.local.TransactionEntity
+import com.mobilemoney.data.local.UserDao
+import com.mobilemoney.data.model.AccountUi
+import com.mobilemoney.data.model.CategoryUi
+import com.mobilemoney.data.model.TransactionUi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.util.UUID
+
+class DatabaseRepository(context: Context) {
+    private val database = AppDatabase.getDatabase(context)
+    private val userDao: UserDao = database.userDao()
+    private val currencyDao: CurrencyDao = database.currencyDao()
+    private val accountTypeDao: AccountTypeDao = database.accountTypeDao()
+    private val accountDao: AccountDao = database.accountDao()
+    private val categoryDao: CategoryDao = database.categoryDao()
+    private val tagDao: TagDao = database.tagDao()
+    private val transactionDao: TransactionDao = database.transactionDao()
+    private val exchangeRateDao: ExchangeRateDao = database.exchangeRateDao()
+
+    fun getAccounts(): Flow<List<AccountUi>> {
+        return accountDao.getAllAccounts().map { entities ->
+            entities.map { it.toUiModel() }
+        }
+    }
+
+    fun getCategories(): Flow<List<CategoryUi>> {
+        return categoryDao.getAllCategories().map { entities ->
+            entities.map { it.toUiModel() }
+        }
+    }
+
+    fun getTransactions(): Flow<List<TransactionUi>> {
+        return transactionDao.getAllTransactions().map { entities ->
+            entities.map { entity ->
+                entity.toUiModel(
+                    accountDao.getAccountById(entity.accountId),
+                    categoryDao.getCategoryById(entity.categoryId ?: "")
+                )
+            }
+        }
+    }
+
+    suspend fun getTransactionById(id: String): TransactionUi? {
+        val entity = transactionDao.getTransactionById(id) ?: return null
+        val account = accountDao.getAccountById(entity.accountId)
+        val category = entity.categoryId?.let { categoryDao.getCategoryById(it) }
+        return entity.toUiModel(account, category)
+    }
+
+    suspend fun addTransaction(transaction: TransactionUi) {
+        val entity = transaction.toEntity()
+        transactionDao.insert(entity)
+    }
+
+    suspend fun updateTransaction(transaction: TransactionUi) {
+        val entity = transaction.toEntity()
+        transactionDao.update(entity)
+    }
+
+    suspend fun deleteTransaction(id: String) {
+        transactionDao.softDelete(id, System.currentTimeMillis())
+    }
+
+    suspend fun addAccount(account: AccountUi) {
+        accountDao.insert(account.toEntity())
+    }
+
+    suspend fun updateAccount(account: AccountUi) {
+        accountDao.update(account.toEntity())
+    }
+
+    suspend fun deleteAccount(id: String) {
+        accountDao.softDelete(id, System.currentTimeMillis())
+    }
+
+    suspend fun addCategory(category: CategoryUi) {
+        categoryDao.insert(category.toEntity())
+    }
+
+    suspend fun updateCategory(category: CategoryUi) {
+        categoryDao.update(category.toEntity())
+    }
+
+    suspend fun deleteCategory(id: String) {
+        categoryDao.softDelete(id, System.currentTimeMillis())
+    }
+
+    suspend fun initializeDefaultData() {
+        initializeCurrencies()
+        initializeAccountTypes()
+        initializeCategories()
+        initializeAccounts()
+    }
+
+    private suspend fun initializeAccounts() {
+        val defaultAccounts = listOf(
+            AccountEntity(
+                id = UUID.randomUUID().toString(),
+                name = "Наличные",
+                typeId = "cash",
+                currencyCode = "RUB",
+                icon = "wallet",
+                archived = false,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+        accountDao.insertAll(defaultAccounts)
+    }
+
+    private suspend fun initializeCurrencies() {
+        val defaultCurrencies = listOf(
+            CurrencyEntity("RUB", "Российский рубль", "₽", System.currentTimeMillis()),
+            CurrencyEntity("USD", "Доллар США", "$", System.currentTimeMillis()),
+            CurrencyEntity("EUR", "Евро", "€", System.currentTimeMillis())
+        )
+        currencyDao.insertAll(defaultCurrencies)
+    }
+
+    private suspend fun initializeAccountTypes() {
+        val defaultTypes = listOf(
+            AccountTypeEntity("cash", "Наличные", System.currentTimeMillis(), System.currentTimeMillis()),
+            AccountTypeEntity("card", "Банковская карта", System.currentTimeMillis(), System.currentTimeMillis()),
+            AccountTypeEntity("account", "Счёт", System.currentTimeMillis(), System.currentTimeMillis())
+        )
+        accountTypeDao.insertAll(defaultTypes)
+    }
+
+    private suspend fun initializeCategories() {
+        val defaultCategories = listOf(
+            CategoryEntity(UUID.randomUUID().toString(), "Еда", false, "restaurant", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Транспорт", false, "directions_bus", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Магазин", false, "shopping_cart", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Развлечения", false, "movie", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Здоровье", false, "local_hospital", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Зарплата", true, "work", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Подарок", true, "card_giftcard", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Прочее расходы", false, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Прочее доходы", true, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis())
+        )
+        categoryDao.insertAll(defaultCategories)
+    }
+
+    private fun AccountEntity.toUiModel(): AccountUi {
+        return AccountUi(
+            id = UUID.fromString(id),
+            name = name,
+            currency = currencyCode ?: "₽",
+            icon = icon
+        )
+    }
+
+    private fun AccountUi.toEntity(): AccountEntity {
+        return AccountEntity(
+            id = id.toString(),
+            name = name,
+            typeId = null,
+            currencyCode = currency,
+            icon = icon,
+            archived = false,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    private fun CategoryEntity.toUiModel(): CategoryUi {
+        return CategoryUi(
+            id = UUID.fromString(id),
+            name = name,
+            icon = icon,
+            isIncome = isIncome
+        )
+    }
+
+    private fun CategoryUi.toEntity(): CategoryEntity {
+        return CategoryEntity(
+            id = id.toString(),
+            name = name,
+            isIncome = isIncome,
+            icon = icon,
+            parentId = null,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    private fun TransactionEntity.toUiModel(
+        account: AccountEntity?,
+        category: CategoryEntity?
+    ): TransactionUi {
+        return TransactionUi(
+            id = UUID.fromString(id),
+            title = category?.name ?: "Без категории",
+            subtitle = account?.name ?: formatDate(date),
+            comment = comment,
+            amount = amount,
+            currency = account?.currencyCode ?: "₽",
+            icon = category?.icon ?: "receipt",
+            color = if (category?.isIncome == true) 0xFF2196F3 else 0xFF4CAF50,
+            isIncome = category?.isIncome ?: false,
+            date = date,
+            accountId = accountId.takeIf { it.isNotEmpty() }?.let { UUID.fromString(it) },
+            categoryId = categoryId?.let { UUID.fromString(it) }
+        )
+    }
+
+    private fun TransactionUi.toEntity(): TransactionEntity {
+        return TransactionEntity(
+            id = id.toString(),
+            accountId = accountId?.toString() ?: "",
+            categoryId = categoryId?.toString(),
+            amount = amount,
+            date = date,
+            comment = comment,
+            source = null,
+            sourceData = null,
+            creatorId = null,
+            relatedTransactionId = null,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    private fun formatDate(timestamp: Long): String {
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+        return when {
+            diff < 86400000 -> "Сегодня"
+            diff < 172800000 -> "Вчера"
+            else -> "Дата"
+        }
+    }
+}

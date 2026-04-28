@@ -111,7 +111,7 @@ fun headerTitle(date: LocalDate): String {
     return when (date) {
         today -> "Сегодня"
         yesterday -> "Вчера"
-        else -> date.format(DateTimeFormatter.ofPattern("d MMMM, EEEE", Locale("ru", "RU")))
+        else -> date.format(DateTimeFormatter.ofPattern("d MMMM, EEEE", Locale.forLanguageTag("ru-RU")))
     }
 }
 

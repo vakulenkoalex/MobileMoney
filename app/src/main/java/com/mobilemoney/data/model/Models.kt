@@ -26,5 +26,7 @@ data class TransactionUi(
     val icon: String,
     val color: Long,
     val isIncome: Boolean,
-    val date: Long = System.currentTimeMillis()
+    val date: Long = System.currentTimeMillis(),
+    val accountId: UUID? = null,
+    val categoryId: UUID? = null
 )
