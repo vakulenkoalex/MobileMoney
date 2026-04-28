@@ -65,7 +65,7 @@ fun TransactionListScreen(
                     transaction = transaction,
                     onClick = { onTransactionClick(transaction.id) }
                 )
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
                     color = MaterialTheme.colorScheme.outlineVariant
                 )
