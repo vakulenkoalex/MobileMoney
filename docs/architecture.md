@@ -728,16 +728,15 @@ class SyncWorker(
 | Gradle | | 9.4.1 |
 | AGP | Android Gradle Plugin | 9.2.0 |
 | Min SDK | API 34 (Android 14) | |
-| UI | Jetpack Compose + Material 3 | BOM 2023.10.01 |
-| Compose Compiler Plugin | Kotlin | 2.2.10 |
-| Lifecycle | | 2.7.0 |
-| Navigation Compose | | 2.7.6 |
+| UI | Jetpack Compose + Material 3 | BOM 2024.02.00 |
+| Compose Compiler Plugin | Kotlin | 2.3.21 |
+| Lifecycle | | 2.10.0 |
+| Navigation Compose | | 2.9.8 |
 | DI | Hilt | |
 | Networking | Retrofit + OkHttp + Kotlin Serialization | |
 | Local DB | Room + SQLCipher (или androidx.security:security-crypto) | |
 | Async | Kotlin Coroutines + Flow | |
-| Navigation | Navigation Compose | 2.7.5 |
-| Images | Coil | |
+| Networking | Retrofit + OkHttp + Kotlin Serialization | |
 | Charts | Vico | |
 | Auth | Firebase Auth | |
 | Push | Firebase Cloud Messaging | |
