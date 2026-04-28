@@ -22,12 +22,6 @@
 ## minSDK
 Проект использует minSDK 34 (Android 14). Старые версии Android не поддерживаются.
 
-## Версии
-- Gradle: 9.0
-- AGP: 8.5.0
-- Kotlin: 1.9.22
-- Compose BOM: 2023.10.01
-
 ## Среда
 - Используется Java из Android Studio: `C:\Program Files\Android\Android Studio\jbr`
 - Настройка в `gradle.properties`: `org.gradle.java.home`
