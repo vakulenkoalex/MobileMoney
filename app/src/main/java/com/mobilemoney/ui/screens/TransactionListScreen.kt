@@ -10,6 +10,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import java.time.LocalDate
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
@@ -54,23 +59,59 @@ fun TransactionListScreen(
             BottomNavigationBar()
         }
     ) { paddingValues ->
+        val sortedTransactions = remember(uiState.transactions) {
+            uiState.transactions.sortedByDescending { it.date }
+        }
+        val groupedByDate = remember(sortedTransactions) {
+            sortedTransactions.groupBy {
+                Instant.ofEpochMilli(it.date).atZone(ZoneId.systemDefault()).toLocalDate()
+            }
+        }
+        val sections = remember(groupedByDate) {
+            groupedByDate.entries.sortedByDescending { it.key }.map { it.key to it.value }
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            items(uiState.transactions) { transaction ->
-                TransactionItem(
-                    transaction = transaction,
-                    onClick = { onTransactionClick(transaction.id) }
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant
-                )
+            sections.forEach { (dateKey, txs) ->
+                item(key = dateKey.toString()) {
+                    Text(
+                        text = headerTitle(dateKey),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 2.dp)
+                    )
+                }
+
+                items(txs, key = { it.id.toString() }) { transaction ->
+                    TransactionItem(
+                        transaction = transaction,
+                        onClick = { onTransactionClick(transaction.id) }
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
             }
         }
+    }
+}
+
+// Helpers
+fun headerTitle(date: LocalDate): String {
+    val today = LocalDate.now()
+    val yesterday = today.minusDays(1)
+    return when (date) {
+        today -> "Сегодня"
+        yesterday -> "Вчера"
+        else -> date.format(DateTimeFormatter.ofPattern("d MMMM, EEEE", Locale("ru", "RU")))
     }
 }
 
