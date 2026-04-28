@@ -42,6 +42,7 @@ fun TransactionFormScreen(
     var showTargetAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(transactionId) {
         if (transactionId != null) {
@@ -261,17 +262,46 @@ fun TransactionFormScreen(
                 }
             }
 
-            // Дата
-            val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-            ListItem(
-                headlineContent = { Text("Дата") },
-                supportingContent = { Text(dateFormat.format(Date(uiState.date))) },
-                leadingContent = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+            // Дата и время
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                    .clickable { showDatePicker = true }
-            )
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { showDatePicker = true }
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = null)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text("Дата", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(dateFormat.format(Date(uiState.date)))
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { showTimePicker = true }
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Schedule, contentDescription = null)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text("Время", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(timeFormat.format(Date(uiState.date)))
+                    }
+                }
+            }
 
             if (showDatePicker) {
                 val datePickerState = rememberDatePickerState(
@@ -299,6 +329,42 @@ fun TransactionFormScreen(
                 ) {
                     DatePicker(state = datePickerState)
                 }
+            }
+
+            if (showTimePicker) {
+                val calendar = java.util.Calendar.getInstance().apply {
+                    timeInMillis = uiState.date
+                }
+                val timePickerState = rememberTimePickerState(
+                    initialHour = calendar.get(java.util.Calendar.HOUR_OF_DAY),
+                    initialMinute = calendar.get(java.util.Calendar.MINUTE)
+                )
+                AlertDialog(
+                    onDismissRequest = { showTimePicker = false },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val newCalendar = java.util.Calendar.getInstance().apply {
+                                    timeInMillis = uiState.date
+                                    set(java.util.Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                    set(java.util.Calendar.MINUTE, timePickerState.minute)
+                                }
+                                viewModel.updateDate(newCalendar.timeInMillis)
+                                showTimePicker = false
+                            }
+                        ) {
+                            Text("OK")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showTimePicker = false }) {
+                            Text("Отмена")
+                        }
+                    },
+                    text = {
+                        TimePicker(state = timePickerState)
+                    }
+                )
             }
 
             // Комментарий
