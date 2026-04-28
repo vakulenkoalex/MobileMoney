@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.mobilemoney"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.mobilemoney"
@@ -42,9 +42,9 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2023.10.01")
     implementation(composeBom)
 
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
 
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -52,9 +52,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
-    implementation("androidx.navigation:navigation-compose:2.7.6")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
