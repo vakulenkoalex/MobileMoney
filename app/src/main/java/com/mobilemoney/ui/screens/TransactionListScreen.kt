@@ -33,7 +33,8 @@ import java.util.*
 fun TransactionListScreen(
     viewModel: TransactionListViewModel = viewModel(),
     onAddClick: () -> Unit,
-    onTransactionClick: (UUID) -> Unit
+    onTransactionClick: (UUID) -> Unit,
+    onAccountsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -56,7 +57,7 @@ fun TransactionListScreen(
             }
         },
         bottomBar = {
-            BottomNavigationBar()
+            BottomNavigationBar(onAccountsClick = onAccountsClick)
         }
     ) { paddingValues ->
         val sortedTransactions = remember(uiState.transactions) {
@@ -169,7 +170,9 @@ fun TransactionItem(
 }
 
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(
+    onAccountsClick: () -> Unit = {}
+) {
     NavigationBar {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
@@ -181,7 +184,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
             label = { Text("Счета") },
             selected = false,
-            onClick = { }
+            onClick = onAccountsClick
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.BarChart, contentDescription = null) },

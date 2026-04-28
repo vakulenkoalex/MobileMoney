@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mobilemoney.ui.screens.AccountFormScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
 import java.util.UUID
@@ -15,6 +16,11 @@ sealed class Screen(val route: String) {
     data object CreateTransaction : Screen("create")
     data object EditTransaction : Screen("edit/{transactionId}") {
         fun createRoute(transactionId: UUID) = "edit/$transactionId"
+    }
+    data object Accounts : Screen("accounts")
+    data object CreateAccount : Screen("account/create")
+    data object EditAccount : Screen("account/edit/{accountId}") {
+        fun createRoute(accountId: UUID) = "account/edit/$accountId"
     }
 }
 
@@ -33,6 +39,9 @@ fun MobileMoneyNavigation() {
                 },
                 onTransactionClick = { transactionId ->
                     navController.navigate(Screen.EditTransaction.createRoute(transactionId))
+                },
+                onAccountsClick = {
+                    navController.navigate(Screen.Accounts.route)
                 }
             )
         }
@@ -57,6 +66,46 @@ fun MobileMoneyNavigation() {
             }
             TransactionFormScreen(
                 transactionId = transactionId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.Accounts.route) {
+            com.mobilemoney.ui.screens.AccountListScreen(
+                onAddClick = {
+                    navController.navigate(Screen.CreateAccount.route)
+                },
+                onAccountClick = { accountId ->
+                    navController.navigate(Screen.EditAccount.createRoute(accountId))
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.CreateAccount.route) {
+            AccountFormScreen(
+                accountId = null,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Screen.EditAccount.route,
+            arguments = listOf(
+                navArgument("accountId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId")?.let {
+                UUID.fromString(it)
+            }
+            AccountFormScreen(
+                accountId = accountId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
