@@ -23,7 +23,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.data.config.AppIcons
-import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.viewmodel.TransactionFormViewModel
 import com.mobilemoney.viewmodel.TransactionType
@@ -33,7 +32,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionFormScreen(
-    transactionId: java.util.UUID?,
+    transactionId: UUID?,
     onNavigateBack: () -> Unit,
     viewModel: TransactionFormViewModel = viewModel()
 ) {
@@ -368,22 +367,22 @@ fun TransactionFormScreen(
             }
 
             if (showTimePicker) {
-                val calendar = java.util.Calendar.getInstance().apply {
+                val calendar = Calendar.getInstance().apply {
                     timeInMillis = uiState.date
                 }
                 val timePickerState = rememberTimePickerState(
-                    initialHour = calendar.get(java.util.Calendar.HOUR_OF_DAY),
-                    initialMinute = calendar.get(java.util.Calendar.MINUTE)
+                    initialHour = calendar.get(Calendar.HOUR_OF_DAY),
+                    initialMinute = calendar.get(Calendar.MINUTE)
                 )
                 AlertDialog(
                     onDismissRequest = { showTimePicker = false },
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                val newCalendar = java.util.Calendar.getInstance().apply {
+                                val newCalendar = Calendar.getInstance().apply {
                                     timeInMillis = uiState.date
-                                    set(java.util.Calendar.HOUR_OF_DAY, timePickerState.hour)
-                                    set(java.util.Calendar.MINUTE, timePickerState.minute)
+                                    set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                    set(Calendar.MINUTE, timePickerState.minute)
                                 }
                                 viewModel.updateDate(newCalendar.timeInMillis)
                                 showTimePicker = false

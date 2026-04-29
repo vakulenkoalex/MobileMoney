@@ -12,7 +12,6 @@ import com.mobilemoney.data.local.CurrencyDao
 import com.mobilemoney.data.local.CurrencyEntity
 import com.mobilemoney.data.local.ExchangeRateDao
 import com.mobilemoney.data.local.TagDao
-import com.mobilemoney.data.local.TagEntity
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.local.UserDao
