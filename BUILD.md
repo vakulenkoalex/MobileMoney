@@ -3,7 +3,7 @@
 ## Сборка
 
 ```bash
-# Windows
+# Windows PowerShell - НЕ ИСПОЛЬЗУЙТЕ && - используйте ; или отдельные команды
 .\gradlew.bat assembleDebug
 
 # Linux/Mac
