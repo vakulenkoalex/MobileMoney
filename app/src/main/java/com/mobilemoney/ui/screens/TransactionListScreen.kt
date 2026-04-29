@@ -34,7 +34,8 @@ fun TransactionListScreen(
     viewModel: TransactionListViewModel = viewModel(),
     onAddClick: () -> Unit,
     onTransactionClick: (UUID) -> Unit,
-    onAccountsClick: () -> Unit
+    onAccountsClick: () -> Unit,
+    onCategoriesClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -57,7 +58,10 @@ fun TransactionListScreen(
             }
         },
         bottomBar = {
-            BottomNavigationBar(onAccountsClick = onAccountsClick)
+            BottomNavigationBar(
+                onAccountsClick = onAccountsClick,
+                onCategoriesClick = onCategoriesClick
+            )
         }
     ) { paddingValues ->
         val sortedTransactions = remember(uiState.transactions) {
@@ -171,7 +175,8 @@ fun TransactionItem(
 
 @Composable
 fun BottomNavigationBar(
-    onAccountsClick: () -> Unit = {}
+    onAccountsClick: () -> Unit = {},
+    onCategoriesClick: () -> Unit = {}
 ) {
     NavigationBar {
         NavigationBarItem(
@@ -187,10 +192,10 @@ fun BottomNavigationBar(
             onClick = onAccountsClick
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
-            label = { Text("Отчёты") },
+            icon = { Icon(Icons.Default.Category, contentDescription = null) },
+            label = { Text("Категории") },
             selected = false,
-            onClick = { }
+            onClick = onCategoriesClick
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },

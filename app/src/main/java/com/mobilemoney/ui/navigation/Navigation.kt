@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mobilemoney.ui.screens.AccountFormScreen
+import com.mobilemoney.ui.screens.CategoryFormScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
 import java.util.UUID
@@ -21,6 +22,11 @@ sealed class Screen(val route: String) {
     data object CreateAccount : Screen("account/create")
     data object EditAccount : Screen("account/edit/{accountId}") {
         fun createRoute(accountId: UUID) = "account/edit/$accountId"
+    }
+    data object Categories : Screen("categories")
+    data object CreateCategory : Screen("category/create")
+    data object EditCategory : Screen("category/edit/{categoryId}") {
+        fun createRoute(categoryId: UUID) = "category/edit/$categoryId"
     }
 }
 
@@ -42,6 +48,9 @@ fun MobileMoneyNavigation() {
                 },
                 onAccountsClick = {
                     navController.navigate(Screen.Accounts.route)
+                },
+                onCategoriesClick = {
+                    navController.navigate(Screen.Categories.route)
                 }
             )
         }
@@ -106,6 +115,46 @@ fun MobileMoneyNavigation() {
             }
             AccountFormScreen(
                 accountId = accountId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.Categories.route) {
+            com.mobilemoney.ui.screens.CategoryListScreen(
+                onAddClick = {
+                    navController.navigate(Screen.CreateCategory.route)
+                },
+                onCategoryClick = { categoryId ->
+                    navController.navigate(Screen.EditCategory.createRoute(categoryId))
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.CreateCategory.route) {
+            CategoryFormScreen(
+                categoryId = null,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Screen.EditCategory.route,
+            arguments = listOf(
+                navArgument("categoryId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val categoryId = backStackEntry.arguments?.getString("categoryId")?.let {
+                UUID.fromString(it)
+            }
+            CategoryFormScreen(
+                categoryId = categoryId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

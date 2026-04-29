@@ -16,9 +16,19 @@ object AppIcons {
             "restaurant" -> Icons.Default.Restaurant
             "directions_bus" -> Icons.Default.DirectionsBus
             "card_giftcard" -> Icons.Default.CardGiftcard
+            "school" -> Icons.Default.School
+            "home" -> Icons.Default.Home
+            "pets" -> Icons.Default.Pets
+            "phone" -> Icons.Default.Phone
+            "flight" -> Icons.Default.Flight
+            "fitness_center" -> Icons.Default.FitnessCenter
+            "checkroom" -> Icons.Default.Checkroom
+            "more_horiz" -> Icons.Default.MoreHoriz
             else -> Icons.Default.Category
         }
     }
+
+    fun getCategoryIcon(iconName: String): ImageVector = getTransactionIcon(iconName)
 
     fun getAccountIcon(iconName: String): ImageVector {
         return when (iconName) {
