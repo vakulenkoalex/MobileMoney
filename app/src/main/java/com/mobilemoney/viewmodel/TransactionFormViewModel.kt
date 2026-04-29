@@ -33,7 +33,8 @@ data class TransactionFormState(
     val categories: List<CategoryUi> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val isDeleted: Boolean = false
 )
 
 class TransactionFormViewModel(application: Application) : AndroidViewModel(application) {
@@ -243,5 +244,23 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
     fun getFilteredCategories(): List<CategoryUi> {
         val isIncome = _uiState.value.type == TransactionType.INCOME
         return _uiState.value.categories.filter { it.isIncome == isIncome }
+    }
+
+    fun delete() {
+        val id = _uiState.value.transactionId
+        if (id != null) {
+            viewModelScope.launch {
+                repository.deleteTransaction(id.toString())
+                _uiState.value = _uiState.value.copy(isDeleted = true)
+            }
+        }
+    }
+
+    fun copy() {
+        _uiState.value = _uiState.value.copy(
+            transactionId = null,
+            isEditing = false,
+            date = System.currentTimeMillis()
+        )
     }
 }

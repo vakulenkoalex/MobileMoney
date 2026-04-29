@@ -58,6 +58,12 @@ fun TransactionFormScreen(
         }
     }
 
+    LaunchedEffect(uiState.isDeleted) {
+        if (uiState.isDeleted) {
+            onNavigateBack()
+        }
+    }
+
     val filteredCategories = viewModel.getFilteredCategories()
 
     val amountFocusRequester = remember { FocusRequester() }
@@ -66,6 +72,14 @@ fun TransactionFormScreen(
         if (transactionId == null) {
             amountFocusRequester.requestFocus()
         }
+    }
+
+    var wasEditing by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.isEditing) {
+        if (wasEditing && !uiState.isEditing) {
+            amountFocusRequester.requestFocus()
+        }
+        wasEditing = uiState.isEditing
     }
 
     Scaffold(
@@ -432,6 +446,34 @@ fun TransactionFormScreen(
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+
+            // Кнопки действий (только при редактировании)
+            if (uiState.isEditing) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.copy() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Копировать")
+                    }
+                    OutlinedButton(
+                        onClick = { viewModel.delete() },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Удалить")
+                    }
+                }
             }
         }
     }
