@@ -17,6 +17,7 @@ import java.util.UUID
 
 data class AccountFormState(
     val name: String = "",
+    val typeId: String = "cash",
     val currencyCode: String = "RUB",
     val currencySymbol: String = "₽",
     val icon: String = "wallet",
@@ -24,6 +25,7 @@ data class AccountFormState(
     val accountId: UUID? = null,
     val currencies: List<com.mobilemoney.data.config.CurrencyConfig> = Currencies.all,
     val icons: List<com.mobilemoney.data.config.IconOption> = AccountIcons.all,
+    val accountTypes: List<com.mobilemoney.data.local.AccountTypeEntity> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false
@@ -36,6 +38,14 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
     private val _uiState = MutableStateFlow(AccountFormState())
     val uiState: StateFlow<AccountFormState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            repository.getAccountTypes().collect { types ->
+                _uiState.value = _uiState.value.copy(accountTypes = types)
+            }
+        }
+    }
+
     fun loadAccount(accountId: UUID) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -44,6 +54,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
                 val currency = uiState.value.currencies.find { it.code == account.currency }
                 _uiState.value = _uiState.value.copy(
                     name = account.name,
+                    typeId = account.typeId,
                     currencyCode = account.currency,
                     currencySymbol = currency?.symbol ?: "₽",
                     icon = account.icon,
@@ -76,6 +87,10 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
         _uiState.value = _uiState.value.copy(icon = icon)
     }
 
+    fun updateTypeId(typeId: String) {
+        _uiState.value = _uiState.value.copy(typeId = typeId)
+    }
+
     fun save(): Boolean {
         val state = _uiState.value
 
@@ -87,6 +102,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
         val account = AccountUi(
             id = state.accountId ?: UUID.randomUUID(),
             name = state.name,
+            typeId = state.typeId,
             currency = state.currencyCode,
             icon = state.icon
         )

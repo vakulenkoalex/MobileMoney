@@ -5,6 +5,7 @@ import java.util.UUID
 data class AccountUi(
     val id: UUID = UUID.randomUUID(),
     val name: String,
+    val typeId: String = "cash",
     val currency: String = "₽",
     val icon: String = "wallet"
 )

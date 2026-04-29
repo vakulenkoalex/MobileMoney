@@ -39,6 +39,10 @@ class DatabaseRepository(context: Context) {
         }
     }
 
+    fun getAccountTypes(): Flow<List<AccountTypeEntity>> {
+        return accountTypeDao.getAllAccountTypes()
+    }
+
     fun getCategories(): Flow<List<CategoryUi>> {
         return categoryDao.getAllCategories().map { entities ->
             entities.map { it.toUiModel() }
@@ -196,6 +200,7 @@ class DatabaseRepository(context: Context) {
         return AccountUi(
             id = UUID.fromString(id),
             name = name,
+            typeId = typeId ?: "cash",
             currency = currencyCode ?: "₽",
             icon = icon
         )
@@ -205,7 +210,7 @@ class DatabaseRepository(context: Context) {
         return AccountEntity(
             id = id.toString(),
             name = name,
-            typeId = null,
+            typeId = typeId,
             currencyCode = currency,
             icon = icon,
             archived = false,

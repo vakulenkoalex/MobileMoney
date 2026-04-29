@@ -34,6 +34,7 @@ fun AccountFormScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showCurrencySheet by remember { mutableStateOf(false) }
     var showIconSheet by remember { mutableStateOf(false) }
+    var showTypeSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(accountId) {
         if (accountId != null) {
@@ -85,6 +86,54 @@ fun AccountFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+
+            ListItem(
+                headlineContent = { Text("Тип счёта") },
+                supportingContent = {
+                    Text(
+                        uiState.accountTypes.find { it.id == uiState.typeId }?.name
+                            ?: "Наличные"
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                    .clickable { showTypeSheet = true }
+            )
+
+            if (showTypeSheet) {
+                ModalBottomSheet(
+                    onDismissRequest = { showTypeSheet = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Выберите тип счёта",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        uiState.accountTypes.forEach { type ->
+                            ListItem(
+                                headlineContent = { Text(type.name) },
+                                leadingContent = {
+                                    RadioButton(
+                                        selected = uiState.typeId == type.id,
+                                        onClick = null
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.updateTypeId(type.id)
+                                    showTypeSheet = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             ListItem(
                 headlineContent = { Text("Валюта") },
