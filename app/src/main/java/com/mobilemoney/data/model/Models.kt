@@ -8,7 +8,8 @@ data class AccountUi(
     val typeId: String = "cash",
     val currency: String = "₽",
     val icon: String = "wallet",
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val balance: Double = 0.0
 )
 
 data class CategoryUi(

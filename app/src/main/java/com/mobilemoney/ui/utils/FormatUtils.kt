@@ -9,4 +9,8 @@ object FormatUtils {
         val sign = if (isIncome) "+" else "-"
         return "$sign${amountFormat.format(amount)} $currency"
     }
+
+    fun formatBalance(amount: Double, currency: String): String {
+        return "${amountFormat.format(amount)} $currency"
+    }
 }

@@ -20,6 +20,7 @@ import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.data.model.TransactionUi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 
@@ -35,8 +36,20 @@ class DatabaseRepository(context: Context) {
     private val exchangeRateDao: ExchangeRateDao = database.exchangeRateDao()
 
     fun getAccounts(): Flow<List<AccountUi>> {
-        return accountDao.getAllAccounts().map { entities ->
-            entities.map { it.toUiModel() }
+        return combine(
+            accountDao.getAllAccounts(),
+            transactionDao.getAllTransactions(),
+            categoryDao.getAllCategories()
+        ) { accounts, transactions, categories ->
+            val categoriesMap = categories.associateBy { it.id }
+            accounts.map { account ->
+                val accountTransactions = transactions.filter { it.accountId == account.id }
+                val balance = accountTransactions.sumOf { tx ->
+                    val category = tx.categoryId?.let { categoriesMap[it] }
+                    if (category?.isIncome == true) tx.amount else -tx.amount
+                }
+                account.toUiModel(balance)
+            }
         }
     }
 
@@ -206,14 +219,15 @@ class DatabaseRepository(context: Context) {
         categoryDao.insertAll(defaultCategories)
     }
 
-    private fun AccountEntity.toUiModel(): AccountUi {
+    private fun AccountEntity.toUiModel(balance: Double = 0.0): AccountUi {
         return AccountUi(
             id = UUID.fromString(id),
             name = name,
             typeId = typeId ?: "cash",
             currency = currencyCode ?: "₽",
             icon = icon,
-            isDefault = isDefault
+            isDefault = isDefault,
+            balance = balance
         )
     }
 

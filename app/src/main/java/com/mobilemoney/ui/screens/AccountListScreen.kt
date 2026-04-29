@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.model.AccountUi
+import com.mobilemoney.ui.utils.FormatUtils
 import com.mobilemoney.viewmodel.AccountListViewModel
 import java.util.UUID
 
@@ -131,19 +132,25 @@ fun AccountItem(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = account.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
+                Text(
+                    text = FormatUtils.formatBalance(account.balance, account.currency),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (account.balance >= 0)
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else
+                        MaterialTheme.colorScheme.error
+                )
             }
-
-            Text(
-                text = account.currency,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
         }
     }
 }

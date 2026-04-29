@@ -115,6 +115,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE deletedAt IS NULL")
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM categories WHERE deletedAt IS NULL")
+    suspend fun getAllCategoriesList(): List<CategoryEntity>
+
     @Query("SELECT * FROM categories WHERE isIncome = 1 AND deletedAt IS NULL")
     fun getIncomeCategories(): Flow<List<CategoryEntity>>
 
@@ -205,6 +208,19 @@ interface TransactionDao {
         WHERE accountId = :accountId AND deletedAt IS NULL
     """)
     suspend fun getTotalAmountForAccount(accountId: String): Double?
+
+    @Query("""
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN c.isIncome = 1 THEN t.amount
+                ELSE -t.amount
+            END
+        ), 0)
+        FROM transactions t
+        LEFT JOIN categories c ON t.categoryId = c.id
+        WHERE t.accountId = :accountId AND t.deletedAt IS NULL
+    """)
+    suspend fun getAccountBalance(accountId: String): Double?
 }
 
 @Dao
