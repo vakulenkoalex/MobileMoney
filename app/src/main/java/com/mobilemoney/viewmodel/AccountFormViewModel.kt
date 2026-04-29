@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobilemoney.MobileMoneyApp
+import com.mobilemoney.data.config.AccountIcons
+import com.mobilemoney.data.config.Currencies
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.repository.DatabaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,36 +22,11 @@ data class AccountFormState(
     val icon: String = "wallet",
     val isEditing: Boolean = false,
     val accountId: UUID? = null,
-    val currencies: List<CurrencyOption> = listOf(
-        CurrencyOption("RUB", "₽", "Российский рубль"),
-        CurrencyOption("USD", "$", "Доллар США"),
-        CurrencyOption("EUR", "€", "Евро"),
-        CurrencyOption("KZT", "₸", "Казахстанский тенге")
-    ),
-    val icons: List<IconOption> = listOf(
-        IconOption("wallet", "Наличные"),
-        IconOption("credit_card", "Карта"),
-        IconOption("account_balance", "Счёт"),
-        IconOption("savings", "Накопления"),
-        IconOption("home", "Дом"),
-        IconOption("business", "Бизнес"),
-        IconOption("school", "Обучение"),
-        IconOption("favorite", "Личное")
-    ),
+    val currencies: List<com.mobilemoney.data.config.CurrencyConfig> = Currencies.all,
+    val icons: List<com.mobilemoney.data.config.IconOption> = AccountIcons.all,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false
-)
-
-data class CurrencyOption(
-    val code: String,
-    val symbol: String,
-    val name: String
-)
-
-data class IconOption(
-    val name: String,
-    val label: String
 )
 
 class AccountFormViewModel(application: Application) : AndroidViewModel(application) {

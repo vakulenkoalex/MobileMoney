@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.viewmodel.AccountListViewModel
 import java.util.UUID
@@ -123,7 +124,7 @@ fun AccountItem(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = getAccountIcon(account.icon),
+                    imageVector = AppIcons.getAccountIcon(account.icon),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )

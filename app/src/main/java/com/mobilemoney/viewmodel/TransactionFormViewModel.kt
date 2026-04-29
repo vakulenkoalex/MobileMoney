@@ -68,11 +68,8 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             val transaction = repository.getTransactionById(transactionId.toString())
             if (transaction != null) {
-                var selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId }
-                while (selectedAccount == null && _uiState.value.accounts.isEmpty()) {
-                    kotlinx.coroutines.delay(100)
-                    selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId }
-                }
+                val accounts = _uiState.value.accounts
+                val categories = _uiState.value.categories
 
                 val targetAccount = if (transaction.relatedTransactionId != null) {
                     val relatedTx = repository.getRelatedTransaction(
@@ -84,9 +81,9 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
 
                 _uiState.value = _uiState.value.copy(
                     amount = transaction.amount.toString(),
-                    selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId },
-                    targetAccount = targetAccount?.let { tid -> _uiState.value.accounts.find { it.id == tid } },
-                    selectedCategory = _uiState.value.categories.find { it.id == transaction.categoryId },
+                    selectedAccount = accounts.find { it.id == transaction.accountId },
+                    targetAccount = targetAccount?.let { tid -> accounts.find { it.id == tid } },
+                    selectedCategory = categories.find { it.id == transaction.categoryId },
                     date = transaction.date,
                     comment = transaction.comment,
                     type = when {

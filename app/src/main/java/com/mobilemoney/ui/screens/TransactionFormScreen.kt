@@ -19,10 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.viewmodel.TransactionFormViewModel
@@ -216,7 +216,7 @@ fun TransactionFormScreen(
                             uiState.accounts.filter { it.id != uiState.selectedAccount?.id }.forEach { account ->
                                 ListItem(
                                     headlineContent = { Text(account.name) },
-                                    leadingContent = { Icon(getIcon(account.icon), contentDescription = null) },
+                                    leadingContent = { Icon(AppIcons.getTransactionIcon(account.icon), contentDescription = null) },
                                     modifier = Modifier.clickable {
                                         viewModel.updateTargetAccount(account)
                                         showTargetAccountSheet = false
@@ -248,7 +248,7 @@ fun TransactionFormScreen(
                                 headlineContent = { Text(account.name) },
                                 leadingContent = {
                                     Icon(
-                                        getIcon(account.icon),
+AppIcons.getTransactionIcon(account.icon),
                                         contentDescription = null
                                     )
                                 },
@@ -417,7 +417,7 @@ fun CategoryGridItem(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = getIcon(category.icon),
+                imageVector = AppIcons.getTransactionIcon(category.icon),
                 contentDescription = null,
                 tint = if (selected) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurfaceVariant

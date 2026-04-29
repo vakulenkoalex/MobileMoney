@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mobilemoney.data.config.AppIcons
+import com.mobilemoney.data.config.IconOption
 import com.mobilemoney.viewmodel.AccountFormViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +127,7 @@ fun AccountFormScreen(
                                     )
                                 },
                                 modifier = Modifier.clickable {
-                                    viewModel.updateCurrency(currency.symbol)
+                                    viewModel.updateCurrency(currency.code)
                                     showCurrencySheet = false
                                 }
                             )
@@ -151,7 +153,7 @@ fun AccountFormScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = getAccountIcon(uiState.icon),
+                            imageVector = AppIcons.getAccountIcon(uiState.icon),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -210,7 +212,7 @@ fun AccountFormScreen(
 
 @Composable
 fun AccountIconItem(
-    iconOption: com.mobilemoney.viewmodel.IconOption,
+    iconOption: IconOption,
     selected: Boolean,
     onClick: () -> Unit
 ) {
@@ -236,7 +238,7 @@ fun AccountIconItem(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = getAccountIcon(iconOption.name),
+                imageVector = AppIcons.getAccountIcon(iconOption.name),
                 contentDescription = null,
                 tint = if (selected) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurfaceVariant
@@ -251,16 +253,3 @@ fun AccountIconItem(
     }
 }
 
-fun getAccountIcon(iconName: String): ImageVector {
-    return when (iconName) {
-        "wallet" -> Icons.Default.AccountBalanceWallet
-        "credit_card" -> Icons.Default.CreditCard
-        "account_balance" -> Icons.Default.AccountBalance
-        "savings" -> Icons.Default.Savings
-        "home" -> Icons.Default.Home
-        "business" -> Icons.Default.Business
-        "school" -> Icons.Default.School
-        "favorite" -> Icons.Default.Favorite
-        else -> Icons.Default.AccountBalanceWallet
-    }
-}
