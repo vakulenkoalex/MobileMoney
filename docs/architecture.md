@@ -349,109 +349,7 @@ interface RemoteDataSource {
 
 ### 3.2 Local DataSource (Room)
 
-```kotlin
-@Entity(tableName = "users")
-data class UserEntity(
-    @PrimaryKey val id: String,
-    val email: String,
-    val password: String,
-    val name: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Entity(tableName = "wallets")
-data class AccountEntity(
-    @PrimaryKey val id: String,
-    val name: String,
-    val accountTypeId: String? = null,
-    val currencyCode: String,
-    val icon: String?,
-    val isDefault: Boolean = false,
-    val isArchived: Boolean = false,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Entity(tableName = "categories")
-data class CategoryEntity(
-    @PrimaryKey val id: String,
-    val name: String,
-    val isIncome: Boolean,
-    val icon: String?,
-    val parentId: String? = null,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Entity(tableName = "transactions")
-data class TransactionEntity(
-    @PrimaryKey val id: String,
-    val walletId: String,
-    val categoryId: String? = null,
-    val amount: String,
-    val date: Long,
-    val comment: String?,
-    val source: String,
-    val sourceData: String? = null,
-    val creatorId: String,
-    val relatedTransactionId: String? = null,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Entity(tableName = "tags")
-data class TagEntity(
-    @PrimaryKey val id: String,
-    val name: String,
-    val color: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Entity(
-    tableName = "category_tags",
-    primaryKeys = ["categoryId", "tagId"]
-)
-data class CategoryTagCrossRef(val categoryId: String, val tagId: String)
-
-@Entity(
-    tableName = "transaction_tags",
-    primaryKeys = ["transactionId", "tagId"]
-)
-data class TransactionTagCrossRef(val transactionId: String, val tagId: String)
-
-@Entity(tableName = "exchange_rates")
-data class ExchangeRateEntity(
-    @PrimaryKey val id: String,
-    val fromCurrency: String,
-    val toCurrency: String,
-    val rate: String,
-    val date: Long
-)
-
-@Entity(tableName = "currencies")
-data class CurrencyEntity(
-    @PrimaryKey val code: String,
-    val name: String,
-    val symbol: String,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Entity(tableName = "account_types")
-data class AccountTypeEntity(
-    @PrimaryKey val id: String,
-    val name: String,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
+См. [db_schema.md](db_schema.md)
 ```
 
 ### 3.3 Repository Implementation
@@ -738,7 +636,6 @@ class SyncWorker(
 | Networking | Retrofit + OkHttp + Kotlin Serialization | |
 | Local DB | Room + SQLCipher (или androidx.security:security-crypto) | |
 | Async | Kotlin Coroutines + Flow | |
-| Networking | Retrofit + OkHttp + Kotlin Serialization | |
 | Charts | Vico | |
 | Auth | Firebase Auth | |
 | Push | Firebase Cloud Messaging | |
