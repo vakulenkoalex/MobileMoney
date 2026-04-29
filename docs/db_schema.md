@@ -59,7 +59,7 @@
 ### Операции (transactions)
 - id (PK)
 - account_id (FK -> accounts.id)
-- category_id (FK -> categories.id, nullable)
+- category_id (FK -> categories.id)
 - amount (decimal)
 - date (datetime)
 - comment
