@@ -15,6 +15,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,6 +44,7 @@ fun TransactionFormScreen(
     var showAccountSheet by remember { mutableStateOf(false) }
     var showTargetAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var showSplitCategorySheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -154,6 +156,113 @@ fun TransactionFormScreen(
                     )
                 }
             )
+
+            // Кнопка Разделить (только при редактировании и не в режиме TRANSFER)
+            if (uiState.isEditing && uiState.type != TransactionType.TRANSFER && !uiState.isSplitMode) {
+                OutlinedButton(
+                    onClick = { viewModel.enableSplitMode() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.CallSplit, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Разделить операцию")
+                }
+            }
+
+            // Режим разделения
+            if (uiState.isSplitMode) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Разделение операции",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            IconButton(onClick = { viewModel.disableSplitMode() }) {
+                                Icon(Icons.Default.Close, contentDescription = "Закрыть")
+                            }
+                        }
+
+                        // Итоговая сумма
+                        Text(
+                            text = "Итого: ${uiState.amount} ${uiState.selectedAccount?.currency ?: "₽"}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        // Оставшаяся сумма (основная категория)
+                        val remainingAmount = viewModel.getRemainingAmount()
+                        OutlinedTextField(
+                            value = uiState.amount.toDoubleOrNull()?.let { String.format("%.2f", it - (uiState.splitAmount.toDoubleOrNull() ?: 0.0)).replace(",", ".") } ?: "",
+                            onValueChange = { },
+                            label = { Text(uiState.selectedCategory?.name ?: "Основная категория") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Text(
+                                    text = uiState.selectedAccount?.currency ?: "₽",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        )
+
+                        // Сумма для новой категории
+                        OutlinedTextField(
+                            value = uiState.splitAmount,
+                            onValueChange = { viewModel.updateSplitAmount(it) },
+                            label = { Text("Новая категория") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Text(
+                                    text = uiState.selectedAccount?.currency ?: "₽",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        )
+
+                        // Выбор категории для новой операции
+                        ListItem(
+                            headlineContent = { Text("Категория") },
+                            supportingContent = { Text(uiState.splitCategory?.name ?: "Выберите категорию") },
+                            leadingContent = {
+                                if (uiState.splitCategory != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = AppIcons.getTransactionIcon(uiState.splitCategory!!.icon),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                } else {
+                                    Icon(Icons.Default.Category, contentDescription = null)
+                                }
+                            },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                                .clickable { showSplitCategorySheet = true }
+                        )
+                    }
+                }
+            }
 
             // Счёт
             ListItem(
@@ -282,6 +391,42 @@ fun TransactionFormScreen(
                                     modifier = Modifier.clickable {
                                         viewModel.updateTargetAccount(account)
                                         showTargetAccountSheet = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom sheet для выбора категории разделения
+            if (showSplitCategorySheet) {
+                val splitFilteredCategories = viewModel.getSplitFilteredCategories()
+                ModalBottomSheet(
+                    onDismissRequest = { showSplitCategorySheet = false }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Выберите категорию",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(splitFilteredCategories) { category ->
+                                CategoryGridItem(
+                                    category = category,
+                                    selected = uiState.splitCategory?.id == category.id,
+                                    onClick = {
+                                        viewModel.updateSplitCategory(category)
+                                        showSplitCategorySheet = false
                                     }
                                 )
                             }

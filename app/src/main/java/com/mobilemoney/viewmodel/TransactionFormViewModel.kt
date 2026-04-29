@@ -34,7 +34,10 @@ data class TransactionFormState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false,
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+    val isSplitMode: Boolean = false,
+    val splitAmount: String = "",
+    val splitCategory: CategoryUi? = null
 )
 
 class TransactionFormViewModel(application: Application) : AndroidViewModel(application) {
@@ -131,6 +134,37 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         _uiState.value = _uiState.value.copy(targetAccount = account)
     }
 
+    fun enableSplitMode() {
+        _uiState.value = _uiState.value.copy(isSplitMode = true, splitAmount = "")
+    }
+
+    fun disableSplitMode() {
+        _uiState.value = _uiState.value.copy(isSplitMode = false, splitAmount = "", splitCategory = null)
+    }
+
+    fun updateSplitAmount(value: String) {
+        val parsed = value.toDoubleOrNull() ?: 0.0
+        val currentAmount = _uiState.value.amount.toDoubleOrNull() ?: 0.0
+        if (parsed <= currentAmount) {
+            _uiState.value = _uiState.value.copy(splitAmount = value)
+        }
+    }
+
+    fun updateSplitCategory(category: CategoryUi) {
+        _uiState.value = _uiState.value.copy(splitCategory = category)
+    }
+
+    fun getRemainingAmount(): Double {
+        val total = _uiState.value.amount.toDoubleOrNull() ?: 0.0
+        val split = _uiState.value.splitAmount.toDoubleOrNull() ?: 0.0
+        return total - split
+    }
+
+    fun getSplitFilteredCategories(): List<CategoryUi> {
+        val isIncome = _uiState.value.type == TransactionType.INCOME
+        return _uiState.value.categories.filter { it.isIncome == isIncome }
+    }
+
     fun save(): Boolean {
         val state = _uiState.value
 
@@ -147,6 +181,18 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         if (state.type == TransactionType.TRANSFER && state.targetAccount == null) {
             _uiState.value = state.copy(error = "Выберите целевой счёт")
             return false
+        }
+
+        if (state.isSplitMode) {
+            val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
+            if (splitAmount <= 0) {
+                _uiState.value = state.copy(error = "Введите сумму для разделения")
+                return false
+            }
+            if (state.splitCategory == null) {
+                _uiState.value = state.copy(error = "Выберите категорию для новой операции")
+                return false
+            }
         }
 
         val isIncome = state.type == TransactionType.INCOME
@@ -205,6 +251,46 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
 
                 repository.addTransaction(expenseTransaction)
                 repository.addTransaction(incomeTransaction)
+            } else if (state.isSplitMode) {
+                val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
+                val remainingAmount = state.amount.toDoubleOrNull()!! - splitAmount
+
+                val splitIcon = state.splitCategory?.icon ?: "category"
+                val mainTransaction = TransactionUi(
+                    id = UUID.randomUUID(),
+                    title = state.selectedCategory?.name ?: "Без категории",
+                    subtitle = state.selectedAccount.name,
+                    comment = state.comment,
+                    amount = remainingAmount,
+                    currency = state.selectedAccount.currency,
+                    icon = state.selectedCategory?.icon ?: "shopping_cart",
+                    color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
+                    isIncome = isIncome,
+                    date = state.date,
+                    accountId = state.selectedAccount.id,
+                    categoryId = state.selectedCategory?.id
+                )
+
+                val newTransaction = TransactionUi(
+                    id = UUID.randomUUID(),
+                    title = state.splitCategory?.name ?: "Без категории",
+                    subtitle = state.selectedAccount.name,
+                    comment = state.comment,
+                    amount = splitAmount,
+                    currency = state.selectedAccount.currency,
+                    icon = splitIcon,
+                    color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
+                    isIncome = isIncome,
+                    date = state.date,
+                    accountId = state.selectedAccount.id,
+                    categoryId = state.splitCategory?.id
+                )
+
+                if (state.isEditing) {
+                    repository.deleteTransaction(state.transactionId.toString())
+                }
+                repository.addTransaction(mainTransaction)
+                repository.addTransaction(newTransaction)
             } else {
                 val transaction = TransactionUi(
                     id = state.transactionId ?: UUID.randomUUID(),
