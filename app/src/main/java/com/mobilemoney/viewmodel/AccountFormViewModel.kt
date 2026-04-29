@@ -21,6 +21,7 @@ data class AccountFormState(
     val currencyCode: String = "RUB",
     val currencySymbol: String = "₽",
     val icon: String = "wallet",
+    val isDefault: Boolean = false,
     val isEditing: Boolean = false,
     val accountId: UUID? = null,
     val currencies: List<com.mobilemoney.data.config.CurrencyConfig> = Currencies.all,
@@ -58,6 +59,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
                     currencyCode = account.currency,
                     currencySymbol = currency?.symbol ?: "₽",
                     icon = account.icon,
+                    isDefault = account.isDefault,
                     isEditing = true,
                     accountId = accountId,
                     isLoading = false
@@ -87,6 +89,10 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
         _uiState.value = _uiState.value.copy(icon = icon)
     }
 
+    fun updateIsDefault(isDefault: Boolean) {
+        _uiState.value = _uiState.value.copy(isDefault = isDefault)
+    }
+
     fun updateTypeId(typeId: String) {
         _uiState.value = _uiState.value.copy(typeId = typeId)
     }
@@ -104,10 +110,14 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
             name = state.name,
             typeId = state.typeId,
             currency = state.currencyCode,
-            icon = state.icon
+            icon = state.icon,
+            isDefault = state.isDefault
         )
 
         viewModelScope.launch {
+            if (state.isDefault) {
+                repository.clearDefaultAccounts()
+            }
             if (state.isEditing) {
                 repository.updateAccount(account)
             } else {

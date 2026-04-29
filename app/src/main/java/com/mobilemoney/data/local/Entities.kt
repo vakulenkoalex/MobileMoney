@@ -64,6 +64,7 @@ data class AccountEntity(
     val typeId: String?,
     val currencyCode: String?,
     val icon: String,
+    val isDefault: Boolean = false,
     val archived: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,

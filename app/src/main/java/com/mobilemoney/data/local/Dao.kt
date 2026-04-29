@@ -82,6 +82,9 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE id = :id AND deletedAt IS NULL")
     suspend fun getAccountById(id: String): AccountEntity?
 
+    @Query("SELECT * FROM accounts WHERE isDefault = 1 AND deletedAt IS NULL LIMIT 1")
+    suspend fun getDefaultAccount(): AccountEntity?
+
     @Query("SELECT * FROM accounts WHERE typeId = :typeId AND deletedAt IS NULL AND archived = 0")
     fun getAccountsByType(typeId: String): Flow<List<AccountEntity>>
 
@@ -102,6 +105,9 @@ interface AccountDao {
 
     @Query("UPDATE accounts SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("UPDATE accounts SET isDefault = 0")
+    suspend fun clearDefaultAccounts()
 }
 
 @Dao

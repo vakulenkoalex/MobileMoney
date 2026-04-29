@@ -247,6 +247,20 @@ fun AccountFormScreen(
                 }
             }
 
+            ListItem(
+                headlineContent = { Text("По умолчанию") },
+                supportingContent = { Text("Использовать для новых операций") },
+                leadingContent = {
+                    Checkbox(
+                        checked = uiState.isDefault,
+                        onCheckedChange = { viewModel.updateIsDefault(it) }
+                    )
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            )
+
             uiState.error?.let { error ->
                 Text(
                     text = error,

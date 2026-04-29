@@ -37,6 +37,7 @@ data class Account(
     val typeId: UUID?,
     val currencyCode: String,
     val icon: String?,
+    val isDefault: Boolean = false, // использовать по умолчанию для новых операций
     val isArchived: Boolean = false,
     val createdAt: Instant,
     val updatedAt: Instant,
@@ -367,6 +368,7 @@ data class AccountEntity(
     val accountTypeId: String? = null,
     val currencyCode: String,
     val icon: String?,
+    val isDefault: Boolean = false,
     val isArchived: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,

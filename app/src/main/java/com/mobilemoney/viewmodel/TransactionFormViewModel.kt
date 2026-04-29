@@ -53,6 +53,10 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                 .catch { /* handle error */ }
                 .collect { accounts ->
                     _uiState.value = _uiState.value.copy(accounts = accounts)
+                    if (!uiState.value.isEditing) {
+                        val defaultAccount = accounts.find { it.isDefault } ?: accounts.firstOrNull()
+                        _uiState.value = _uiState.value.copy(selectedAccount = defaultAccount)
+                    }
                 }
         }
         viewModelScope.launch {

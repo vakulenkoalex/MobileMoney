@@ -40,6 +40,10 @@ class DatabaseRepository(context: Context) {
         }
     }
 
+    suspend fun getDefaultAccount(): AccountUi? {
+        return accountDao.getDefaultAccount()?.toUiModel()
+    }
+
     fun getAccountTypes(): Flow<List<AccountTypeEntity>> {
         return accountTypeDao.getAllAccountTypes()
     }
@@ -121,6 +125,10 @@ class DatabaseRepository(context: Context) {
         accountDao.insert(account.toEntity())
     }
 
+    suspend fun clearDefaultAccounts() {
+        accountDao.clearDefaultAccounts()
+    }
+
     suspend fun updateAccount(account: AccountUi) {
         accountDao.update(account.toEntity())
     }
@@ -156,6 +164,7 @@ class DatabaseRepository(context: Context) {
                 typeId = "cash",
                 currencyCode = "RUB",
                 icon = "wallet",
+                isDefault = true,
                 archived = false,
                 createdAt = System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis()
@@ -203,7 +212,8 @@ class DatabaseRepository(context: Context) {
             name = name,
             typeId = typeId ?: "cash",
             currency = currencyCode ?: "₽",
-            icon = icon
+            icon = icon,
+            isDefault = isDefault
         )
     }
 
@@ -214,6 +224,7 @@ class DatabaseRepository(context: Context) {
             typeId = typeId,
             currencyCode = currency,
             icon = icon,
+            isDefault = isDefault,
             archived = false,
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis()

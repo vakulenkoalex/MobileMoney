@@ -26,6 +26,7 @@
 - type_id (FK -> account_types.id)
 - currency_code (FK -> currencies.code)
 - icon (varchar)
+- is_default (boolean) - использовать по умолчанию для новых операций
 - archived (boolean) - для скрытия старых счетов
 - created_at (timestamp)
 - updated_at (timestamp)
