@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -56,6 +59,14 @@ fun TransactionFormScreen(
     }
 
     val filteredCategories = viewModel.getFilteredCategories()
+
+    val amountFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        if (transactionId == null) {
+            amountFocusRequester.requestFocus()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -119,7 +130,9 @@ fun TransactionFormScreen(
                 onValueChange = { viewModel.updateAmount(it) },
                 label = { Text("Сумма") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(amountFocusRequester),
                 leadingIcon = {
                     Text(
                         text = uiState.selectedAccount?.currency ?: "₽",
