@@ -68,7 +68,7 @@ data class Tag(
 // Операция
 data class Transaction(
     val id: UUID,
-val accountId: UUID,
+    val accountId: UUID,
     val categoryId: UUID? = null,
     val amount: BigDecimal,
     val date: Instant,

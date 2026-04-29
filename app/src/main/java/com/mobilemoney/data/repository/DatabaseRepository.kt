@@ -14,6 +14,7 @@ import com.mobilemoney.data.local.ExchangeRateDao
 import com.mobilemoney.data.local.TagDao
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.local.TransactionEntity
+import com.mobilemoney.data.local.TransactionSource
 import com.mobilemoney.data.local.UserDao
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.CategoryUi
@@ -269,7 +270,7 @@ relatedTransactionId = relatedTransactionId?.let { UUID.fromString(it) }
             amount = amount,
             date = date,
             comment = comment,
-            source = null,
+            source = TransactionSource.MANUAL,
             sourceData = null,
             creatorId = null,
             relatedTransactionId = relatedTransactionId?.toString(),

@@ -5,6 +5,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+enum class TransactionSource {
+    MANUAL,
+    SMS,
+    PUSH
+}
+
 @Entity(tableName = "users")
 data class UserEntity(
     @PrimaryKey val id: String,
@@ -133,7 +139,7 @@ data class TransactionEntity(
     val amount: Double,
     val date: Long,
     val comment: String,
-    val source: String?,
+    val source: TransactionSource = TransactionSource.MANUAL,
     val sourceData: String?,
     val creatorId: String?,
     val relatedTransactionId: String?,

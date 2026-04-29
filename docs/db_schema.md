@@ -63,7 +63,7 @@
 - amount (decimal)
 - date (datetime)
 - comment
-- source (varchar) - откуда пришла операция (SMS/push)
+- source (text) - источник операции: MANUAL (ручной ввод), SMS, PUSH
 - source_data (text) - необработанные данные от источника
 - creator_id (FK -> users.id)
 - related_transaction_id (varchar, nullable) - UUID для связывания переводов между счетами (не внешний ключ)
