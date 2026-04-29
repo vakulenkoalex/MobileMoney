@@ -66,7 +66,7 @@
 - source (varchar) - откуда пришла операция (SMS/push)
 - source_data (text) - необработанные данные от источника
 - creator_id (FK -> users.id)
-- related_transaction_id (FK -> transactions.id, nullable) - для переводов между счетами
+- related_transaction_id (varchar, nullable) - UUID для связывания переводов между счетами (не внешний ключ)
 - created_at (timestamp)
 - updated_at (timestamp)
 - deleted_at (timestamp, nullable)
@@ -94,5 +94,5 @@
 - Категории образуют иерархию через parent_id
 - Операции привязаны к счету, категории, пользователю
 - Метки можно назначить категории или операции
-- Перевод между счетами - две связанные операции (расход с одного счета, приход на другой) через related_transaction_id
+- Перевод между счетами - две связанные операции (расход с одного счёта, приход на другой) с общим UUID в related_transaction_id
 

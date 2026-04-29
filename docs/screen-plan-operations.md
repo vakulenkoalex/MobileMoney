@@ -5,6 +5,7 @@
 - Архитектура: MVVM + UI-композиты
   - UI модель: `data class TransactionUi(val id: String, val title: String, val subtitle: String, val comment: String, val amount: Double, val currency: String = "₽", val icon: ImageVector, val color: Color, val isIncome: Boolean)`
   - Domain модель (из db_schema): `data class Transaction(val id: UUID, val accountId: UUID, val categoryId: UUID?, val amount: BigDecimal, val date: Instant, val comment: String?, val source: String, val sourceData: String?, val creatorId: UUID, val relatedTransactionId: UUID?)`
+  - Перевод между счетами: создаются 2 транзакции с общим UUID в `relatedTransactionId` (расход + приход)
   - Маппинг: domain -> UI (category name -> title, category icon -> icon, accountId -> subtitle)
   - ViewModel: хранит список транзакций и состояние загрузки/ошибки.
   - Репозиторий: моковые данные на старте (позже Replace with Room/Retrofit).

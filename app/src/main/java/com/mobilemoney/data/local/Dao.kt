@@ -191,8 +191,8 @@ interface TransactionDao {
     @Query("UPDATE transactions SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 
-    @Query("SELECT * FROM transactions WHERE relatedTransactionId = :relatedId AND deletedAt IS NULL")
-    suspend fun getRelatedTransaction(relatedId: String): TransactionEntity?
+    @Query("SELECT * FROM transactions WHERE relatedTransactionId = :relatedId AND id != :excludeId AND deletedAt IS NULL")
+    suspend fun getRelatedTransaction(relatedId: String, excludeId: String): TransactionEntity?
 
     @Query("""
         SELECT SUM(amount) FROM transactions

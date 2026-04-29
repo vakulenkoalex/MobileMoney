@@ -73,14 +73,24 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                     kotlinx.coroutines.delay(100)
                     selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId }
                 }
+
+                val targetAccount = if (transaction.relatedTransactionId != null) {
+                    val relatedTx = repository.getRelatedTransaction(
+                        transaction.relatedTransactionId.toString(),
+                        transaction.id.toString()
+                    )
+                    relatedTx?.accountId
+                } else null
+
                 _uiState.value = _uiState.value.copy(
                     amount = transaction.amount.toString(),
                     selectedAccount = _uiState.value.accounts.find { it.id == transaction.accountId },
+                    targetAccount = targetAccount?.let { tid -> _uiState.value.accounts.find { it.id == tid } },
                     selectedCategory = _uiState.value.categories.find { it.id == transaction.categoryId },
                     date = transaction.date,
                     comment = transaction.comment,
                     type = when {
-                        transaction.title == "Перевод" -> TransactionType.TRANSFER
+                        transaction.relatedTransactionId != null -> TransactionType.TRANSFER
                         transaction.isIncome -> TransactionType.INCOME
                         else -> TransactionType.EXPENSE
                     },
@@ -154,30 +164,70 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
             else -> state.selectedAccount.name
         }
 
-        val transaction = TransactionUi(
-            id = state.transactionId ?: UUID.randomUUID(),
-            title = title,
-            subtitle = subtitle,
-            comment = state.comment,
-            amount = state.amount.toDouble(),
-            currency = state.selectedAccount.currency,
-            icon = icon,
-            color = when (state.type) {
-                TransactionType.TRANSFER -> 0xFF9C27B0
-                TransactionType.INCOME -> 0xFF2E7D32
-                TransactionType.EXPENSE -> 0xFFD32F2F
-            },
-            isIncome = isIncome,
-            date = state.date,
-            accountId = state.selectedAccount.id,
-            categoryId = state.selectedCategory?.id
-        )
-
         viewModelScope.launch {
-            if (state.isEditing) {
-                repository.updateTransaction(transaction)
+            if (state.type == TransactionType.TRANSFER) {
+                val transferId = UUID.randomUUID()
+                val amount = state.amount.toDouble()
+
+                val expenseTransaction = TransactionUi(
+                    id = UUID.randomUUID(),
+                    title = title,
+                    subtitle = subtitle,
+                    comment = state.comment,
+                    amount = amount,
+                    currency = state.selectedAccount.currency,
+                    icon = icon,
+                    color = 0xFF9C27B0,
+                    isIncome = false,
+                    date = state.date,
+                    accountId = state.selectedAccount.id,
+                    categoryId = null,
+                    relatedTransactionId = transferId
+                )
+
+                val incomeTransaction = TransactionUi(
+                    id = UUID.randomUUID(),
+                    title = title,
+                    subtitle = subtitle,
+                    comment = state.comment,
+                    amount = amount,
+                    currency = state.targetAccount?.currency ?: state.selectedAccount.currency,
+                    icon = icon,
+                    color = 0xFF9C27B0,
+                    isIncome = true,
+                    date = state.date,
+                    accountId = state.targetAccount?.id,
+                    categoryId = null,
+                    relatedTransactionId = transferId
+                )
+
+                repository.addTransaction(expenseTransaction)
+                repository.addTransaction(incomeTransaction)
             } else {
-                repository.addTransaction(transaction)
+                val transaction = TransactionUi(
+                    id = state.transactionId ?: UUID.randomUUID(),
+                    title = title,
+                    subtitle = subtitle,
+                    comment = state.comment,
+                    amount = state.amount.toDouble(),
+                    currency = state.selectedAccount.currency,
+                    icon = icon,
+                    color = when (state.type) {
+                        TransactionType.TRANSFER -> 0xFF9C27B0
+                        TransactionType.INCOME -> 0xFF2E7D32
+                        TransactionType.EXPENSE -> 0xFFD32F2F
+                    },
+                    isIncome = isIncome,
+                    date = state.date,
+                    accountId = state.selectedAccount.id,
+                    categoryId = state.selectedCategory?.id
+                )
+
+                if (state.isEditing) {
+                    repository.updateTransaction(transaction)
+                } else {
+                    repository.addTransaction(transaction)
+                }
             }
         }
 

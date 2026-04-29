@@ -18,7 +18,7 @@ import androidx.room.RoomDatabase
         CategoryTagCrossRef::class,
         ExchangeRateEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

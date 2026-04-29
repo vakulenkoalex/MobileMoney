@@ -28,5 +28,6 @@ data class TransactionUi(
     val isIncome: Boolean,
     val date: Long = System.currentTimeMillis(),
     val accountId: UUID? = null,
-    val categoryId: UUID? = null
+    val categoryId: UUID? = null,
+    val relatedTransactionId: UUID? = null
 )

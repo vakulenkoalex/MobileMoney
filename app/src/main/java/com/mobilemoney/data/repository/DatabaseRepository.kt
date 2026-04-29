@@ -48,17 +48,52 @@ class DatabaseRepository(context: Context) {
 
     fun getTransactions(): Flow<List<TransactionUi>> {
         return transactionDao.getAllTransactions().map { entities ->
-            entities.map { entity ->
+            val transactions = entities.map { entity ->
                 entity.toUiModel(
                     accountDao.getAccountById(entity.accountId),
                     categoryDao.getCategoryById(entity.categoryId ?: "")
                 )
             }
+
+            val regularTransactions = transactions.filter { it.relatedTransactionId == null }
+            val transferTransactions = transactions.filter { it.relatedTransactionId != null }
+
+            val mergedTransfers = mutableListOf<TransactionUi>()
+            if (transferTransactions.isNotEmpty()) {
+                val groupedTransfers = transferTransactions.groupBy { it.relatedTransactionId }
+                for ((_, group) in groupedTransfers) {
+                    if (group.size >= 2) {
+                        val tx1 = group[0]
+                        val tx2 = group[1]
+                        val from = if (!tx1.isIncome) tx1.subtitle else tx2.subtitle
+                        val to = if (tx1.isIncome) tx1.subtitle else tx2.subtitle
+                        mergedTransfers.add(
+                            tx1.copy(
+                                title = to,
+                                subtitle = from,
+                                icon = "swap_horiz",
+                                color = 0xFF9C27B0,
+                                isIncome = true,
+                                amount = tx1.amount
+                            )
+                        )
+                    }
+                }
+            }
+
+            (regularTransactions + mergedTransfers).sortedByDescending { it.date }
         }
     }
 
     suspend fun getTransactionById(id: String): TransactionUi? {
         val entity = transactionDao.getTransactionById(id) ?: return null
+        val account = accountDao.getAccountById(entity.accountId)
+        val category = entity.categoryId?.let { categoryDao.getCategoryById(it) }
+        return entity.toUiModel(account, category)
+    }
+
+    suspend fun getRelatedTransaction(relatedId: String, excludeId: String): TransactionUi? {
+        val entity = transactionDao.getRelatedTransaction(relatedId, excludeId) ?: return null
         val account = accountDao.getAccountById(entity.accountId)
         val category = entity.categoryId?.let { categoryDao.getCategoryById(it) }
         return entity.toUiModel(account, category)
@@ -217,7 +252,8 @@ class DatabaseRepository(context: Context) {
             isIncome = category?.isIncome ?: false,
             date = date,
             accountId = accountId.takeIf { it.isNotEmpty() }?.let { UUID.fromString(it) },
-            categoryId = categoryId?.let { UUID.fromString(it) }
+            categoryId = categoryId?.let { UUID.fromString(it) },
+relatedTransactionId = relatedTransactionId?.let { UUID.fromString(it) }
         )
     }
 
@@ -232,7 +268,7 @@ class DatabaseRepository(context: Context) {
             source = null,
             sourceData = null,
             creatorId = null,
-            relatedTransactionId = null,
+            relatedTransactionId = relatedTransactionId?.toString(),
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis()
         )

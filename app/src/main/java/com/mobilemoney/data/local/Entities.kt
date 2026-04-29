@@ -117,12 +117,6 @@ data class TagEntity(
             parentColumns = ["id"],
             childColumns = ["creatorId"],
             onDelete = ForeignKey.SET_NULL
-        ),
-        ForeignKey(
-            entity = TransactionEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["relatedTransactionId"],
-            onDelete = ForeignKey.SET_NULL
         )
     ],
     indices = [
