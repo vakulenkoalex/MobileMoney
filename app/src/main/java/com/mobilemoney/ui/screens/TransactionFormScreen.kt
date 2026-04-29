@@ -133,7 +133,25 @@ fun TransactionFormScreen(
             ListItem(
                 headlineContent = { Text("Счёт") },
                 supportingContent = { Text(uiState.selectedAccount?.name ?: "Выберите счёт") },
-                leadingContent = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+                leadingContent = {
+                    if (uiState.selectedAccount != null) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = AppIcons.getAccountIcon(uiState.selectedAccount!!.icon),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    } else {
+                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null)
+                    }
+                },
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
@@ -145,7 +163,25 @@ fun TransactionFormScreen(
                 ListItem(
                     headlineContent = { Text("Категория") },
                     supportingContent = { Text(uiState.selectedCategory?.name ?: "Выберите категорию") },
-                    leadingContent = { Icon(Icons.Default.Category, contentDescription = null) },
+                    leadingContent = {
+                        if (uiState.selectedCategory != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = AppIcons.getTransactionIcon(uiState.selectedCategory!!.icon),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        } else {
+                            Icon(Icons.Default.Category, contentDescription = null)
+                        }
+                    },
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
@@ -216,7 +252,7 @@ fun TransactionFormScreen(
                             uiState.accounts.filter { it.id != uiState.selectedAccount?.id }.forEach { account ->
                                 ListItem(
                                     headlineContent = { Text(account.name) },
-                                    leadingContent = { Icon(AppIcons.getTransactionIcon(account.icon), contentDescription = null) },
+                                    leadingContent = { Icon(AppIcons.getAccountIcon(account.icon), contentDescription = null) },
                                     modifier = Modifier.clickable {
                                         viewModel.updateTargetAccount(account)
                                         showTargetAccountSheet = false
@@ -248,7 +284,7 @@ fun TransactionFormScreen(
                                 headlineContent = { Text(account.name) },
                                 leadingContent = {
                                     Icon(
-AppIcons.getTransactionIcon(account.icon),
+                                        AppIcons.getAccountIcon(account.icon),
                                         contentDescription = null
                                     )
                                 },
