@@ -206,15 +206,13 @@ class DatabaseRepository(context: Context) {
 
     private suspend fun initializeCategories() {
         val defaultCategories = listOf(
-            CategoryEntity(UUID.randomUUID().toString(), "Еда", false, "restaurant", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Транспорт", false, "directions_bus", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Магазин", false, "shopping_cart", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Кафе и рестораны", false, "restaurant", null, System.currentTimeMillis(), System.currentTimeMillis()),
             CategoryEntity(UUID.randomUUID().toString(), "Развлечения", false, "movie", null, System.currentTimeMillis(), System.currentTimeMillis()),
             CategoryEntity(UUID.randomUUID().toString(), "Здоровье", false, "local_hospital", null, System.currentTimeMillis(), System.currentTimeMillis()),
             CategoryEntity(UUID.randomUUID().toString(), "Зарплата", true, "work", null, System.currentTimeMillis(), System.currentTimeMillis()),
             CategoryEntity(UUID.randomUUID().toString(), "Подарок", true, "card_giftcard", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Прочее расходы", false, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Прочее доходы", true, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis())
+            CategoryEntity(UUID.randomUUID().toString(), "Корректировка", false, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis()),
+            CategoryEntity(UUID.randomUUID().toString(), "Корректировка", true, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis())
         )
         categoryDao.insertAll(defaultCategories)
     }

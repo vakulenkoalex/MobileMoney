@@ -7,7 +7,7 @@ data class CategoryIconOption(
 
 object CategoryIcons {
     val all = listOf(
-        CategoryIconOption("restaurant", "Еда"),
+        CategoryIconOption("restaurant", "Кафе и рестораны"),
         CategoryIconOption("directions_bus", "Транспорт"),
         CategoryIconOption("shopping_cart", "Магазин"),
         CategoryIconOption("movie", "Кино"),
