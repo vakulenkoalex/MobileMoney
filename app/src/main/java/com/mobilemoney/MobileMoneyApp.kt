@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.worker.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,6 +27,7 @@ class MobileMoneyApp : Application() {
         prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         repository = DatabaseRepository(this)
         checkAndInitialize()
+        enableSync()
     }
 
     private fun checkAndInitialize() {
@@ -37,6 +39,12 @@ class MobileMoneyApp : Application() {
             }
             prefs.edit().putBoolean("initialized", true).apply()
             isInitialized = true
+        }
+    }
+
+    private fun enableSync() {
+        if (prefs.getBoolean("sync_enabled", true)) {
+            SyncWorker.enqueuePeriodicSync(this)
         }
     }
 

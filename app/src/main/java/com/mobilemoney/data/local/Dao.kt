@@ -93,6 +93,12 @@ interface AccountDao {
 
     @Query("UPDATE accounts SET isDefault = 0")
     suspend fun clearDefaultAccounts()
+
+    @Query("SELECT * FROM accounts WHERE syncedAt IS NULL AND updatedAt > 0")
+    suspend fun getUnsyncedAccounts(): List<AccountEntity>
+
+    @Query("UPDATE accounts SET syncedAt = :syncedAt WHERE id = :id")
+    suspend fun markSynced(id: String, syncedAt: Long)
 }
 
 @Dao
@@ -132,6 +138,12 @@ interface CategoryDao {
 
     @Query("DELETE FROM categories WHERE deletedAt IS NOT NULL")
     suspend fun permanentDeleteAll()
+
+    @Query("SELECT * FROM categories WHERE syncedAt IS NULL AND updatedAt > 0")
+    suspend fun getUnsyncedCategories(): List<CategoryEntity>
+
+    @Query("UPDATE categories SET syncedAt = :syncedAt WHERE id = :id")
+    suspend fun markSynced(id: String, syncedAt: Long)
 }
 
 @Dao
@@ -215,6 +227,12 @@ interface TransactionDao {
         WHERE t.accountId = :accountId AND t.deletedAt IS NULL
     """)
     suspend fun getAccountBalance(accountId: String): Double?
+
+    @Query("SELECT * FROM transactions WHERE syncedAt IS NULL AND updatedAt > 0")
+    suspend fun getUnsyncedTransactions(): List<TransactionEntity>
+
+    @Query("UPDATE transactions SET syncedAt = :syncedAt WHERE id = :id")
+    suspend fun markSynced(id: String, syncedAt: Long)
 }
 
 @Dao

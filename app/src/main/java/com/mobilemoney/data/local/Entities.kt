@@ -53,7 +53,8 @@ data class AccountEntity(
     val archived: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null
 )
 
 @Entity(
@@ -76,7 +77,8 @@ data class CategoryEntity(
     val parentId: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null
 )
 
 @Entity(tableName = "tags")
@@ -131,7 +133,8 @@ data class TransactionEntity(
     val relatedTransactionId: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null
 )
 
 @Entity(
