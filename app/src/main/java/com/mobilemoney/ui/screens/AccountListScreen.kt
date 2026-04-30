@@ -125,25 +125,30 @@ fun AccountItem(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Row(
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = account.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = if (account.isDefault) FontWeight.Bold else FontWeight.Medium
                 )
-                Text(
-                    text = FormatUtils.formatBalance(account.balance, account.currency),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (account.balance >= 0)
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    else
-                        MaterialTheme.colorScheme.error
-                )
+                if (account.isDefault) {
+                    Text(
+                        text = "По умолчанию",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
+            Text(
+                text = FormatUtils.formatBalance(account.balance, account.currency),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (account.balance >= 0)
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                else
+                    MaterialTheme.colorScheme.error
+            )
         }
     }
 }
