@@ -1,13 +1,30 @@
 package com.mobilemoney.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.ui.screens.AccountFormScreen
 import com.mobilemoney.ui.screens.CategoryFormScreen
+import com.mobilemoney.ui.screens.SettingsScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
 import java.util.UUID
@@ -28,10 +45,36 @@ sealed class Screen(val route: String) {
     data object EditCategory : Screen("category/edit/{categoryId}") {
         fun createRoute(categoryId: UUID) = "category/edit/$categoryId"
     }
+    data object Settings : Screen("settings")
 }
 
 @Composable
 fun MobileMoneyNavigation() {
+    val context = LocalContext.current
+    val app = context.applicationContext as MobileMoneyApp
+    var showLoading by remember { mutableStateOf(app.isFirstRun()) }
+
+    LaunchedEffect(Unit) {
+        if (app.isFirstRun()) {
+            while (!app.isInitialized) {
+                kotlinx.coroutines.delay(500)
+            }
+            showLoading = false
+        }
+    }
+
+    if (showLoading) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator()
+            Text("Инициализация базы данных...", modifier = Modifier.padding(top = 16.dp))
+        }
+        return
+    }
+
     val navController = rememberNavController()
 
     NavHost(
@@ -51,6 +94,9 @@ fun MobileMoneyNavigation() {
                 },
                 onCategoriesClick = {
                     navController.navigate(Screen.Categories.route)
+                },
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -155,6 +201,14 @@ fun MobileMoneyNavigation() {
             }
             CategoryFormScreen(
                 categoryId = categoryId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

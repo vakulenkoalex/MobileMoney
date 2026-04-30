@@ -50,5 +50,16 @@ abstract class AppDatabase : RoomDatabase() {
                 instance
             }
         }
+
+        fun closeDatabase() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
+            }
+        }
+
+        fun getDatabasePath(context: Context): String {
+            return context.getDatabasePath("mobile_money_database").absolutePath
+        }
     }
 }
