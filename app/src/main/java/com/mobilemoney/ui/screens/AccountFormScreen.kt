@@ -187,10 +187,7 @@ fun AccountFormScreen(
             ListItem(
                 headlineContent = { Text("Иконка") },
                 supportingContent = {
-                    Text(
-                        uiState.icons.find { it.name == uiState.icon }?.label
-                            ?: "Стандартная"
-                    )
+                    Text("")
                 },
                 leadingContent = {
                     Box(
@@ -306,12 +303,6 @@ fun AccountIconItem(
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = iconOption.label,
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1
-        )
     }
 }
 

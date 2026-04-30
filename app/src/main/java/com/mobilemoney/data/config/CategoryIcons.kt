@@ -1,27 +1,26 @@
 package com.mobilemoney.data.config
 
 data class CategoryIconOption(
-    val name: String,
-    val label: String
+    val name: String
 )
 
 object CategoryIcons {
     val all = listOf(
-        CategoryIconOption("restaurant", "Кафе и рестораны"),
-        CategoryIconOption("directions_bus", "Транспорт"),
-        CategoryIconOption("shopping_cart", "Магазин"),
-        CategoryIconOption("movie", "Кино"),
-        CategoryIconOption("local_hospital", "Здоровье"),
-        CategoryIconOption("work", "Работа"),
-        CategoryIconOption("card_giftcard", "Подарок"),
-        CategoryIconOption("local_taxi", "Такси"),
-        CategoryIconOption("school", "Обучение"),
-        CategoryIconOption("home", "Дом"),
-        CategoryIconOption("pets", "Животные"),
-        CategoryIconOption("phone", "Связь"),
-        CategoryIconOption("flight", "Путешествия"),
-        CategoryIconOption("fitness_center", "Спорт"),
-        CategoryIconOption("checkroom", "Одежда"),
-        CategoryIconOption("more_horiz", "Прочее")
+        CategoryIconOption("restaurant"),
+        CategoryIconOption("directions_bus"),
+        CategoryIconOption("shopping_cart"),
+        CategoryIconOption("movie"),
+        CategoryIconOption("local_hospital"),
+        CategoryIconOption("work"),
+        CategoryIconOption("card_giftcard"),
+        CategoryIconOption("local_taxi"),
+        CategoryIconOption("school"),
+        CategoryIconOption("home"),
+        CategoryIconOption("pets"),
+        CategoryIconOption("phone"),
+        CategoryIconOption("flight"),
+        CategoryIconOption("fitness_center"),
+        CategoryIconOption("checkroom"),
+        CategoryIconOption("more_horiz")
     )
 }
