@@ -37,7 +37,7 @@ CREATE DATABASE mobilemoney;
 
 ```powershell
 cd D:\Git\MobileMoney\server
-gradle run
+buildServer.bat
 ```
 
 ## 4. Проверка
