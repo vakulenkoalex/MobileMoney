@@ -311,4 +311,11 @@ relatedTransactionId = relatedTransactionId?.let { UUID.fromString(it) }
             else -> "Дата"
         }
     }
+
+    suspend fun permanentlyDeleteAll() {
+        transactionDao.permanentDeleteAll()
+        accountDao.permanentDeleteAll()
+        categoryDao.permanentDeleteAll()
+        tagDao.permanentDeleteAll()
+    }
 }

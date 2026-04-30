@@ -81,6 +81,17 @@ fun SettingsScreen(
                 Text("Импорт базы данных")
             }
 
+            Button(
+                onClick = { viewModel.deleteAll() },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Удалить удалённые записи")
+            }
+
             uiState.message?.let { message ->
                 Text(
                     text = message,

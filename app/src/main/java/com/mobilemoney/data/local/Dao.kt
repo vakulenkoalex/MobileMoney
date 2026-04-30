@@ -27,6 +27,9 @@ interface UserDao {
 
     @Query("UPDATE users SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM users WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 }
 
 @Dao
@@ -48,6 +51,9 @@ interface CurrencyDao {
 
     @Query("UPDATE currencies SET deletedAt = :deletedAt WHERE code = :code")
     suspend fun softDelete(code: String, deletedAt: Long)
+
+    @Query("DELETE FROM currencies WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 }
 
 @Dao
@@ -69,6 +75,9 @@ interface AccountTypeDao {
 
     @Query("UPDATE account_types SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM account_types WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 }
 
 @Dao
@@ -105,6 +114,9 @@ interface AccountDao {
 
     @Query("UPDATE accounts SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM accounts WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 
     @Query("UPDATE accounts SET isDefault = 0")
     suspend fun clearDefaultAccounts()
@@ -144,6 +156,9 @@ interface CategoryDao {
 
     @Query("UPDATE categories SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM categories WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 }
 
 @Dao
@@ -165,6 +180,9 @@ interface TagDao {
 
     @Query("UPDATE tags SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM tags WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 
     @Query("""
         SELECT t.* FROM tags t
@@ -199,6 +217,9 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM transactions WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
 
     @Query("SELECT * FROM transactions WHERE relatedTransactionId = :relatedId AND id != :excludeId AND deletedAt IS NULL")
     suspend fun getRelatedTransaction(relatedId: String, excludeId: String): TransactionEntity?
