@@ -60,14 +60,8 @@ cd server; gradle run
 - Icons: Material Design Icons names (e.g., `food`, `account-balance-wallet`)
 - `READ_SMS` is a restricted permission on Android 14+; Google Play may reject apps using it
 
-## Verification
-
-```powershell
-# Android build check
-.\build.bat assembleDebug
-
 # Server health check
-Invoke-RestMethod http://localhost:6080/api/v1/sync/register?deviceId=test&deviceName=test
+Invoke-RestMethod http://localhost:8080/api/v1/sync/register?deviceId=test&deviceName=test
 ```
 
 ## References
