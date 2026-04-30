@@ -39,4 +39,4 @@ else
   JAVACMD="$JAVA_HOME/bin/java"
 fi
 
-exec "$JAVACMD" -Xmx64m -Xms64m -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+exec "$JAVACMD" -Xmx2048m -Xms2048m -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
