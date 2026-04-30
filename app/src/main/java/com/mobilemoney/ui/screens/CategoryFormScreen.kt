@@ -50,7 +50,7 @@ fun CategoryFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (uiState.isEditing) "Редактирование категории" else "Новая категория") },
+                title = { Text(if (uiState.isEditing) "Редактирование категории" else "Новая категория", style = MaterialTheme.typography.titleSmall) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")

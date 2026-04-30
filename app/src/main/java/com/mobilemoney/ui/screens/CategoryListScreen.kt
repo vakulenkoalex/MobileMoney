@@ -29,7 +29,6 @@ import java.util.UUID
 fun CategoryListScreen(
     onAddClick: () -> Unit,
     onCategoryClick: (UUID) -> Unit,
-    onNavigateBack: () -> Unit,
     viewModel: CategoryListViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -37,16 +36,10 @@ fun CategoryListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Категории") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
+                title = { Text("Категории", style = MaterialTheme.typography.titleSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },

@@ -33,17 +33,14 @@ import com.mobilemoney.viewmodel.TransactionListViewModel
 fun TransactionListScreen(
     viewModel: TransactionListViewModel = viewModel(),
     onAddClick: () -> Unit,
-    onTransactionClick: (UUID) -> Unit,
-    onAccountsClick: () -> Unit,
-    onCategoriesClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onTransactionClick: (UUID) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Операции") },
+                title = { Text("Операции", style = MaterialTheme.typography.titleSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -57,13 +54,6 @@ fun TransactionListScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Добавить")
             }
-        },
-        bottomBar = {
-            BottomNavigationBar(
-                onAccountsClick = onAccountsClick,
-                onCategoriesClick = onCategoriesClick,
-                onSettingsClick = onSettingsClick
-            )
         }
     ) { paddingValues ->
         val sortedTransactions = remember(uiState.transactions) {

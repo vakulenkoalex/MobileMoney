@@ -51,7 +51,7 @@ fun AccountFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (uiState.isEditing) "Редактирование счёта" else "Новый счёт") },
+                title = { Text(if (uiState.isEditing) "Редактирование счёта" else "Новый счёт", style = MaterialTheme.typography.titleSmall) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")

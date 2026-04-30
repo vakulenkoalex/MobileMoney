@@ -28,7 +28,6 @@ import java.util.UUID
 fun AccountListScreen(
     onAddClick: () -> Unit,
     onAccountClick: (UUID) -> Unit,
-    onNavigateBack: () -> Unit,
     viewModel: AccountListViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -36,16 +35,10 @@ fun AccountListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Счета") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
+                title = { Text("Счета", style = MaterialTheme.typography.titleSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },

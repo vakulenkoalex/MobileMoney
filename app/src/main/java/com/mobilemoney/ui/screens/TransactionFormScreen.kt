@@ -87,7 +87,7 @@ fun TransactionFormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (uiState.isEditing) "Редактирование" else "Создание") },
+                title = { Text(if (uiState.isEditing) "Редактирование" else "Создание", style = MaterialTheme.typography.titleSmall) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")

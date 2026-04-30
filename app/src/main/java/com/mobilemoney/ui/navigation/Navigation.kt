@@ -4,7 +4,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mobilemoney.MobileMoneyApp
@@ -48,6 +58,13 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
 }
 
+val bottomNavItems = listOf(
+    Screen.TransactionList,
+    Screen.Accounts,
+    Screen.Categories,
+    Screen.Settings
+)
+
 @Composable
 fun MobileMoneyNavigation() {
     val context = LocalContext.current
@@ -76,143 +93,174 @@ fun MobileMoneyNavigation() {
     }
 
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.TransactionList.route
-    ) {
-        composable(Screen.TransactionList.route) {
-            TransactionListScreen(
-                onAddClick = {
-                    navController.navigate(Screen.CreateTransaction.route)
-                },
-                onTransactionClick = { transactionId ->
-                    navController.navigate(Screen.EditTransaction.createRoute(transactionId))
-                },
-                onAccountsClick = {
-                    navController.navigate(Screen.Accounts.route)
-                },
-                onCategoriesClick = {
-                    navController.navigate(Screen.Categories.route)
-                },
-                onSettingsClick = {
-                    navController.navigate(Screen.Settings.route)
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                bottomNavItems.forEach { screen ->
+                    val selected = currentRoute == screen.route
+                    NavigationBarItem(
+                        icon = {
+                            Icon(
+                                imageVector = when (screen) {
+                                    Screen.TransactionList -> Icons.Default.Home
+                                    Screen.Accounts -> Icons.Default.CreditCard
+                                    Screen.Categories -> Icons.Default.Category
+                                    Screen.Settings -> Icons.Default.Settings
+                                    else -> Icons.Default.Home
+                                },
+                                contentDescription = null
+                            )
+                        },
+                        label = {
+                            Text(
+                                when (screen) {
+                                    Screen.TransactionList -> "Главная"
+                                    Screen.Accounts -> "Счета"
+                                    Screen.Categories -> "Категории"
+                                    Screen.Settings -> "Настройки"
+                                    else -> ""
+                                }
+                            )
+                        },
+                        selected = selected,
+                        onClick = {
+                            if (currentRoute != screen.route) {
+                                navController.navigate(screen.route) {
+                                    popUpTo(Screen.TransactionList.route) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        }
+                    )
                 }
-            )
-        }
-
-        composable(Screen.CreateTransaction.route) {
-            TransactionFormScreen(
-                transactionId = null,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(
-            route = Screen.EditTransaction.route,
-            arguments = listOf(
-                navArgument("transactionId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val transactionId = backStackEntry.arguments?.getString("transactionId")?.let {
-                UUID.fromString(it)
             }
-            TransactionFormScreen(
-                transactionId = transactionId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
         }
-
-        composable(Screen.Accounts.route) {
-            com.mobilemoney.ui.screens.AccountListScreen(
-                onAddClick = {
-                    navController.navigate(Screen.CreateAccount.route)
-                },
-                onAccountClick = { accountId ->
-                    navController.navigate(Screen.EditAccount.createRoute(accountId))
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.TransactionList.route,
+            modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
+        ) {
+                composable(Screen.TransactionList.route) {
+                    TransactionListScreen(
+                        onAddClick = {
+                            navController.navigate(Screen.CreateTransaction.route)
+                        },
+                        onTransactionClick = { transactionId ->
+                            navController.navigate(Screen.EditTransaction.createRoute(transactionId))
+                        }
+                    )
                 }
-            )
-        }
 
-        composable(Screen.CreateAccount.route) {
-            AccountFormScreen(
-                accountId = null,
-                onNavigateBack = {
-                    navController.popBackStack()
+                composable(Screen.CreateTransaction.route) {
+                    TransactionFormScreen(
+                        transactionId = null,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
-            )
-        }
 
-        composable(
-            route = Screen.EditAccount.route,
-            arguments = listOf(
-                navArgument("accountId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val accountId = backStackEntry.arguments?.getString("accountId")?.let {
-                UUID.fromString(it)
+                composable(
+                    route = Screen.EditTransaction.route,
+                    arguments = listOf(
+                        navArgument("transactionId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val transactionId = backStackEntry.arguments?.getString("transactionId")?.let {
+                        UUID.fromString(it)
+                    }
+                    TransactionFormScreen(
+                        transactionId = transactionId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(Screen.Accounts.route) {
+                    com.mobilemoney.ui.screens.AccountListScreen(
+                        onAddClick = {
+                            navController.navigate(Screen.CreateAccount.route)
+                        },
+                        onAccountClick = { accountId ->
+                            navController.navigate(Screen.EditAccount.createRoute(accountId))
+                        }
+                    )
+                }
+
+                composable(Screen.CreateAccount.route) {
+                    AccountFormScreen(
+                        accountId = null,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(
+                    route = Screen.EditAccount.route,
+                    arguments = listOf(
+                        navArgument("accountId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val accountId = backStackEntry.arguments?.getString("accountId")?.let {
+                        UUID.fromString(it)
+                    }
+                    AccountFormScreen(
+                        accountId = accountId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(Screen.Categories.route) {
+                    com.mobilemoney.ui.screens.CategoryListScreen(
+                        onAddClick = {
+                            navController.navigate(Screen.CreateCategory.route)
+                        },
+                        onCategoryClick = { categoryId ->
+                            navController.navigate(Screen.EditCategory.createRoute(categoryId))
+                        }
+                    )
+                }
+
+                composable(Screen.CreateCategory.route) {
+                    CategoryFormScreen(
+                        categoryId = null,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(
+                    route = Screen.EditCategory.route,
+                    arguments = listOf(
+                        navArgument("categoryId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val categoryId = backStackEntry.arguments?.getString("categoryId")?.let {
+                        UUID.fromString(it)
+                    }
+                    CategoryFormScreen(
+                        categoryId = categoryId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(Screen.Settings.route) {
+                    SettingsScreen()
+                }
             }
-            AccountFormScreen(
-                accountId = accountId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
         }
-
-        composable(Screen.Categories.route) {
-            com.mobilemoney.ui.screens.CategoryListScreen(
-                onAddClick = {
-                    navController.navigate(Screen.CreateCategory.route)
-                },
-                onCategoryClick = { categoryId ->
-                    navController.navigate(Screen.EditCategory.createRoute(categoryId))
-                },
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Screen.CreateCategory.route) {
-            CategoryFormScreen(
-                categoryId = null,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(
-            route = Screen.EditCategory.route,
-            arguments = listOf(
-                navArgument("categoryId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val categoryId = backStackEntry.arguments?.getString("categoryId")?.let {
-                UUID.fromString(it)
-            }
-            CategoryFormScreen(
-                categoryId = categoryId,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Screen.Settings.route) {
-            SettingsScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
-        }
-    }
 }
