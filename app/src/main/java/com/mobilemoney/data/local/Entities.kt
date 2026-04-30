@@ -31,24 +31,9 @@ data class CurrencyEntity(
     val deletedAt: Long? = null
 )
 
-@Entity(tableName = "account_types")
-data class AccountTypeEntity(
-    @PrimaryKey val id: String,
-    val name: String,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
 @Entity(
     tableName = "accounts",
     foreignKeys = [
-        ForeignKey(
-            entity = AccountTypeEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["typeId"],
-            onDelete = ForeignKey.SET_NULL
-        ),
         ForeignKey(
             entity = CurrencyEntity::class,
             parentColumns = ["code"],
@@ -56,12 +41,12 @@ data class AccountTypeEntity(
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("typeId"), Index("currencyCode")]
+    indices = [Index("currencyCode")]
 )
 data class AccountEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val typeId: String?,
+    val typeId: String,
     val currencyCode: String?,
     val icon: String,
     val isDefault: Boolean = false,

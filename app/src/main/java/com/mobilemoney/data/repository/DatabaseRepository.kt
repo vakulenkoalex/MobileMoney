@@ -3,8 +3,6 @@ package com.mobilemoney.data.repository
 import android.content.Context
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AccountEntity
-import com.mobilemoney.data.local.AccountTypeDao
-import com.mobilemoney.data.local.AccountTypeEntity
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.CategoryEntity
@@ -17,6 +15,7 @@ import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.local.TransactionSource
 import com.mobilemoney.data.local.UserDao
 import com.mobilemoney.data.model.AccountUi
+import com.mobilemoney.data.model.AccountType
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.data.model.TransactionUi
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +27,6 @@ class DatabaseRepository(context: Context) {
     private val database = AppDatabase.getDatabase(context)
     private val userDao: UserDao = database.userDao()
     private val currencyDao: CurrencyDao = database.currencyDao()
-    private val accountTypeDao: AccountTypeDao = database.accountTypeDao()
     private val accountDao: AccountDao = database.accountDao()
     private val categoryDao: CategoryDao = database.categoryDao()
     private val tagDao: TagDao = database.tagDao()
@@ -55,10 +53,6 @@ class DatabaseRepository(context: Context) {
 
     suspend fun getDefaultAccount(): AccountUi? {
         return accountDao.getDefaultAccount()?.toUiModel()
-    }
-
-    fun getAccountTypes(): Flow<List<AccountTypeEntity>> {
-        return accountTypeDao.getAllAccountTypes()
     }
 
     fun getCategories(): Flow<List<CategoryUi>> {
@@ -164,7 +158,6 @@ class DatabaseRepository(context: Context) {
 
     suspend fun initializeDefaultData() {
         initializeCurrencies()
-        initializeAccountTypes()
         initializeCategories()
         initializeAccounts()
     }
@@ -174,7 +167,7 @@ class DatabaseRepository(context: Context) {
             AccountEntity(
                 id = UUID.randomUUID().toString(),
                 name = "Наличные",
-                typeId = "cash",
+                typeId = AccountType.CASH.id,
                 currencyCode = "RUB",
                 icon = "wallet",
                 isDefault = true,
@@ -195,15 +188,6 @@ class DatabaseRepository(context: Context) {
         currencyDao.insertAll(defaultCurrencies)
     }
 
-    private suspend fun initializeAccountTypes() {
-        val defaultTypes = listOf(
-            AccountTypeEntity("cash", "Наличные", System.currentTimeMillis(), System.currentTimeMillis()),
-            AccountTypeEntity("card", "Банковская карта", System.currentTimeMillis(), System.currentTimeMillis()),
-            AccountTypeEntity("account", "Счёт", System.currentTimeMillis(), System.currentTimeMillis())
-        )
-        accountTypeDao.insertAll(defaultTypes)
-    }
-
     private suspend fun initializeCategories() {
         val defaultCategories = listOf(
             CategoryEntity(UUID.randomUUID().toString(), "Кафе и рестораны", false, "restaurant", null, System.currentTimeMillis(), System.currentTimeMillis()),
@@ -221,7 +205,7 @@ class DatabaseRepository(context: Context) {
         return AccountUi(
             id = UUID.fromString(id),
             name = name,
-            typeId = typeId ?: "cash",
+            type = AccountType.entries.find { it.id == typeId } ?: AccountType.CASH,
             currency = currencyCode ?: "₽",
             icon = icon,
             isDefault = isDefault,
@@ -233,7 +217,7 @@ class DatabaseRepository(context: Context) {
         return AccountEntity(
             id = id.toString(),
             name = name,
-            typeId = typeId,
+            typeId = type.id,
             currencyCode = currency,
             icon = icon,
             isDefault = isDefault,

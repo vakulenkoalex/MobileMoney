@@ -90,10 +90,7 @@ fun AccountFormScreen(
             ListItem(
                 headlineContent = { Text("Тип счёта") },
                 supportingContent = {
-                    Text(
-                        uiState.accountTypes.find { it.id == uiState.typeId }?.name
-                            ?: "Наличные"
-                    )
+                    Text(uiState.type.displayName)
                 },
                 leadingContent = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
                 modifier = Modifier
@@ -118,15 +115,15 @@ fun AccountFormScreen(
                         )
                         uiState.accountTypes.forEach { type ->
                             ListItem(
-                                headlineContent = { Text(type.name) },
+                                headlineContent = { Text(type.displayName) },
                                 leadingContent = {
                                     RadioButton(
-                                        selected = uiState.typeId == type.id,
+                                        selected = uiState.type == type,
                                         onClick = null
                                     )
                                 },
                                 modifier = Modifier.clickable {
-                                    viewModel.updateTypeId(type.id)
+                                    viewModel.updateType(type)
                                     showTypeSheet = false
                                 }
                             )

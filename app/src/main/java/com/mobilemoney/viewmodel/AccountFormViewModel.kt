@@ -7,6 +7,7 @@ import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.data.config.AccountIcons
 import com.mobilemoney.data.config.Currencies
 import com.mobilemoney.data.model.AccountUi
+import com.mobilemoney.data.model.AccountType
 import com.mobilemoney.data.repository.DatabaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,7 @@ import java.util.UUID
 
 data class AccountFormState(
     val name: String = "",
-    val typeId: String = "cash",
+    val type: AccountType = AccountType.CASH,
     val currencyCode: String = "RUB",
     val currencySymbol: String = "₽",
     val icon: String = "wallet",
@@ -26,7 +27,7 @@ data class AccountFormState(
     val accountId: UUID? = null,
     val currencies: List<com.mobilemoney.data.config.CurrencyConfig> = Currencies.all,
     val icons: List<com.mobilemoney.data.config.IconOption> = AccountIcons.all,
-    val accountTypes: List<com.mobilemoney.data.local.AccountTypeEntity> = emptyList(),
+    val accountTypes: List<AccountType> = AccountType.entries,
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false
@@ -39,14 +40,6 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
     private val _uiState = MutableStateFlow(AccountFormState())
     val uiState: StateFlow<AccountFormState> = _uiState.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            repository.getAccountTypes().collect { types ->
-                _uiState.value = _uiState.value.copy(accountTypes = types)
-            }
-        }
-    }
-
     fun loadAccount(accountId: UUID) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -55,7 +48,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
                 val currency = uiState.value.currencies.find { it.code == account.currency }
                 _uiState.value = _uiState.value.copy(
                     name = account.name,
-                    typeId = account.typeId,
+                    type = account.type,
                     currencyCode = account.currency,
                     currencySymbol = currency?.symbol ?: "₽",
                     icon = account.icon,
@@ -93,8 +86,8 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
         _uiState.value = _uiState.value.copy(isDefault = isDefault)
     }
 
-    fun updateTypeId(typeId: String) {
-        _uiState.value = _uiState.value.copy(typeId = typeId)
+    fun updateType(type: AccountType) {
+        _uiState.value = _uiState.value.copy(type = type)
     }
 
     fun save(): Boolean {
@@ -108,7 +101,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
         val account = AccountUi(
             id = state.accountId ?: UUID.randomUUID(),
             name = state.name,
-            typeId = state.typeId,
+            type = state.type,
             currency = state.currencyCode,
             icon = state.icon,
             isDefault = state.isDefault

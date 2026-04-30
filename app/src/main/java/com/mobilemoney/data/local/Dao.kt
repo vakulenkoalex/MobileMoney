@@ -57,30 +57,6 @@ interface CurrencyDao {
 }
 
 @Dao
-interface AccountTypeDao {
-    @Query("SELECT * FROM account_types WHERE deletedAt IS NULL")
-    fun getAllAccountTypes(): Flow<List<AccountTypeEntity>>
-
-    @Query("SELECT * FROM account_types WHERE id = :id AND deletedAt IS NULL")
-    suspend fun getAccountTypeById(id: String): AccountTypeEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(accountType: AccountTypeEntity)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(accountTypes: List<AccountTypeEntity>)
-
-    @Update
-    suspend fun update(accountType: AccountTypeEntity)
-
-    @Query("UPDATE account_types SET deletedAt = :deletedAt WHERE id = :id")
-    suspend fun softDelete(id: String, deletedAt: Long)
-
-    @Query("DELETE FROM account_types WHERE deletedAt IS NOT NULL")
-    suspend fun permanentDeleteAll()
-}
-
-@Dao
 interface AccountDao {
     @Query("SELECT * FROM accounts WHERE deletedAt IS NULL AND archived = 0")
     fun getAllAccounts(): Flow<List<AccountEntity>>
@@ -93,9 +69,6 @@ interface AccountDao {
 
     @Query("SELECT * FROM accounts WHERE isDefault = 1 AND deletedAt IS NULL LIMIT 1")
     suspend fun getDefaultAccount(): AccountEntity?
-
-    @Query("SELECT * FROM accounts WHERE typeId = :typeId AND deletedAt IS NULL AND archived = 0")
-    fun getAccountsByType(typeId: String): Flow<List<AccountEntity>>
 
     @Query("SELECT * FROM accounts WHERE currencyCode = :currencyCode AND deletedAt IS NULL AND archived = 0")
     fun getAccountsByCurrency(currencyCode: String): Flow<List<AccountEntity>>

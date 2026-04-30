@@ -9,7 +9,6 @@ import androidx.room.RoomDatabase
     entities = [
         UserEntity::class,
         CurrencyEntity::class,
-        AccountTypeEntity::class,
         AccountEntity::class,
         CategoryEntity::class,
         TagEntity::class,
@@ -24,7 +23,6 @@ import androidx.room.RoomDatabase
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun currencyDao(): CurrencyDao
-    abstract fun accountTypeDao(): AccountTypeDao
     abstract fun accountDao(): AccountDao
     abstract fun categoryDao(): CategoryDao
     abstract fun tagDao(): TagDao

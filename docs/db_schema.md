@@ -23,18 +23,11 @@
 ### Счета (accounts)
 - id (PK)
 - name
-- type_id (FK -> account_types.id)
+- type_id (varchar) - тип счёта: cash, card, account (перечисление)
 - currency_code (FK -> currencies.code)
 - icon (varchar)
 - is_default (boolean) - использовать по умолчанию для новых операций
 - archived (boolean) - для скрытия старых счетов
-- created_at (timestamp)
-- updated_at (timestamp)
-- deleted_at (timestamp, nullable)
-
-### Типы счетов (account_types)
-- id (PK)
-- name
 - created_at (timestamp)
 - updated_at (timestamp)
 - deleted_at (timestamp, nullable)
@@ -92,6 +85,7 @@
 ## Связи
 
 - Счета принадлежат одной валюте
+- Тип счёта (type_id) - перечисление (cash, card, account), не внешний ключ
 - Категории образуют иерархию через parent_id
 - Операции привязаны к счету, категории, пользователю
 - Метки можно назначить категории или операции

@@ -2,10 +2,16 @@ package com.mobilemoney.data.model
 
 import java.util.UUID
 
+enum class AccountType(val id: String, val displayName: String) {
+    CASH("cash", "Наличные"),
+    CARD("card", "Банковская карта"),
+    ACCOUNT("account", "Счёт")
+}
+
 data class AccountUi(
     val id: UUID = UUID.randomUUID(),
     val name: String,
-    val typeId: String = "cash",
+    val type: AccountType = AccountType.CASH,
     val currency: String = "₽",
     val icon: String = "wallet",
     val isDefault: Boolean = false,
