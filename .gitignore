@@ -1,8 +1,6 @@
 .gradle/
 build/
 .idea/caches/
-build/reports/
 local.properties
-gradle.properties.local
 build.bat
 .idea/deploymentTargetSelector.xml
