@@ -69,9 +69,10 @@ object SyncDatabase {
 }
 
 fun main() {
-    val dbUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/mobilemoney"
-    val dbUser = System.getenv("DB_USER") ?: "postgres"
-    val dbPass = System.getenv("DB_PASS") ?: "postgres"
+    val dbUrl = System.getenv("DB_URL")
+    val dbUser = System.getenv("DB_USER")
+    val dbPass = System.getenv("DB_PASS")
+    val nettyPort = (System.getenv("NETTY_PORT")).toInt()
 
     try {
         SyncDatabase.init(dbUrl, dbUser, dbPass)
@@ -80,7 +81,7 @@ fun main() {
         println("Database not connected: ${e.message}")
     }
 
-    embeddedServer(Netty, port = 8080) {
+    embeddedServer(Netty, port = nettyPort) {
         routing {
             get("/") {
                 call.respondText("{\"status\":\"ok\",\"database\":${SyncDatabase.isConnected()}}")
