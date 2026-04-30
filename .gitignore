@@ -3,5 +3,5 @@ build/
 .idea/caches/
 local.properties
 build.bat
-.idea/deploymentTargetSelector.xml
+deploymentTargetSelector.xml
 */gradle/gradle-daemon-jvm.properties
