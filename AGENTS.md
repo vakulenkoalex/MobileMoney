@@ -1,59 +1,79 @@
-# AGENTS.md - MobileMoney Android App
+# AGENTS.md
 
 ## Build Commands
 
+### Android
 ```powershell
-# Windows (PowerShell) - use ; not &&
 .\build.bat assembleDebug
-
-# Linux/Mac
-./gradlew assembleDebug
 ```
+- Output: `android/app/build/outputs/apk/debug/app-debug.apk`
+- **Windows**: use `;` or separate lines — do NOT use `&&`
 
-**APK locations:**
-- Debug: `app/build/outputs/apk/debug/app-debug.apk`
-- Release: `app/build/outputs/apk/release/app-release.apk`
-
-## Project Constraints
-
-- **minSDK 34** (Android 14 only) - older Android versions not supported
-- **JDK 17** required
-- Uses Java from Android Studio: `C:\Program Files\Android\Android Studio\jbr` (configured in `build.bat`)
+### Server
+```powershell
+cd server; gradle run
+```
+- Serves on `http://localhost:6080`
 
 ## Architecture
 
-```
-app/
-├── presentation/   # UI (Compose + ViewModel)
-├── domain/          # UseCases, Entities, Repository interfaces
-├── data/            # Repository impl, Local/Remote datasources
-├── di/               # Hilt dependency injection
-├── core/             # Utilities, constants
-└── security/        # Encryption, biometrics
-```
+- **Monorepo** with two independent Gradle projects: `android/` and `server/`
+- **Android**: Kotlin/Jetpack Compose, Clean Architecture (presentation/domain/data), MVVM, minSDK 34
+- **Server**: Kotlin/JVM + Ktor, PostgreSQL (port 5432, DB `mobilemoney`), HikariCP
 
-- Clean Architecture + MVVM pattern
-- Room database with offline-first sync
-- Soft deletes on all entities
+### Key domain rules
+- Balance is **computed** from transactions: `SUM(income) - SUM(expense)` — not stored in a column
+- Soft deletes only (`deleted_at` timestamp)
+- Offline-first sync: write to Room locally, background sync via WorkManager, last-write-wins conflict resolution
+- `related_transaction_id` links transfer pairs (two transactions with shared UUID)
 
-## Tech Stack
+## Tech Stack (Android)
 
-| Component | Version |
-|-----------|---------|
-| Kotlin | 2.3.21 |
+| | |
+|---|---|
+| Language | Kotlin 2.3.21 |
+| Compose Compiler | 2.3.21 |
 | AGP | 9.2.0 |
-| Compose BOM | 2024.02.00 |
-| Room | 2.8.4 |
-| Navigation | 2.9.8 |
-| Lifecycle | 2.10.0 |
+| Min/Target SDK | 34 |
+| DI | Hilt |
+| DB | Room + KSP |
+| Network | Ktor client |
+| Serialization | Kotlin Serialization |
+| Async | Coroutines + Flow |
+| Background | WorkManager |
+| Pagination | Paging 3 |
+| Charts | Vico |
+| Security | EncryptedSharedPreferences, BiometricPrompt |
 
-## CI
+## Tech Stack (Server)
 
-- GitHub Actions: builds on PR to `master`
-- Uses JDK 17 on Ubuntu
+| | |
+|---|---|
+| Language | Kotlin 2.0.21 |
+| Framework | Ktor 3.0.2 |
+| Server | Netty |
+| DB | PostgreSQL + HikariCP |
+
+## Project-Specific Conventions
+
+- Docs are in Russian (`docs/*.md`)
+- Icons: Material Design Icons names (e.g., `food`, `account-balance-wallet`)
+- `READ_SMS` is a restricted permission on Android 14+; Google Play may reject apps using it
+
+## Verification
+
+```powershell
+# Android build check
+.\build.bat assembleDebug
+
+# Server health check
+Invoke-RestMethod http://localhost:6080/api/v1/sync/register?deviceId=test&deviceName=test
+```
 
 ## References
 
-- Full build docs: `BUILD.md`
 - Architecture: `docs/architecture.md`
 - DB schema: `docs/db_schema.md`
+- Server run: `docs/SERVER_RUN.md`
+- Build: `docs/BUILD.md`
+- CI: `.github/workflows/android.yml` (builds on PR to master)
