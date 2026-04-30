@@ -4,7 +4,7 @@
 
 ```bash
 # Windows PowerShell - НЕ ИСПОЛЬЗУЙТЕ && - используйте ; или отдельные команды
-.\gradlew.bat assembleDebug
+.\build.bat assembleDebug
 
 # Linux/Mac
 ./gradlew assembleDebug
@@ -19,4 +19,4 @@
 
 ## Среда
 - Используется Java из Android Studio: `C:\Program Files\Android\Android Studio\jbr`
-- Настройка в `gradle.properties`: `org.gradle.java.home`
+- Настройка в `build.bat`: переменная `JAVA_HOME`

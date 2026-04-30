@@ -4,3 +4,4 @@ build/
 build/reports/
 local.properties
 gradle.properties.local
+build.bat
