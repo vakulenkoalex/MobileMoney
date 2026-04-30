@@ -1,0 +1,7 @@
+@echo off
+set "JAVA_HOME="
+set "DB_URL=jdbc:postgresql://localhost:5432/mobilemoney"
+set "DB_USER=postgres"
+set "DB_PASS="
+
+gradlew.bat run
