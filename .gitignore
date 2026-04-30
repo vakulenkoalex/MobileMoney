@@ -2,3 +2,4 @@
 build/
 .idea/caches/
 build/reports/
+local.properties
