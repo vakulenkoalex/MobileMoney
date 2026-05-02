@@ -1,6 +1,5 @@
 package com.mobilemoney.server
 
-import com.zaxxer.hikari.HikariDataSource
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -8,120 +7,158 @@ import io.ktor.server.netty.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import java.sql.Connection
-
-object SyncDatabase {
-    private var db: HikariDataSource? = null
-    private val devices = mutableMapOf<String, Pair<String, String>>()
-
-    fun init(url: String, user: String, pass: String) {
-        db = HikariDataSource().apply {
-            setJdbcUrl(url)
-            setUsername(user)
-            setPassword(pass)
-            maximumPoolSize = 10
-        }
-        createTables()
-    }
-
-    private fun createTables() {
-        db?.connection?.use { conn ->
-            conn.createStatement().use { stmt ->
-                stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS devices (
-                        id SERIAL PRIMARY KEY,
-                        device_id VARCHAR(255) UNIQUE NOT NULL,
-                        device_name VARCHAR(255),
-                        token VARCHAR(255) UNIQUE NOT NULL,
-                        created_at BIGINT NOT NULL,
-                        last_seen_at BIGINT NOT NULL
-                    )
-                """.trimIndent())
-            }
-        }
-    }
-
-    fun registerDevice(deviceId: String, deviceName: String, token: String) {
-        val now = System.currentTimeMillis()
-        try {
-            db?.connection?.use { conn ->
-                conn.prepareStatement("INSERT INTO devices (device_id, device_name, token, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?)").use { stmt ->
-                    stmt.setString(1, deviceId)
-                    stmt.setString(2, deviceName)
-                    stmt.setString(3, token)
-                    stmt.setLong(4, now)
-                    stmt.setLong(5, now)
-                    stmt.executeUpdate()
-                }
-            }
-        } catch (e: Exception) {
-            println("DB error: ${e.message}")
-        }
-        devices[token] = deviceId to deviceName
-    }
-
-    fun validateToken(token: String): Boolean {
-        if (devices.containsKey(token)) return true
-        return false
-    }
-
-    fun isConnected(): Boolean = db != null
-}
 
 fun main() {
-    val dbUrl = System.getenv("DB_URL")
-    val dbUser = System.getenv("DB_USER")
-    val dbPass = System.getenv("DB_PASS")
     val nettyPort = (System.getenv("NETTY_PORT")).toInt()
 
-    try {
-        SyncDatabase.init(dbUrl, dbUser, dbPass)
-        println("Database connected: $dbUrl")
-    } catch (e: Exception) {
-        println("Database not connected: ${e.message}")
-    }
+    Database.init()
+    println("Database initialized: sync.db")
 
     embeddedServer(Netty, port = nettyPort) {
         routing {
             get("/") {
-                call.respondText("{\"status\":\"ok\",\"database\":${SyncDatabase.isConnected()}}")
+                call.respondText("{\"status\":\"ok\",\"database\":${Database.isConnected()}}")
             }
 
-            get("/api/v1/sync/register") {
-                val deviceId = call.request.queryParameters["deviceId"] ?: "unknown"
-                val deviceName = call.request.queryParameters["deviceName"] ?: "Unknown"
-                val token = java.util.UUID.randomUUID().toString()
-                SyncDatabase.registerDevice(deviceId, deviceName, token)
-                println("Device registered: $deviceId")
-                call.respondText("{\"token\":\"$token\",\"deviceId\":\"$deviceId\"}")
+            post("/api/v1/auth/login") {
+                val body = call.receiveText()
+                val json = parseJson(body)
+                val login = json["login"] ?: ""
+                val password = json["password"] ?: ""
+                val deviceId = json["device_id"] ?: "unknown"
+                val deviceName = json["device_name"] ?: "Unknown"
+
+                if (login.isEmpty() || password.isEmpty()) {
+                    call.respondText("{\"error\":\"Missing login or password\"}", status = HttpStatusCode.BadRequest)
+                    return@post
+                }
+
+                val result = AuthService.login(login, password, deviceId, deviceName)
+                if (result.isFailure) {
+                    val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                    val status = if (error.contains("not found")) HttpStatusCode.NotFound else HttpStatusCode.Unauthorized
+                    call.respondText("{\"error\":\"$error\"}", status = status)
+                    return@post
+                }
+
+                call.respondText("{\"token\":\"${result.getOrNull()}\",\"login\":\"$login\"}")
             }
 
-            get("/api/v1/sync/changes") {
+            get("/api/v1/auth/verify") {
                 val auth = call.request.headers["Authorization"]
-                if (auth == null || !SyncDatabase.validateToken(auth)) {
-                    call.respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
+                if (auth == null) {
+                    call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
                     return@get
                 }
-                call.respondText("{\"timestamp\":${System.currentTimeMillis()},\"accounts\":[],\"categories\":[],\"transactions\":[]}")
+
+                val result = AuthService.verify(auth)
+                if (result.isFailure) {
+                    call.respondText("{\"error\":\"${result.exceptionOrNull()?.message}\"}", status = HttpStatusCode.Unauthorized)
+                    return@get
+                }
+
+                val device = result.getOrNull()
+                call.respondText("{\"login\":\"${device?.login}\",\"device_name\":\"${device?.deviceName}\"}")
             }
 
             post("/api/v1/sync/push") {
                 val auth = call.request.headers["Authorization"]
-                if (auth == null || !SyncDatabase.validateToken(auth)) {
-                    call.respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
+                if (auth == null) {
+                    call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
                     return@post
                 }
-                call.respondText("{\"success\":true,\"timestamp\":${System.currentTimeMillis()},\"synced\":0}")
+
+                val verifyResult = AuthService.verify(auth)
+                if (verifyResult.isFailure) {
+                    call.respondText("{\"error\":\"Invalid token\"}", status = HttpStatusCode.Unauthorized)
+                    return@post
+                }
+
+                val body = call.receiveText()
+                val request = parseSyncRequest(body)
+                val response = SyncService.push(request)
+
+                call.respondText("{\"success\":${response.success},\"timestamp\":${response.timestamp},\"synced\":${response.synced}}")
+            }
+
+            get("/api/v1/sync/changes") {
+                val auth = call.request.headers["Authorization"]
+                if (auth == null) {
+                    call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
+                    return@get
+                }
+
+                val verifyResult = AuthService.verify(auth)
+                if (verifyResult.isFailure) {
+                    call.respondText("{\"error\":\"Invalid token\"}", status = HttpStatusCode.Unauthorized)
+                    return@get
+                }
+
+                val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
+                val response = SyncService.getChanges(since)
+
+                val result = "{\"timestamp\":${response.timestamp},\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                call.respondText(result)
             }
 
             get("/api/v1/sync/pull") {
                 val auth = call.request.headers["Authorization"]
-                if (auth == null || !SyncDatabase.validateToken(auth)) {
-                    call.respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
+                if (auth == null) {
+                    call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
                     return@get
                 }
-                call.respondText("{\"timestamp\":${System.currentTimeMillis()},\"accounts\":[],\"categories\":[],\"transactions\":[]}")
+
+                val verifyResult = AuthService.verify(auth)
+                if (verifyResult.isFailure) {
+                    call.respondText("{\"error\":\"Invalid token\"}", status = HttpStatusCode.Unauthorized)
+                    return@get
+                }
+
+                val response = SyncService.pull()
+
+                val result = "{\"timestamp\":${response.timestamp},\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                call.respondText(result)
             }
         }
     }.start(wait = true)
+}
+
+fun parseJson(json: String): Map<String, String> {
+    val result = mutableMapOf<String, String>()
+    val regex = """\"(\w+)\"\s*:\s*"([^"]*)"""".toRegex()
+    regex.findAll(json).forEach { match ->
+        val key = match.groupValues.getOrNull(1) ?: return@forEach
+        val value = match.groupValues.getOrNull(2) ?: ""
+        result[key] = value
+    }
+    return result
+}
+
+fun parseSyncRequest(json: String): SyncRequest {
+    val accounts = extractArray(json, "accounts").map { parseJson(it) }
+    val categories = extractArray(json, "categories").map { parseJson(it) }
+    val transactions = extractArray(json, "transactions").map { parseJson(it) }
+    return SyncRequest(accounts, categories, transactions)
+}
+
+fun extractArray(json: String, key: String): List<String> {
+    val pattern = "$key\\s*:\\s*\\[([^\\]]*)\\]".toRegex()
+    val match = pattern.find(json) ?: return emptyList()
+    val content = match.groupValues[1].trim()
+    if (content.isEmpty()) return emptyList()
+    val items = mutableListOf<String>()
+    var depth = 0
+    val current = StringBuilder()
+    for (c in content) {
+        if (c == '{') depth++
+        if (c == '}') depth--
+        if (c == ',' && depth == 0) {
+            items.add(current.toString().trim())
+            current.clear()
+        } else {
+            current.append(c)
+        }
+    }
+    if (current.isNotBlank()) items.add(current.toString().trim())
+    return items
 }

@@ -27,6 +27,7 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging:3.0.2")
     implementation("io.ktor:ktor-server-status-pages:3.0.2")
 
-    implementation("org.postgresql:postgresql:42.7.2")
+    implementation("org.xerial:sqlite-jdbc:3.45.1.0")
     implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 }
