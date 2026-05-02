@@ -28,7 +28,9 @@ object Database {
             }
         }
         
-        if (existingTables.isNotEmpty()) return false
+        if (existingTables.isNotEmpty()) {
+            return false
+        }
         
         println("Creating tables...")
         conn?.use { c ->
@@ -43,7 +45,7 @@ object Database {
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS devices (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        device_id VARCHAR(255) NOT NULL,
+                        device_id VARCHAR(255) NOT NULL UNIQUE,
                         device_name VARCHAR(255),
                         token VARCHAR(255) UNIQUE NOT NULL,
                         login VARCHAR(255) NOT NULL,
