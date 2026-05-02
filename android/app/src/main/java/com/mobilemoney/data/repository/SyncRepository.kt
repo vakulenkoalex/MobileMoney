@@ -276,6 +276,11 @@ class SyncRepository(context: Context) {
     }
 
     fun isLoggedIn(): Boolean = deviceToken != null && isRegistered
+
+    suspend fun ping(): Result<Unit> {
+        apiClient.setBaseUrl(serverUrl)
+        return apiClient.ping()
+    }
 }
 
 data class SyncState(

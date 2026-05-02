@@ -3,6 +3,8 @@ package com.mobilemoney.data.remote
 import android.content.Context
 import android.provider.Settings
 import com.mobilemoney.BuildConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.BufferedReader
@@ -169,6 +171,30 @@ class SyncApiClient(private val context: Context) {
     }
 
     fun getToken(): String? = deviceToken
+
+    suspend fun ping(): Result<Unit> {
+        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                android.util.Log.d("SyncApiClient", "Ping to: $baseUrl/")
+                val url = URL("$baseUrl/")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+
+                val responseCode = conn.responseCode
+                android.util.Log.d("SyncApiClient", "Response code: $responseCode")
+                if (responseCode == 200) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Server unreachable: $responseCode"))
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SyncApiClient", "Ping exception: ${e.message}", e)
+                Result.failure(e)
+            }
+        }
+    }
 }
 
 @Serializable

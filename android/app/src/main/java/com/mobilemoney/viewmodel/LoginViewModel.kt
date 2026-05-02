@@ -11,8 +11,16 @@ import kotlinx.coroutines.launch
 data class LoginUiState(
     val isLoading: Boolean = false,
     val isLoggedIn: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val serverStatus: ServerStatus = ServerStatus.UNKNOWN
 )
+
+enum class ServerStatus {
+    UNKNOWN,
+    CHECKING,
+    AVAILABLE,
+    UNAVAILABLE
+}
 
 class LoginViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -34,6 +42,26 @@ class LoginViewModel : ViewModel() {
                     isLoading = false,
                     error = result.exceptionOrNull()?.message ?: "Ошибка входа"
                 )
+            }
+        }
+    }
+
+    fun checkServerConnection() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(serverStatus = ServerStatus.CHECKING)
+
+            val app = com.mobilemoney.MobileMoneyApp.instance
+            val syncRepository = app.syncRepository
+
+            android.util.Log.d("LoginVM", "Server URL: ${syncRepository.serverUrl}")
+            val result = syncRepository.ping()
+
+            _uiState.value = if (result.isSuccess) {
+                _uiState.value.copy(serverStatus = ServerStatus.AVAILABLE)
+            } else {
+                val error = result.exceptionOrNull()
+                android.util.Log.e("LoginVM", "Ping failed: ${error?.message}", error)
+                _uiState.value.copy(serverStatus = ServerStatus.UNAVAILABLE, error = error?.message)
             }
         }
     }
