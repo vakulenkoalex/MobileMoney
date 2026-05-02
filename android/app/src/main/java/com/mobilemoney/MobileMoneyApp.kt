@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.data.repository.SyncRepository
 import com.mobilemoney.worker.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +14,8 @@ import kotlinx.coroutines.launch
 
 class MobileMoneyApp : Application() {
     lateinit var repository: DatabaseRepository
+        private set
+    lateinit var syncRepository: SyncRepository
         private set
 
     var isInitialized = false
@@ -26,6 +29,7 @@ class MobileMoneyApp : Application() {
         instance = this
         prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         repository = DatabaseRepository(this)
+        syncRepository = SyncRepository(this)
         checkAndInitialize()
         enableSync()
     }

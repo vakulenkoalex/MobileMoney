@@ -16,7 +16,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "SERVER_URL", "\"http://127.0.0.1\"")
+        buildConfigField("String", "SERVER_URL", "\"http://10.0.2.2:6080\"")
         
         vectorDrawables {
             useSupportLibrary = true

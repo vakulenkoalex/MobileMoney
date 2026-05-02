@@ -34,12 +34,14 @@ import androidx.navigation.navArgument
 import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.ui.screens.AccountFormScreen
 import com.mobilemoney.ui.screens.CategoryFormScreen
+import com.mobilemoney.ui.screens.LoginScreen
 import com.mobilemoney.ui.screens.SettingsScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
 import java.util.UUID
 
 sealed class Screen(val route: String) {
+    data object Login : Screen("login")
     data object TransactionList : Screen("transactions")
     data object CreateTransaction : Screen("create")
     data object EditTransaction : Screen("edit/{transactionId}") {
@@ -89,6 +91,17 @@ fun MobileMoneyNavigation() {
             CircularProgressIndicator()
             Text("Инициализация базы данных...", modifier = Modifier.padding(top = 16.dp))
         }
+        return
+    }
+
+    val isLoggedIn = app.syncRepository.isLoggedIn()
+
+    if (!isLoggedIn) {
+        LoginScreen(
+            onLoginSuccess = {
+                // Перезапустим Composable для обновления состояния
+            }
+        )
         return
     }
 
@@ -147,6 +160,16 @@ fun MobileMoneyNavigation() {
             startDestination = Screen.TransactionList.route,
             modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
         ) {
+                composable(Screen.Login.route) {
+                    LoginScreen(
+                        onLoginSuccess = {
+                            navController.navigate(Screen.TransactionList.route) {
+                                popUpTo(Screen.Login.route) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
                 composable(Screen.TransactionList.route) {
                     TransactionListScreen(
                         onAddClick = {

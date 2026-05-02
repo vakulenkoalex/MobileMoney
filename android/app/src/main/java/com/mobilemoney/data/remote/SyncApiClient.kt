@@ -30,23 +30,60 @@ class SyncApiClient(private val context: Context) {
     }
 
     fun register(deviceName: String): Result<String> {
+        return Result.failure(Exception("Use login() instead"))
+    }
+
+    fun login(login: String, password: String): Result<String> {
         return try {
             val deviceId = getDeviceId()
-            val url = URL("$baseUrl/api/v1/sync/register?deviceId=$deviceId&deviceName=$deviceName")
+            val deviceName = android.os.Build.MODEL
+
+            val url = URL("$baseUrl/api/v1/auth/login")
             val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
             conn.connectTimeout = 30000
             conn.readTimeout = 30000
+
+            val body = """{"login":"$login","password":"$password","device_id":"$deviceId","device_name":"$deviceName"}"""
+            conn.outputStream.use { it.write(body.toByteArray()) }
 
             val responseCode = conn.responseCode
             val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
 
             if (responseCode == 200) {
-                val data = json.decodeFromString<RegisterResponse>(response)
-                deviceToken = data.token
-                Result.success(data.token)
+                val loginResponse = json.decodeFromString<LoginResponse>(response)
+                deviceToken = loginResponse.token
+                Result.success(loginResponse.token)
             } else {
-                Result.failure(Exception("Registration failed: $responseCode"))
+                val error = try {
+                    json.decodeFromString<ErrorResponse>(response).error
+                } catch (e: Exception) {
+                    "Login failed: $responseCode"
+                }
+                Result.failure(Exception(error))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun verifyToken(): Result<Unit> {
+        return try {
+            val token = deviceToken ?: return Result.failure(Exception("Not logged in"))
+            val url = URL("$baseUrl/api/v1/auth/verify")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = "GET"
+            conn.setRequestProperty("Authorization", token)
+            conn.connectTimeout = 30000
+            conn.readTimeout = 30000
+
+            val responseCode = conn.responseCode
+            if (responseCode == 200) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Token invalid"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -138,6 +175,17 @@ class SyncApiClient(private val context: Context) {
 data class RegisterResponse(
     val token: String,
     val deviceId: String
+)
+
+@Serializable
+data class LoginResponse(
+    val token: String,
+    val login: String
+)
+
+@Serializable
+data class ErrorResponse(
+    val error: String
 )
 
 @Serializable

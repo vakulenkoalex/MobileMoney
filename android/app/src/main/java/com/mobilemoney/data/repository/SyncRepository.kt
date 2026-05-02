@@ -47,6 +47,21 @@ class SyncRepository(context: Context) {
         get() = prefs.getBoolean("is_registered", false)
         set(value) = prefs.edit().putBoolean("is_registered", value).apply()
 
+    var userLogin: String?
+        get() = prefs.getString("user_login", null)
+        set(value) = prefs.edit().putString("user_login", value).apply()
+
+    suspend fun login(login: String, password: String): Result<String> {
+        apiClient.setBaseUrl(serverUrl)
+        val result = apiClient.login(login, password)
+        result.onSuccess { token ->
+            deviceToken = token
+            userLogin = login
+            isRegistered = true
+        }
+        return result
+    }
+
     suspend fun getUnsyncedAccounts(): List<AccountDto> {
         return accountDao.getUnsyncedAccounts().map { entity ->
             AccountDto(
@@ -252,6 +267,15 @@ class SyncRepository(context: Context) {
     suspend fun markTransactionSynced(id: String) {
         transactionDao.markSynced(id, System.currentTimeMillis())
     }
+
+    fun logout() {
+        deviceToken = null
+        userLogin = null
+        isRegistered = false
+        lastSyncTimestamp = 0L
+    }
+
+    fun isLoggedIn(): Boolean = deviceToken != null && isRegistered
 }
 
 data class SyncState(
