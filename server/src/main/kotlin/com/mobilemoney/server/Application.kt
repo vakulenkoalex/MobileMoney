@@ -11,8 +11,10 @@ import io.ktor.server.routing.*
 fun main() {
     val nettyPort = (System.getenv("NETTY_PORT")).toInt()
 
-    Database.init()
-    println("Database initialized: sync.db")
+    val dbInitialized = Database.init()
+    if (dbInitialized) {
+        println("Database initialized: sync.db")
+    }
 
     embeddedServer(Netty, port = nettyPort) {
         routing {

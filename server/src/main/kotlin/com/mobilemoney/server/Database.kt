@@ -5,17 +5,32 @@ import java.sql.Connection
 object Database {
     private var conn: java.sql.Connection? = null
 
-    fun init() {
+    fun init(): Boolean {
         val dbPath = System.getenv("DB_PATH") ?: "data/sync.db"
+        println("Database path: $dbPath")
+        
         val jdbcUrl = "jdbc:sqlite:$dbPath"
+        println("Connecting to: $jdbcUrl")
+        
         conn = java.sql.DriverManager.getConnection(jdbcUrl)
         conn?.createStatement()?.use { stmt ->
             stmt.execute("PRAGMA journal_mode=WAL")
         }
-        createTables()
+        return createTables()
     }
 
-    private fun createTables() {
+    private fun createTables(): Boolean {
+        val existingTables = mutableListOf<String>()
+        conn?.createStatement()?.use { stmt ->
+            val rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")
+            while (rs.next()) {
+                existingTables.add(rs.getString(1))
+            }
+        }
+        
+        if (existingTables.isNotEmpty()) return false
+        
+        println("Creating tables...")
         conn?.use { c ->
             c.createStatement().use { stmt ->
                 stmt.execute("""
@@ -80,8 +95,16 @@ object Database {
                         deleted_at BIGINT
                     )
                 """.trimIndent())
+                
+                // Check tables
+                val rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table'")
+                println("Tables in database:")
+                while (rs.next()) {
+                    println("  - ${rs.getString(1)}")
+                }
             }
         }
+        return true
     }
 
     fun getConnection(): Connection = conn
