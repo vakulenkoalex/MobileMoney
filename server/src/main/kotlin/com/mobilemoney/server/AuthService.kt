@@ -7,11 +7,16 @@ object AuthService {
     fun login(login: String, password: String, deviceId: String, deviceName: String): Result<String> {
         val user = findUser(login)
         if (user == null) {
+            println("Login failed: user not found: $login")
             return Result.failure(Exception("User not found"))
         }
 
-        val hash = sha256(password + user["salt"])
+        val salt = user["salt"] ?: ""
+        val hash = sha256(password + salt)
+        println("Login attempt: login=$login, inputHash=$hash, storedHash=${user["password_hash"]}, salt=$salt")
+        
         if (hash != user["password_hash"]) {
+            println("Login failed: invalid password for $login")
             return Result.failure(Exception("Invalid password"))
         }
 
