@@ -9,7 +9,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun main() {
-    val nettyPort = (System.getenv("NETTY_PORT")).toInt()
+    val nettyPort = (System.getenv("NETTY_PORT") ?: "6080").toInt()
 
     val dbInitialized = Database.init()
     if (dbInitialized) {
