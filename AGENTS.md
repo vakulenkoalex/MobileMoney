@@ -11,7 +11,7 @@
 
 ### Server
 ```powershell
-cd server; gradle run
+.\buildServer.bat
 ```
 - Serves on `http://localhost:6080`
 
