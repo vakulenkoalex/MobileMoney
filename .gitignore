@@ -5,6 +5,6 @@ local.properties
 build.bat
 deploymentTargetSelector.xml
 */gradle/gradle-daemon-jvm.properties
-server/data/sync.db
+server/data/
 misc.xml
 gradle.xml
