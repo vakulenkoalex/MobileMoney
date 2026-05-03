@@ -42,37 +42,12 @@ buildServer.bat
 
 ## 4. Проверка
 
-В браузере:
+В браузере (базовая проверка):
 ```
-http://localhost:8080/api/v1/sync/register?deviceId=test&deviceName=test
+http://localhost:6080/
 ```
 
 Должно вернуть:
 ```json
-{"token": "...", "deviceId": "test"}
-```
-
-## Если ошибка "port 8080 already used"
-
-```powershell
-# Найти процесс на порту 8080
-netstat -ano | findstr :8080
-
-# Убить процесс
-taskkill /PID <номер> /F
-```
-
-## Если ошибка "database does not exist"
-
-```powershell
-psql -U postgres
-CREATE DATABASE mobilemoney;
-\q
-```
-
-## Если ошибка "connection refused"
-
-Проверь PostgreSQL запущен:
-```powershell
-pg_isready
+{"status":"ok","database":true}
 ```

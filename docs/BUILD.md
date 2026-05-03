@@ -11,8 +11,8 @@
 ```
 
 ## APK
-- Debug: `app/build/outputs/apk/debug/app-debug.apk`
-- Release: `app/build/outputs/apk/release/app-release.apk`
+- Debug: `android/app/build/outputs/apk/debug/app-debug.apk`
+- Release: `android/app/build/outputs/apk/release/app-release.apk`
 
 ## minSDK
 Проект использует minSDK 34 (Android 14). Старые версии Android не поддерживаются.

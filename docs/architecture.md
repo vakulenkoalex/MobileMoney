@@ -1,15 +1,23 @@
 # Архитектура приложения "Учет личных денег"
 
-## 1. Общая архитектура: Clean Architecture + MVVM
+## 1. Общая архитектура: Clean Architecture + MVVM (Java)
 
 ```
-app/
-├── presentation/     # UI слой (Jetpack Compose + ViewModel)
-├── domain/           # Бизнес-логика (UseCases, Entities, Repository Interfaces)
-├── data/             # Data слой (Repository Impl, Remote/Local DataSources)
-├── di/               # Dependency Injection (Hilt)
-├── core/             # Утилиты, константы, расширения
-└── security/         # Безопасность (шифрование, биометрия)
+android/app/src/main/java/com/mobilemoney/
+├── data/             # Data слой (Repository, Remote/Local DataSources, Config)
+│   ├── remote/       # SyncApiClient
+│   ├── repository/   # DatabaseRepository, SyncRepository, BackupRepository
+│   ├── local/        # Room Entities, DAOs, AppDatabase
+│   ├── config/       # CategoryIcons, AccountIcons, Currencies
+│   └── model/        # Models
+├── viewmodel/        # ViewModels (Login, Account, Category, Transaction, Settings)
+├── ui/               # UI слой (Jetpack Compose)
+│   ├── screens/      # Compose UI (Login, AccountList, TransactionForm, etc.)
+│   ├── navigation/   # Navigation
+│   ├── theme/        # Theme, Typography
+│   └── utils/        # FormatUtils
+├── worker/           # WorkManager (SyncWorker)
+└── MobileMoneyApp.kt # Application class
 ```
 
 ---
@@ -34,14 +42,15 @@ data class User(
 data class Account(
     val id: UUID,
     val name: String,
-    val typeId: UUID?,
+    val typeId: String?,          // Тип счёта: cash, card, account (строка, не enum)
     val currencyCode: String,
     val icon: String?,
-    val isDefault: Boolean = false, // использовать по умолчанию для новых операций
+    val isDefault: Boolean = false,
     val isArchived: Boolean = false,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val deletedAt: Instant? = null
+    val createdAt: Long,          // timestamp (millis)
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null   // Время последней синхронизации
 )
 
 // Категория
@@ -51,9 +60,10 @@ data class Category(
     val isIncome: Boolean, // true=приход, false=расход
     val icon: String?,
     val parentId: UUID? = null,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val deletedAt: Instant? = null
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null
 )
 
 // Тег (для группировки)
@@ -71,16 +81,17 @@ data class Transaction(
     val id: UUID,
     val accountId: UUID,
     val categoryId: UUID? = null,
-    val amount: BigDecimal,
-    val date: Instant,
+    val amount: Double,       // BigDecimal в Kotlin, double в Java Entity
+    val date: Long,            // timestamp (millis)
     val comment: String?,
     val source: TransactionSource = TransactionSource.MANUAL, // MANUAL, SMS, PUSH
-    val sourceData: String? = null, // Необработанные данные от источника
-    val creatorId: UUID,
-    val relatedTransactionId: UUID? = null, // Для переводов между счетами
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val deletedAt: Instant? = null
+    val sourceData: String? = null,
+    val creatorId: UUID?,
+    val relatedTransactionId: UUID? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null
 )
 
 // Валюта
@@ -88,8 +99,8 @@ data class Currency(
     val code: String, // RUB, USD, EUR (PK)
     val name: String,
     val symbol: String,
-    val updatedAt: Instant,
-    val deletedAt: Instant? = null
+    val updatedAt: Long,
+    val deletedAt: Long? = null
 )
 
 // Тип счета
@@ -625,24 +636,21 @@ class SyncWorker(
 | Компонент | Технология | Версия |
 |-----------|------------|--------|
 | Language | Kotlin | 2.3.21 |
+| Compile SDK | API 37 | |
+| Target/Min SDK | API 34 (Android 14) | |
 | Gradle | | 9.4.1 |
 | AGP | Android Gradle Plugin | 9.2.0 |
-| Min SDK | API 34 (Android 14) | |
 | UI | Jetpack Compose + Material 3 | BOM 2024.02.00 |
 | Compose Compiler Plugin | Kotlin | 2.3.21 |
 | Lifecycle | | 2.10.0 |
 | Navigation Compose | | 2.9.8 |
-| DI | Hilt | |
-| Networking | Retrofit + OkHttp + Kotlin Serialization | |
-| Local DB | Room + SQLCipher (или androidx.security:security-crypto) | |
-| Async | Kotlin Coroutines + Flow | |
-| Charts | Vico | |
-| Auth | Firebase Auth | |
-| Push | Firebase Cloud Messaging | |
-| Background | WorkManager | |
-| Security | BiometricPrompt, EncryptedSharedPreferences | |
+| Networking | Ktor client | 3.0.2 |
+| Serialization | Kotlin Serialization | 1.7.3 |
+| Local DB | Room | 2.8.4 |
+| Async | Kotlin Coroutines + Flow | 1.9.0 |
+| Background | WorkManager | 2.10.0 |
+| Security | EncryptedSharedPreferences, BiometricPrompt | |
 | Pagination | Paging 3 | |
-| Testing | JUnit, MockK, Turbine | |
 
 ---
 
@@ -656,37 +664,15 @@ class SyncWorker(
 ## 10. API Endpoints (Backend)
 
 ```
-POST   /api/v1/auth/login
-POST   /api/v1/auth/register
-POST   /api/v1/auth/refresh
+POST   /api/v1/auth/login           # Логин: {login, password, device_id, device_name}
+GET    /api/v1/auth/verify          # Проверка токена в заголовке Authorization
 
-GET    /api/v1/user
-PUT    /api/v1/user
-
-GET    /api/v1/wallets
-POST   /api/v1/wallets
-PUT    /api/v1/wallets/{id}
-DELETE /api/v1/wallets/{id}
-
-GET    /api/v1/categories
-POST   /api/v1/categories
-PUT    /api/v1/categories/{id}
-DELETE /api/v1/categories/{id}
-
-GET    /api/v1/transactions
-POST   /api/v1/transactions
-PUT    /api/v1/transactions/{id}
-DELETE /api/v1/transactions/{id}
-
-GET    /api/v1/tags
-POST   /api/v1/tags
-DELETE /api/v1/tags/{id}
-
-GET    /api/v1/exchange-rates
-
-GET    /api/v1/sync/changes?since={timestamp}
-POST   /api/v1/sync/push
+POST   /api/v1/sync/push             # Отправка изменений (accounts, categories, transactions)
+GET    /api/v1/sync/changes?since=  # Получение изменений с timestamp
+GET    /api/v1/sync/pull             # Полный дамп всех данных
 ```
+
+**Все операции выполняются через sync endpoints (offline-first).**
 
 ---
 
