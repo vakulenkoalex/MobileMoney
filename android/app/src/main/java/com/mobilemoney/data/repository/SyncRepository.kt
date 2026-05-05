@@ -1,7 +1,8 @@
 package com.mobilemoney.data.repository
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.mobilemoney.BuildConfig
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AccountEntity
@@ -15,7 +16,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class SyncRepository(context: Context) {
-    private val prefs = context.getSharedPreferences("sync_prefs", Context.MODE_PRIVATE)
+    private val masterKey = MasterKey.Builder(context)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
+
+    private val prefs = EncryptedSharedPreferences.create(
+        context,
+        "sync_prefs",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
     private val database = AppDatabase.getDatabase(context)
     private val accountDao: AccountDao = database.accountDao()
     private val categoryDao: CategoryDao = database.categoryDao()

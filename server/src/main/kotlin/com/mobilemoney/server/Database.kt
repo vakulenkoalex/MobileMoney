@@ -109,8 +109,12 @@ object Database {
         return true
     }
 
-    fun getConnection(): Connection = conn
-        ?: throw IllegalStateException("Database not initialized")
+    fun getConnection(): Connection {
+        if (conn == null || conn!!.isClosed) {
+            init()
+        }
+        return conn!!
+    }
 
     fun isConnected(): Boolean = conn != null
 }

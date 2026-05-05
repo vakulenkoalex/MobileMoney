@@ -7,23 +7,19 @@ object AuthService {
     fun login(login: String, password: String, deviceId: String, deviceName: String): Result<String> {
         val user = findUser(login)
         if (user == null) {
-            println("Login failed: user not found: $login")
             return Result.failure(Exception("User not found"))
         }
 
         val salt = user["salt"] ?: ""
         val hash = sha256(password + salt)
-        println("Login attempt: login=$login, inputHash=$hash, storedHash=${user["password_hash"]}, salt=$salt")
-        
+
         if (hash != user["password_hash"]) {
-            println("Login failed: invalid password for $login")
             return Result.failure(Exception("Invalid password"))
         }
 
         val token = UUID.randomUUID().toString()
         insertDevice(deviceId, deviceName, token, login)
 
-        println("Login success: $login, token: $token")
         return Result.success(token)
     }
 
@@ -99,7 +95,7 @@ fun insertDevice(deviceId: String, deviceName: String, token: String, login: Str
     val now = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement(
-            "INSERT INTO devices (device_id, device_name, token, login, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)"
+            "INSERT OR REPLACE INTO devices (device_id, device_name, token, login, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)"
         ).use { stmt ->
             stmt.setString(1, deviceId)
             stmt.setString(2, deviceName)

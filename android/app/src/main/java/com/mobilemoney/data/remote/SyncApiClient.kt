@@ -35,39 +35,42 @@ class SyncApiClient(private val context: Context) {
         return Result.failure(Exception("Use login() instead"))
     }
 
-    fun login(login: String, password: String): Result<String> {
-        return try {
-            val deviceId = getDeviceId()
-            val deviceName = android.os.Build.MODEL
+    suspend fun login(login: String, password: String): Result<String> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val deviceId = getDeviceId()
+                val deviceName = android.os.Build.MODEL
 
-            val url = URL("$baseUrl/api/v1/auth/login")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.doOutput = true
-            conn.connectTimeout = 30000
-            conn.readTimeout = 30000
+                val url = URL("$baseUrl/api/v1/auth/login")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                conn.connectTimeout = 30000
+                conn.readTimeout = 30000
 
-            val body = """{"login":"$login","password":"$password","device_id":"$deviceId","device_name":"$deviceName"}"""
-            conn.outputStream.use { it.write(body.toByteArray()) }
+                val body = """{"login":"$login","password":"$password","device_id":"$deviceId","device_name":"$deviceName"}"""
+                conn.outputStream.use { it.write(body.toByteArray()) }
 
-            val responseCode = conn.responseCode
-            val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                val responseCode = conn.responseCode
+                val inputStream = if (responseCode in 200..299) conn.inputStream else conn.errorStream
+                val response = BufferedReader(InputStreamReader(inputStream)).use { it.readText() }
 
-            if (responseCode == 200) {
-                val loginResponse = json.decodeFromString<LoginResponse>(response)
-                deviceToken = loginResponse.token
-                Result.success(loginResponse.token)
-            } else {
-                val error = try {
-                    json.decodeFromString<ErrorResponse>(response).error
-                } catch (e: Exception) {
-                    "Login failed: $responseCode"
+                if (responseCode == 200) {
+                    val loginResponse = json.decodeFromString<LoginResponse>(response)
+                    deviceToken = loginResponse.token
+                    Result.success(loginResponse.token)
+                } else {
+                    val error = try {
+                        json.decodeFromString<ErrorResponse>(response).error
+                    } catch (e: Exception) {
+                        "Login failed: $responseCode"
+                    }
+                    Result.failure(Exception(error))
                 }
-                Result.failure(Exception(error))
+            } catch (e: Exception) {
+                Result.failure(e)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 

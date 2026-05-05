@@ -94,12 +94,12 @@ fun MobileMoneyNavigation() {
         return
     }
 
-    val isLoggedIn = app.syncRepository.isLoggedIn()
+    var loginState by remember { mutableStateOf(app.syncRepository.isLoggedIn()) }
 
-    if (!isLoggedIn) {
+    if (!loginState) {
         LoginScreen(
             onLoginSuccess = {
-                // Перезапустим Composable для обновления состояния
+                loginState = true
             }
         )
         return

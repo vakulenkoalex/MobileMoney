@@ -28,7 +28,7 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as MobileMoneyApp
-    val viewModel: LoginViewModel = viewModel()
+    val viewModel: LoginViewModel = remember { LoginViewModel() }
 
     var login by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

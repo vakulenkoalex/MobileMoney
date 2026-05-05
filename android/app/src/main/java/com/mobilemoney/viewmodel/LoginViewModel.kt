@@ -60,7 +60,6 @@ class LoginViewModel : ViewModel() {
                 _uiState.value.copy(serverStatus = ServerStatus.AVAILABLE)
             } else {
                 val error = result.exceptionOrNull()
-                android.util.Log.e("LoginVM", "Ping failed: ${error?.message}", error)
                 _uiState.value.copy(serverStatus = ServerStatus.UNAVAILABLE, error = error?.message)
             }
         }
