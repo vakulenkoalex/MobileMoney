@@ -19,7 +19,7 @@
 
 - **Monorepo** with two independent Gradle projects: `android/` and `server/`
 - **Android**: Kotlin/Jetpack Compose, Clean Architecture (presentation/domain/data), MVVM, minSDK 34
-- **Server**: Kotlin/JVM + Ktor, PostgreSQL (port 5432, DB `mobilemoney`), HikariCP
+- **Server**: Kotlin/JVM + Ktor, SQLite (`data/sync.db`)
 
 ### Key domain rules
 - Balance is **computed** from transactions: `SUM(income) - SUM(expense)` — not stored in a column
@@ -52,7 +52,7 @@
 | Language | Kotlin 2.0.21 |
 | Framework | Ktor 3.0.2 |
 | Server | Netty |
-| DB | PostgreSQL + HikariCP |
+| DB | SQLite |
 
 ## Project-Specific Conventions
 
@@ -61,7 +61,7 @@
 - `READ_SMS` is a restricted permission on Android 14+; Google Play may reject apps using it
 
 # Server health check
-Invoke-RestMethod http://localhost:8080/api/v1/sync/register?deviceId=test&deviceName=test
+Invoke-RestMethod http://localhost:6080/api/v1/sync/register?deviceId=test&deviceName=test
 ```
 
 ## References
