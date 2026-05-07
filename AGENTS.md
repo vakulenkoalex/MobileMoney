@@ -60,9 +60,28 @@
 - Icons: Material Design Icons names (e.g., `food`, `account-balance-wallet`)
 - `READ_SMS` is a restricted permission on Android 14+; Google Play may reject apps using it
 
+## Known Issues & Solutions
+
+### NetworkOnMainThreadException
+
+**Проблема:** Сетевой запрос (HTTP) на главном потоке (UI thread) — запрещено в Android 3.0+.
+
+**Симптом:** `android.os.NetworkOnMainThreadException` в stack trace.
+
+**Решение:** Все сетевые методы в `SyncApiClient` должны использовать `withContext(Dispatchers.IO)`:
+
+```kotlin
+suspend fun verifyToken(): Result<Unit> {
+    return withContext(Dispatchers.IO) {
+        // сетевой код
+    }
+}
+```
+
+**Важно:** Функция должна быть `suspend` — иначе `withContext` не скомпилируется.
+
 # Server health check
 Invoke-RestMethod http://localhost:6080/
-```
 
 ## References
 
