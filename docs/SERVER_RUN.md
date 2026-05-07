@@ -4,7 +4,7 @@
 
 ```powershell
 cd D:\Git\MobileMoney\server
-buildServer.bat
+buildServer.bat run
 ```
 
 Сервер создаст базу данных SQLite при первом запуске: `data/sync.db`
