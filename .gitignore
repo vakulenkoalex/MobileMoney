@@ -1,6 +1,6 @@
 .gradle/
 build/
-.idea/caches/
+*/.idea/caches/
 local.properties
 build.bat
 deploymentTargetSelector.xml
