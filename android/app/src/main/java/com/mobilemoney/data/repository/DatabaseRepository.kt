@@ -17,6 +17,7 @@ import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.AccountType
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.data.model.TransactionUi
+import com.mobilemoney.data.config.DefaultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -154,48 +155,9 @@ class DatabaseRepository(context: Context) {
     }
 
     suspend fun initializeDefaultData() {
-        initializeCurrencies()
-        initializeCategories()
-        initializeAccounts()
-    }
-
-    private suspend fun initializeAccounts() {
-        val defaultAccounts = listOf(
-            AccountEntity(
-                id = UUID.randomUUID().toString(),
-                name = "Наличные",
-                typeId = AccountType.CASH.id,
-                currencyCode = "RUB",
-                icon = "wallet",
-                isDefault = true,
-                archived = false,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
-            )
-        )
-        accountDao.insertAll(defaultAccounts)
-    }
-
-    private suspend fun initializeCurrencies() {
-        val defaultCurrencies = listOf(
-            CurrencyEntity("RUB", "Российский рубль", "₽", System.currentTimeMillis()),
-            CurrencyEntity("USD", "Доллар США", "$", System.currentTimeMillis()),
-            CurrencyEntity("EUR", "Евро", "€", System.currentTimeMillis())
-        )
-        currencyDao.insertAll(defaultCurrencies)
-    }
-
-    private suspend fun initializeCategories() {
-        val defaultCategories = listOf(
-            CategoryEntity(UUID.randomUUID().toString(), "Кафе и рестораны", false, "restaurant", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Развлечения", false, "movie", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Здоровье", false, "local_hospital", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Зарплата", true, "work", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Подарок", true, "card_giftcard", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Корректировка", false, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis()),
-            CategoryEntity(UUID.randomUUID().toString(), "Корректировка", true, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis())
-        )
-        categoryDao.insertAll(defaultCategories)
+        currencyDao.insertAll(DefaultData.currencies)
+        categoryDao.insertAll(DefaultData.categories)
+        accountDao.insertAll(DefaultData.accounts)
     }
 
     suspend fun permanentlyDeleteAll() {
