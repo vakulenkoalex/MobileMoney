@@ -661,18 +661,9 @@ class SyncWorker(
 Баланс кошелька вычисляется из транзакций:
   SUM(INCOME) - SUM(EXPENSE) по wallet_id
 
-## 10. API Endpoints (Backend)
+## 10. API Endpoints
 
-```
-POST   /api/v1/auth/login           # Логин: {login, password, device_id, device_name}
-GET    /api/v1/auth/verify          # Проверка токена в заголовке Authorization
-
-POST   /api/v1/sync/push             # Отправка изменений (accounts, categories, transactions)
-GET    /api/v1/sync/changes?since=  # Получение изменений с timestamp
-GET    /api/v1/sync/pull             # Полный дамп всех данных
-```
-
-**Все операции выполняются через sync endpoints (offline-first).**
+См. [api_scenarios.md](api_scenarios.md)
 
 ---
 
