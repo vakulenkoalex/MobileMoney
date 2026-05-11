@@ -4,18 +4,23 @@ import java.sql.Connection
 
 object Database {
     private var conn: java.sql.Connection? = null
+    private var initialized = false
+    private var jdbcUrl: String = ""
 
     fun init(): Boolean {
+        if (initialized) return true
+
         val dbPath = System.getenv("DB_PATH") ?: "data/sync.db"
         println("Database path: $dbPath")
-        
-        val jdbcUrl = "jdbc:sqlite:$dbPath"
+
+        jdbcUrl = "jdbc:sqlite:$dbPath"
         println("Connecting to: $jdbcUrl")
-        
+
         conn = java.sql.DriverManager.getConnection(jdbcUrl)
         conn?.createStatement()?.use { stmt ->
             stmt.execute("PRAGMA journal_mode=WAL")
         }
+        initialized = true
         return createTables()
     }
 
@@ -111,7 +116,8 @@ object Database {
 
     fun getConnection(): Connection {
         if (conn == null || conn!!.isClosed) {
-            init()
+            println("Reconnecting to database...")
+            conn = java.sql.DriverManager.getConnection(jdbcUrl)
         }
         return conn!!
     }

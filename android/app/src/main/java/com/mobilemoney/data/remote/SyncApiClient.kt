@@ -2,6 +2,7 @@ package com.mobilemoney.data.remote
 
 import android.content.Context
 import android.provider.Settings
+import android.util.Log
 import com.mobilemoney.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,10 +30,6 @@ class SyncApiClient(private val context: Context) {
     fun getDeviceId(): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
             ?: UUID.randomUUID().toString()
-    }
-
-    fun register(deviceName: String): Result<String> {
-        return Result.failure(Exception("Use login() instead"))
     }
 
     suspend fun login(login: String, password: String): Result<String> {
@@ -69,103 +66,93 @@ class SyncApiClient(private val context: Context) {
                     Result.failure(Exception(error))
                 }
             } catch (e: Exception) {
-                Result.failure(e)
+                Result.failure(Exception("500: ${e.message}"))
             }
         }
     }
 
-    fun verifyToken(): Result<Unit> {
-        return try {
-            val token = deviceToken ?: return Result.failure(Exception("Not logged in"))
-            val url = URL("$baseUrl/api/v1/auth/verify")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.setRequestProperty("Authorization", token)
-            conn.connectTimeout = 30000
-            conn.readTimeout = 30000
+    suspend fun getChanges(since: Long): Result<SyncChangesResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = deviceToken ?: return@withContext Result.failure(Exception("Not registered"))
+                val url = URL("$baseUrl/api/v1/sync/changes?since=$since")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Authorization", token)
+                conn.connectTimeout = 30000
+                conn.readTimeout = 30000
 
-            val responseCode = conn.responseCode
-            if (responseCode == 200) {
-                Result.success(Unit)
-            } else {
-                Result.failure(Exception("Token invalid"))
+                val responseCode = conn.responseCode
+                val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+
+                if (responseCode == 200) {
+                    Result.success(json.decodeFromString<SyncChangesResponse>(response))
+                } else {
+                    Result.failure(Exception("$responseCode: Failed to get changes"))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("500: ${e.message}"))
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    fun getChanges(since: Long): Result<SyncChangesResponse> {
-        return try {
-            val token = deviceToken ?: return Result.failure(Exception("Not registered"))
-            val url = URL("$baseUrl/api/v1/sync/changes?since=$since")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.setRequestProperty("Authorization", token)
-            conn.connectTimeout = 30000
-            conn.readTimeout = 30000
+    suspend fun pushChanges(request: SyncPushRequest): Result<SyncPushResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                Log.d("SyncApiClient", "pushChanges START - baseUrl: $baseUrl, hasToken: ${deviceToken != null}")
 
-            val responseCode = conn.responseCode
-            val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                val token = deviceToken ?: return@withContext Result.failure(Exception("Not registered"))
+                val url = URL("$baseUrl/api/v1/sync/push")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Authorization", token)
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                conn.connectTimeout = 30000
+                conn.readTimeout = 30000
 
-            if (responseCode == 200) {
-                Result.success(json.decodeFromString<SyncChangesResponse>(response))
-            } else {
-                Result.failure(Exception("Failed to get changes: $responseCode"))
+                val body = json.encodeToString(SyncPushRequest.serializer(), request)
+                conn.outputStream.use { it.write(body.toByteArray()) }
+
+                val responseCode = conn.responseCode
+                Log.d("SyncApiClient", "pushChanges responseCode: $responseCode")
+                val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
+                Log.d("SyncApiClient", "pushChanges response: $response")
+
+                if (responseCode == 200) {
+                    Result.success(json.decodeFromString<SyncPushResponse>(response))
+                } else {
+                    Result.failure(Exception("$responseCode: Failed to push changes"))
+                }
+            } catch (e: Exception) {
+                Log.e("SyncApiClient", "pushChanges exception: ${e.message}", e)
+                Result.failure(Exception("500: ${e.message}"))
             }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    fun pushChanges(request: SyncPushRequest): Result<SyncPushResponse> {
-        return try {
-            val token = deviceToken ?: return Result.failure(Exception("Not registered"))
-            val url = URL("$baseUrl/api/v1/sync/push")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Authorization", token)
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.doOutput = true
-            conn.connectTimeout = 30000
-            conn.readTimeout = 30000
+    suspend fun pullAll(): Result<SyncPullResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = deviceToken ?: return@withContext Result.failure(Exception("Not registered"))
+                val url = URL("$baseUrl/api/v1/sync/pull")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("Authorization", token)
+                conn.connectTimeout = 30000
+                conn.readTimeout = 30000
 
-            val body = json.encodeToString(SyncPushRequest.serializer(), request)
-            conn.outputStream.use { it.write(body.toByteArray()) }
+                val responseCode = conn.responseCode
+                val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
 
-            val responseCode = conn.responseCode
-            val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-
-            if (responseCode == 200) {
-                Result.success(json.decodeFromString<SyncPushResponse>(response))
-            } else {
-                Result.failure(Exception("Failed to push changes: $responseCode"))
+                if (responseCode == 200) {
+                    Result.success(json.decodeFromString<SyncPullResponse>(response))
+                } else {
+                    Result.failure(Exception("$responseCode: Failed to pull"))
+                }
+            } catch (e: Exception) {
+                Result.failure(Exception("500: ${e.message}"))
             }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    fun pullAll(): Result<SyncPullResponse> {
-        return try {
-            val token = deviceToken ?: return Result.failure(Exception("Not registered"))
-            val url = URL("$baseUrl/api/v1/sync/pull")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.setRequestProperty("Authorization", token)
-            conn.connectTimeout = 30000
-            conn.readTimeout = 30000
-
-            val responseCode = conn.responseCode
-            val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-
-            if (responseCode == 200) {
-                Result.success(json.decodeFromString<SyncPullResponse>(response))
-            } else {
-                Result.failure(Exception("Failed to pull: $responseCode"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
@@ -190,21 +177,15 @@ class SyncApiClient(private val context: Context) {
                 if (responseCode == 200) {
                     Result.success(Unit)
                 } else {
-                    Result.failure(Exception("Server unreachable: $responseCode"))
+                    Result.failure(Exception("$responseCode: Server unreachable"))
                 }
             } catch (e: Exception) {
                 android.util.Log.e("SyncApiClient", "Ping exception: ${e.message}", e)
-                Result.failure(e)
+                Result.failure(Exception("500: ${e.message}"))
             }
         }
     }
 }
-
-@Serializable
-data class RegisterResponse(
-    val token: String,
-    val deviceId: String
-)
 
 @Serializable
 data class LoginResponse(
@@ -251,37 +232,37 @@ data class SyncPushResponse(
 data class AccountDto(
     val id: String,
     val name: String,
-    val typeId: String,
-    val currencyCode: String?,
+    @SerialName("type_id") val typeId: String,
+    @SerialName("currency_code") val currencyCode: String?,
     val icon: String,
-    val isDefault: Boolean = false,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
+    @SerialName("is_default") val isDefault: Boolean = false,
+    @SerialName("created_at") val createdAt: Long,
+    @SerialName("updated_at") val updatedAt: Long,
+    @SerialName("deleted_at") val deletedAt: Long? = null
 )
 
 @Serializable
 data class CategoryDto(
     val id: String,
     val name: String,
-    val isIncome: Boolean,
+    @SerialName("is_income") val isIncome: Boolean,
     val icon: String,
-    val parentId: String? = null,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
+    @SerialName("parent_id") val parentId: String? = null,
+    @SerialName("created_at") val createdAt: Long,
+    @SerialName("updated_at") val updatedAt: Long,
+    @SerialName("deleted_at") val deletedAt: Long? = null
 )
 
 @Serializable
 data class TransactionDto(
     val id: String,
-    val accountId: String,
-    val categoryId: String?,
+    @SerialName("account_id") val accountId: String,
+    @SerialName("category_id") val categoryId: String?,
     val amount: Double,
     val date: Long,
     val comment: String,
-    val creatorId: String? = null,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
+    @SerialName("creator_id") val creatorId: String? = null,
+    @SerialName("created_at") val createdAt: Long,
+    @SerialName("updated_at") val updatedAt: Long,
+    @SerialName("deleted_at") val deletedAt: Long? = null
 )

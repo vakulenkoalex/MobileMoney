@@ -23,7 +23,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val backupRepository = BackupRepository(application)
     private val databaseRepository = DatabaseRepository(application)
-    private val syncRepository = SyncRepository(application)
+    private val syncRepository = SyncRepository.getInstance(application)
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState

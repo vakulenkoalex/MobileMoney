@@ -61,9 +61,9 @@ class MobileMoneyApp : Application() {
     }
 
     private fun enableSync() {
-        if (prefs.getBoolean("sync_enabled", true)) {
-            SyncWorker.enqueuePeriodicSync(this)
-        }
+        // if (prefs.getBoolean("sync_enabled", true)) {
+        //     SyncWorker.enqueuePeriodicSync(this)
+        // }
     }
 
     fun isFirstRun(): Boolean {

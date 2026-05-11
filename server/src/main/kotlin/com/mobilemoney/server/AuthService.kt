@@ -28,7 +28,7 @@ object AuthService {
         if (device == null) {
             return Result.failure(Exception("Invalid token"))
         }
-        if (device["revoked_at"] != null) {
+        if (device["revoked_at"]?.isNotEmpty() == true) {
             return Result.failure(Exception("Token revoked"))
         }
         updateLastSeen(token)
@@ -77,12 +77,17 @@ fun findDeviceByToken(token: String): Map<String, String>? {
             stmt.setString(1, token)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) {
+                    val deviceId = rs.getString("device_id")
+                    val deviceName = rs.getString("device_name")
+                    val login = rs.getString("login")
+                    val revokedAt = rs.getString("revoked_at")
+                    println("Device found: device_id=$deviceId, device_name=$deviceName, login=$login, revoked_at=$revokedAt")
                     return mapOf(
-                        "device_id" to rs.getString("device_id"),
-                        "device_name" to rs.getString("device_name"),
+                        "device_id" to deviceId,
+                        "device_name" to deviceName,
                         "token" to rs.getString("token"),
-                        "login" to rs.getString("login"),
-                        "revoked_at" to (rs.getString("revoked_at") ?: "")
+                        "login" to login,
+                        "revoked_at" to (revokedAt ?: "")
                     )
                 }
             }

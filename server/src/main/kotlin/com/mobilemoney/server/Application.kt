@@ -7,6 +7,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
 
 fun main() {
     val nettyPort = (System.getenv("NETTY_PORT") ?: "6080").toInt()
@@ -46,22 +47,7 @@ fun main() {
                 call.respondText("{\"token\":\"${result.getOrNull()}\",\"login\":\"$login\"}")
             }
 
-            get("/api/v1/auth/verify") {
-                val auth = call.request.headers["Authorization"]
-                if (auth == null) {
-                    call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
-                    return@get
-                }
 
-                val result = AuthService.verify(auth)
-                if (result.isFailure) {
-                    call.respondText("{\"error\":\"${result.exceptionOrNull()?.message}\"}", status = HttpStatusCode.Unauthorized)
-                    return@get
-                }
-
-                val device = result.getOrNull()
-                call.respondText("{\"login\":\"${device?.login}\",\"device_name\":\"${device?.deviceName}\"}")
-            }
 
             post("/api/v1/sync/push") {
                 val auth = call.request.headers["Authorization"]
@@ -77,10 +63,14 @@ fun main() {
                 }
 
                 val body = call.receiveText()
-                val request = parseSyncRequest(body)
-                val response = SyncService.push(request)
-
-                call.respondText("{\"success\":${response.success},\"timestamp\":${response.timestamp},\"synced\":${response.synced}}")
+                try {
+                    val request = kotlinx.serialization.json.Json.decodeFromString<SyncPushRequestDto>(body)
+                    val response = SyncService.push(request)
+                    call.respondText("{\"success\":${response.success},\"timestamp\":${response.timestamp},\"synced\":${response.synced}}")
+                } catch (e: Exception) {
+                    println("ERROR parsing push: ${e.message}")
+                    call.respondText("{\"error\":\"${e.message}\"}", status = HttpStatusCode.BadRequest)
+                }
             }
 
             get("/api/v1/sync/changes") {
@@ -134,13 +124,6 @@ fun parseJson(json: String): Map<String, String> {
         result[key] = value
     }
     return result
-}
-
-fun parseSyncRequest(json: String): SyncRequest {
-    val accounts = extractArray(json, "accounts").map { parseJson(it) }
-    val categories = extractArray(json, "categories").map { parseJson(it) }
-    val transactions = extractArray(json, "transactions").map { parseJson(it) }
-    return SyncRequest(accounts, categories, transactions)
 }
 
 fun extractArray(json: String, key: String): List<String> {

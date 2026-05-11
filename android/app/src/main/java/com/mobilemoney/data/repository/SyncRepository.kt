@@ -14,6 +14,7 @@ import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.remote.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import android.util.Log
 
 class SyncRepository(context: Context) {
     private val masterKey = MasterKey.Builder(context)
@@ -36,6 +37,17 @@ class SyncRepository(context: Context) {
     private val _syncState = MutableStateFlow(SyncState())
     val syncState: StateFlow<SyncState> = _syncState
 
+    companion object {
+        @Volatile
+        private var instance: SyncRepository? = null
+
+        fun getInstance(context: Context): SyncRepository {
+            return instance ?: synchronized(this) {
+                instance ?: SyncRepository(context.applicationContext).also { instance = it }
+            }
+        }
+    }
+
     var serverUrl: String
         get() = prefs.getString("server_url", null) ?: BuildConfig.SERVER_URL
         set(value) = prefs.edit().putString("server_url", value).apply()
@@ -54,10 +66,6 @@ class SyncRepository(context: Context) {
         }
         set(value) = prefs.edit().putString("device_id", value).apply()
 
-    var isRegistered: Boolean
-        get() = prefs.getBoolean("is_registered", false)
-        set(value) = prefs.edit().putBoolean("is_registered", value).apply()
-
     var userLogin: String?
         get() = prefs.getString("user_login", null)
         set(value) = prefs.edit().putString("user_login", value).apply()
@@ -68,7 +76,6 @@ class SyncRepository(context: Context) {
         result.onSuccess { token ->
             deviceToken = token
             userLogin = login
-            isRegistered = true
         }
         return result
     }
@@ -121,49 +128,40 @@ class SyncRepository(context: Context) {
         }
     }
 
-    suspend fun register(): Result<String> {
-        apiClient.setBaseUrl(serverUrl)
-        val result = apiClient.register(android.os.Build.MODEL)
-        result.onSuccess { token ->
-            deviceToken = token
-            isRegistered = true
-        }
-        return result
-    }
-
     suspend fun sync(): Result<Unit> {
-        _syncState.value = _syncState.value.copy(isSyncing = true, error = null)
+        Log.d("SyncRepository", "=== sync() START ===")
+        Log.d("SyncRepository", "deviceToken: ${deviceToken?.take(10)}...")
 
-        if (!isRegistered) {
-            val regResult = register()
-            if (regResult.isFailure) {
-                _syncState.value = _syncState.value.copy(
-                    isSyncing = false,
-                    error = regResult.exceptionOrNull()?.message
-                )
-                return Result.failure(regResult.exceptionOrNull() ?: Exception("Registration failed"))
-            }
-        }
+        _syncState.value = _syncState.value.copy(isSyncing = true, error = null)
 
         apiClient.setBaseUrl(serverUrl)
         deviceToken?.let { apiClient.setToken(it) }
 
-        val pushResult = pushChanges()
-        if (pushResult.isFailure) {
+        if (deviceToken == null) {
+            Log.d("SyncRepository", "NO TOKEN - early exit")
             _syncState.value = _syncState.value.copy(
                 isSyncing = false,
-                error = pushResult.exceptionOrNull()?.message
+                error = "Войдите в аккаунт"
             )
-            return Result.failure(pushResult.exceptionOrNull() ?: Exception("Push failed"))
+            return Result.failure(Exception("Войдите в аккаунт"))
         }
 
-        val pullResult = pullChanges()
-        if (pullResult.isFailure) {
-            _syncState.value = _syncState.value.copy(
-                isSyncing = false,
-                error = pullResult.exceptionOrNull()?.message
-            )
-            return Result.failure(pullResult.exceptionOrNull() ?: Exception("Pull failed"))
+        val pushResult = pushChanges()
+        if (pushResult.isFailure) {
+            val errorMsg = pushResult.exceptionOrNull()?.message ?: ""
+            if (errorMsg.contains("401") || errorMsg.contains("invalid")) {
+                logout()
+                _syncState.value = _syncState.value.copy(
+                    isSyncing = false,
+                    error = "Токен невалиден. Войдите снова."
+                )
+            } else {
+                _syncState.value = _syncState.value.copy(
+                    isSyncing = false,
+                    error = errorMsg
+                )
+            }
+            return Result.failure(pushResult.exceptionOrNull() ?: Exception("Push failed"))
         }
 
         lastSyncTimestamp = System.currentTimeMillis()
@@ -176,16 +174,28 @@ class SyncRepository(context: Context) {
     }
 
     private suspend fun pushChanges(): Result<Int> {
+        val accountDtos = getUnsyncedAccounts()
+        val categoryDtos = getUnsyncedCategories()
+        val transactionDtos = getUnsyncedTransactions()
+
+        Log.d("SyncRepository", "pushChanges: accounts=${accountDtos.size}, categories=${categoryDtos.size}, transactions=${transactionDtos.size}")
+
         val request = SyncPushRequest(
-            accounts = getUnsyncedAccounts(),
-            categories = getUnsyncedCategories(),
-            transactions = getUnsyncedTransactions()
+            accounts = accountDtos,
+            categories = categoryDtos,
+            transactions = transactionDtos
         )
 
         return if (request.accounts.isEmpty() && request.categories.isEmpty() && request.transactions.isEmpty()) {
             Result.success(0)
         } else {
-            apiClient.pushChanges(request).map { it.synced }
+            apiClient.pushChanges(request).map { response ->
+                val syncedAt = response.timestamp
+                accountDtos.forEach { markAccountSynced(it.id, syncedAt) }
+                categoryDtos.forEach { markCategorySynced(it.id, syncedAt) }
+                transactionDtos.forEach { markTransactionSynced(it.id, syncedAt) }
+                response.synced
+            }
         }
     }
 
@@ -267,26 +277,25 @@ class SyncRepository(context: Context) {
         }
     }
 
-    suspend fun markAccountSynced(id: String) {
-        accountDao.markSynced(id, System.currentTimeMillis())
+    suspend fun markAccountSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
+        accountDao.markSynced(id, syncedAt)
     }
 
-    suspend fun markCategorySynced(id: String) {
-        categoryDao.markSynced(id, System.currentTimeMillis())
+    suspend fun markCategorySynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
+        categoryDao.markSynced(id, syncedAt)
     }
 
-    suspend fun markTransactionSynced(id: String) {
-        transactionDao.markSynced(id, System.currentTimeMillis())
+    suspend fun markTransactionSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
+        transactionDao.markSynced(id, syncedAt)
     }
 
     fun logout() {
         deviceToken = null
         userLogin = null
-        isRegistered = false
         lastSyncTimestamp = 0L
     }
 
-    fun isLoggedIn(): Boolean = deviceToken != null && isRegistered
+    fun isLoggedIn(): Boolean = deviceToken != null
 
     suspend fun ping(): Result<Unit> {
         apiClient.setBaseUrl(serverUrl)

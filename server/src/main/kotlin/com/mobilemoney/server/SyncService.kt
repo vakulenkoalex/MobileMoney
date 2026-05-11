@@ -2,7 +2,7 @@ package com.mobilemoney.server
 
 object SyncService {
 
-    fun push(data: SyncRequest): SyncResponse {
+    fun push(data: SyncPushRequestDto): SyncResponse {
         var syncedCount = 0
 
         data.accounts.forEach { account ->
@@ -43,12 +43,6 @@ object SyncService {
     }
 }
 
-data class SyncRequest(
-    val accounts: List<Map<String, String>> = emptyList(),
-    val categories: List<Map<String, String>> = emptyList(),
-    val transactions: List<Map<String, String>> = emptyList()
-)
-
 data class SyncResponse(
     val success: Boolean,
     val timestamp: Long,
@@ -62,68 +56,131 @@ data class SyncChangesResponse(
     val transactions: List<String> = emptyList()
 )
 
-fun upsertAccount(data: Map<String, String>) {
+fun upsertAccount(data: AccountDto) {
+    val incomingUpdatedAt = data.updatedAt
+    val existingUpdatedAt = getAccountUpdatedAt(data.id)
+
+    if (existingUpdatedAt != null && incomingUpdatedAt <= existingUpdatedAt) {
+        return
+    }
+
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
             INSERT OR REPLACE INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
-            stmt.setString(1, data["id"] ?: return)
-            stmt.setString(2, data["name"] ?: "")
-            stmt.setString(3, data["type_id"] ?: "cash")
-            stmt.setString(4, data["currency_code"])
-            stmt.setString(5, data["icon"])
-            stmt.setInt(6, (data["is_default"] ?: "false").toInt())
-            stmt.setInt(7, (data["archived"] ?: "false").toInt())
-            stmt.setLong(8, (data["created_at"] ?: "0").toLong())
-            stmt.setLong(9, (data["updated_at"] ?: "0").toLong())
-            stmt.setString(10, data["deleted_at"])
+            stmt.setString(1, data.id)
+            stmt.setString(2, data.name)
+            stmt.setString(3, data.typeId)
+            stmt.setString(4, data.currencyCode)
+            stmt.setString(5, data.icon)
+            stmt.setInt(6, if (data.isDefault) 1 else 0)
+            stmt.setInt(7, if (data.archived) 1 else 0)
+            stmt.setLong(8, data.createdAt)
+            stmt.setLong(9, data.updatedAt)
+            stmt.setString(10, data.deletedAt?.toString())
             stmt.executeUpdate()
         }
     }
 }
 
-fun upsertCategory(data: Map<String, String>) {
+fun getAccountUpdatedAt(id: String): Long? {
+    Database.getConnection().use { conn ->
+        conn.prepareStatement("SELECT updated_at FROM accounts WHERE id = ?").use { stmt ->
+            stmt.setString(1, id)
+            stmt.executeQuery().use { rs ->
+                if (rs.next()) {
+                    return rs.getLong("updated_at")
+                }
+            }
+        }
+    }
+    return null
+}
+
+fun upsertCategory(data: CategoryDto) {
+    val incomingUpdatedAt = data.updatedAt
+    val existingUpdatedAt = getCategoryUpdatedAt(data.id)
+
+    if (existingUpdatedAt != null && incomingUpdatedAt <= existingUpdatedAt) {
+        return
+    }
+
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
             INSERT OR REPLACE INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
-            stmt.setString(1, data["id"] ?: return)
-            stmt.setString(2, data["name"] ?: "")
-            stmt.setInt(3, (data["is_income"] ?: "false").toInt())
-            stmt.setString(4, data["icon"])
-            stmt.setString(5, data["parent_id"])
-            stmt.setLong(6, (data["created_at"] ?: "0").toLong())
-            stmt.setLong(7, (data["updated_at"] ?: "0").toLong())
-            stmt.setString(8, data["deleted_at"])
+            stmt.setString(1, data.id)
+            stmt.setString(2, data.name)
+            stmt.setInt(3, if (data.isIncome) 1 else 0)
+            stmt.setString(4, data.icon)
+            stmt.setString(5, data.parentId)
+            stmt.setLong(6, data.createdAt)
+            stmt.setLong(7, data.updatedAt)
+            stmt.setString(8, data.deletedAt?.toString())
             stmt.executeUpdate()
         }
     }
 }
 
-fun upsertTransaction(data: Map<String, String>) {
+fun getCategoryUpdatedAt(id: String): Long? {
+    Database.getConnection().use { conn ->
+        conn.prepareStatement("SELECT updated_at FROM categories WHERE id = ?").use { stmt ->
+            stmt.setString(1, id)
+            stmt.executeQuery().use { rs ->
+                if (rs.next()) {
+                    return rs.getLong("updated_at")
+                }
+            }
+        }
+    }
+    return null
+}
+
+fun upsertTransaction(data: TransactionDto) {
+    val incomingUpdatedAt = data.updatedAt
+    val existingUpdatedAt = getTransactionUpdatedAt(data.id)
+
+    if (existingUpdatedAt != null && incomingUpdatedAt <= existingUpdatedAt) {
+        return
+    }
+
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
             INSERT OR REPLACE INTO transactions (id, account_id, category_id, amount, date, comment, source, source_data, creator_id, related_transaction_id, created_at, updated_at, deleted_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
-            stmt.setString(1, data["id"] ?: return)
-            stmt.setString(2, data["account_id"] ?: return)
-            stmt.setString(3, data["category_id"])
-            stmt.setDouble(4, (data["amount"] ?: "0").toDouble())
-            stmt.setLong(5, (data["date"] ?: "0").toLong())
-            stmt.setString(6, data["comment"])
-            stmt.setString(7, data["source"])
-            stmt.setString(8, data["source_data"])
-            stmt.setString(9, data["creator_id"])
-            stmt.setString(10, data["related_transaction_id"])
-            stmt.setLong(11, (data["created_at"] ?: "0").toLong())
-            stmt.setLong(12, (data["updated_at"] ?: "0").toLong())
-            stmt.setString(13, data["deleted_at"])
+            stmt.setString(1, data.id)
+            stmt.setString(2, data.accountId)
+            stmt.setString(3, data.categoryId)
+            stmt.setDouble(4, data.amount)
+            stmt.setLong(5, data.date)
+            stmt.setString(6, data.comment)
+            stmt.setString(7, data.source)
+            stmt.setString(8, data.sourceData)
+            stmt.setString(9, data.creatorId)
+            stmt.setString(10, data.relatedTransactionId)
+            stmt.setLong(11, data.createdAt)
+            stmt.setLong(12, data.updatedAt)
+            stmt.setString(13, data.deletedAt?.toString())
             stmt.executeUpdate()
         }
     }
+}
+
+fun getTransactionUpdatedAt(id: String): Long? {
+    Database.getConnection().use { conn ->
+        conn.prepareStatement("SELECT updated_at FROM transactions WHERE id = ?").use { stmt ->
+            stmt.setString(1, id)
+            stmt.executeQuery().use { rs ->
+                if (rs.next()) {
+                    return rs.getLong("updated_at")
+                }
+            }
+        }
+    }
+    return null
 }
 
 fun getAccounts(since: Long): List<String> {
