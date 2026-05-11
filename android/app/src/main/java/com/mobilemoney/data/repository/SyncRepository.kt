@@ -5,12 +5,9 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.mobilemoney.BuildConfig
 import com.mobilemoney.data.local.AccountDao
-import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
-import com.mobilemoney.data.local.CategoryEntity
 import com.mobilemoney.data.local.TransactionDao
-import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.remote.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -81,51 +78,15 @@ class SyncRepository(context: Context) {
     }
 
     suspend fun getUnsyncedAccounts(): List<AccountDto> {
-        return accountDao.getUnsyncedAccounts().map { entity ->
-            AccountDto(
-                id = entity.id,
-                name = entity.name,
-                typeId = entity.typeId,
-                currencyCode = entity.currencyCode,
-                icon = entity.icon,
-                isDefault = entity.isDefault,
-                createdAt = entity.createdAt,
-                updatedAt = entity.updatedAt,
-                deletedAt = entity.deletedAt
-            )
-        }
+        return accountDao.getUnsyncedAccounts().map { it.toSyncDto() }
     }
 
     suspend fun getUnsyncedCategories(): List<CategoryDto> {
-        return categoryDao.getUnsyncedCategories().map { entity ->
-            CategoryDto(
-                id = entity.id,
-                name = entity.name,
-                isIncome = entity.isIncome,
-                icon = entity.icon,
-                parentId = entity.parentId,
-                createdAt = entity.createdAt,
-                updatedAt = entity.updatedAt,
-                deletedAt = entity.deletedAt
-            )
-        }
+        return categoryDao.getUnsyncedCategories().map { it.toSyncDto() }
     }
 
     suspend fun getUnsyncedTransactions(): List<TransactionDto> {
-        return transactionDao.getUnsyncedTransactions().map { entity ->
-            TransactionDto(
-                id = entity.id,
-                accountId = entity.accountId,
-                categoryId = entity.categoryId,
-                amount = entity.amount,
-                date = entity.date,
-                comment = entity.comment,
-                creatorId = entity.creatorId,
-                createdAt = entity.createdAt,
-                updatedAt = entity.updatedAt,
-                deletedAt = entity.deletedAt
-            )
-        }
+        return transactionDao.getUnsyncedTransactions().map { it.toSyncDto() }
     }
 
     suspend fun sync(): Result<Unit> {
@@ -219,61 +180,21 @@ class SyncRepository(context: Context) {
     private suspend fun upsertAccount(dto: AccountDto) {
         val existing = accountDao.getAccountById(dto.id)
         if (existing == null || existing.updatedAt < dto.updatedAt) {
-            accountDao.insert(
-                AccountEntity(
-                    id = dto.id,
-                    name = dto.name,
-                    typeId = dto.typeId,
-                    currencyCode = dto.currencyCode,
-                    icon = dto.icon,
-                    isDefault = dto.isDefault,
-                    archived = dto.deletedAt != null,
-                    createdAt = dto.createdAt,
-                    updatedAt = dto.updatedAt,
-                    deletedAt = dto.deletedAt
-                )
-            )
+            accountDao.insert(dto.toEntity())
         }
     }
 
     private suspend fun upsertCategory(dto: CategoryDto) {
         val existing = categoryDao.getCategoryById(dto.id)
         if (existing == null || existing.updatedAt < dto.updatedAt) {
-            categoryDao.insert(
-                CategoryEntity(
-                    id = dto.id,
-                    name = dto.name,
-                    isIncome = dto.isIncome,
-                    icon = dto.icon,
-                    parentId = dto.parentId,
-                    createdAt = dto.createdAt,
-                    updatedAt = dto.updatedAt,
-                    deletedAt = dto.deletedAt
-                )
-            )
+            categoryDao.insert(dto.toEntity())
         }
     }
 
     private suspend fun upsertTransaction(dto: TransactionDto) {
         val existing = transactionDao.getTransactionById(dto.id)
         if (existing == null || existing.updatedAt < dto.updatedAt) {
-            transactionDao.insert(
-                TransactionEntity(
-                    id = dto.id,
-                    accountId = dto.accountId,
-                    categoryId = dto.categoryId,
-                    amount = dto.amount,
-                    date = dto.date,
-                    comment = dto.comment,
-                    source = com.mobilemoney.data.local.TransactionSource.MANUAL,
-                    sourceData = null,
-                    creatorId = dto.creatorId,
-                    relatedTransactionId = null,
-                    createdAt = dto.createdAt,
-                    updatedAt = dto.updatedAt,
-                    deletedAt = dto.deletedAt
-                )
-            )
+            transactionDao.insert(dto.toEntity())
         }
     }
 
