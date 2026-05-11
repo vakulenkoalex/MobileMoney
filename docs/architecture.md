@@ -1,6 +1,6 @@
 # Архитектура приложения "Учет личных денег"
 
-## 1. Общая архитектура: Clean Architecture + MVVM (Java)
+## 1. Общая архитектура: Clean Architecture + MVVM (Kotlin)
 
 ```
 android/app/src/main/java/com/mobilemoney/
@@ -340,7 +340,6 @@ inline fun <T> runCatchingResult(block: () -> T): Result<T> {
 interface RemoteDataSource {
     // Auth
     suspend fun login(credentials: LoginRequest): AuthResponse
-    suspend fun register(data: RegisterRequest): AuthResponse
     suspend fun refreshToken(token: String): AuthResponse
     
     // User
@@ -360,7 +359,7 @@ interface RemoteDataSource {
 
 ### 3.2 Local DataSource (Room)
 
-См. [db_schema.md](db_schema.md)
+См. [android_db_schema.md](android_db_schema.md)
 ```
 
 ### 3.3 Repository Implementation
@@ -656,7 +655,7 @@ class SyncWorker(
 
 ## 9. База данных (Room Schema)
 
-См. [db_schema.md](../docs/db_schema.md)
+См. [android_db_schema.md](../docs/android_db_schema.md)
 
 Баланс кошелька вычисляется из транзакций:
   SUM(INCOME) - SUM(EXPENSE) по wallet_id
