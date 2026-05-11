@@ -2,18 +2,17 @@ package com.mobilemoney.data.repository
 
 import android.content.Context
 import com.mobilemoney.data.local.AccountDao
-import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
-import com.mobilemoney.data.local.CategoryEntity
 import com.mobilemoney.data.local.CurrencyDao
 import com.mobilemoney.data.local.CurrencyEntity
 import com.mobilemoney.data.local.ExchangeRateDao
 import com.mobilemoney.data.local.TagDao
 import com.mobilemoney.data.local.TransactionDao
-import com.mobilemoney.data.local.TransactionEntity
-import com.mobilemoney.data.local.TransactionSource
-import com.mobilemoney.data.local.UserDao
+import com.mobilemoney.data.local.AccountEntity
+import com.mobilemoney.data.local.CategoryEntity
+import com.mobilemoney.data.local.toEntity
+import com.mobilemoney.data.local.toUiModel
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.AccountType
 import com.mobilemoney.data.model.CategoryUi
@@ -25,13 +24,13 @@ import java.util.UUID
 
 class DatabaseRepository(context: Context) {
     private val database = AppDatabase.getDatabase(context)
-    private val userDao: UserDao = database.userDao()
-    private val currencyDao: CurrencyDao = database.currencyDao()
-    private val accountDao: AccountDao = database.accountDao()
-    private val categoryDao: CategoryDao = database.categoryDao()
-    private val tagDao: TagDao = database.tagDao()
-    private val transactionDao: TransactionDao = database.transactionDao()
-    private val exchangeRateDao: ExchangeRateDao = database.exchangeRateDao()
+    private val userDao = database.userDao()
+    private val currencyDao = database.currencyDao()
+    private val accountDao = database.accountDao()
+    private val categoryDao = database.categoryDao()
+    private val tagDao = database.tagDao()
+    private val transactionDao = database.transactionDao()
+    private val exchangeRateDao = database.exchangeRateDao()
 
     fun getAccounts(): Flow<List<AccountUi>> {
         return combine(
@@ -115,13 +114,11 @@ class DatabaseRepository(context: Context) {
     }
 
     suspend fun addTransaction(transaction: TransactionUi) {
-        val entity = transaction.toEntity()
-        transactionDao.insert(entity)
+        transactionDao.insert(transaction.toEntity())
     }
 
     suspend fun updateTransaction(transaction: TransactionUi) {
-        val entity = transaction.toEntity()
-        transactionDao.update(entity)
+        transactionDao.update(transaction.toEntity())
     }
 
     suspend fun deleteTransaction(id: String) {
@@ -199,101 +196,6 @@ class DatabaseRepository(context: Context) {
             CategoryEntity(UUID.randomUUID().toString(), "Корректировка", true, "more_horiz", null, System.currentTimeMillis(), System.currentTimeMillis())
         )
         categoryDao.insertAll(defaultCategories)
-    }
-
-    private fun AccountEntity.toUiModel(balance: Double = 0.0): AccountUi {
-        return AccountUi(
-            id = UUID.fromString(id),
-            name = name,
-            type = AccountType.entries.find { it.id == typeId } ?: AccountType.CASH,
-            currency = currencyCode ?: "₽",
-            icon = icon,
-            isDefault = isDefault,
-            balance = balance
-        )
-    }
-
-    private fun AccountUi.toEntity(): AccountEntity {
-        return AccountEntity(
-            id = id.toString(),
-            name = name,
-            typeId = type.id,
-            currencyCode = currency,
-            icon = icon,
-            isDefault = isDefault,
-            archived = false,
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-
-    private fun CategoryEntity.toUiModel(): CategoryUi {
-        return CategoryUi(
-            id = UUID.fromString(id),
-            name = name,
-            icon = icon,
-            isIncome = isIncome
-        )
-    }
-
-    private fun CategoryUi.toEntity(): CategoryEntity {
-        return CategoryEntity(
-            id = id.toString(),
-            name = name,
-            isIncome = isIncome,
-            icon = icon,
-            parentId = null,
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-
-    private fun TransactionEntity.toUiModel(
-        account: AccountEntity?,
-        category: CategoryEntity?
-    ): TransactionUi {
-        return TransactionUi(
-            id = UUID.fromString(id),
-            title = category?.name ?: "Без категории",
-            subtitle = account?.name ?: formatDate(date),
-            comment = comment,
-            amount = amount,
-            currency = account?.currencyCode ?: "₽",
-            icon = category?.icon ?: "receipt",
-            color = if (category?.isIncome == true) 0xFF2196F3 else 0xFF4CAF50,
-            isIncome = category?.isIncome ?: false,
-            date = date,
-            accountId = accountId.takeIf { it.isNotEmpty() }?.let { UUID.fromString(it) },
-            categoryId = categoryId?.let { UUID.fromString(it) },
-relatedTransactionId = relatedTransactionId?.let { UUID.fromString(it) }
-        )
-    }
-
-    private fun TransactionUi.toEntity(): TransactionEntity {
-        return TransactionEntity(
-            id = id.toString(),
-            accountId = accountId?.toString() ?: "",
-            categoryId = categoryId?.toString(),
-            amount = amount,
-            date = date,
-            comment = comment,
-            source = TransactionSource.MANUAL,
-            sourceData = null,
-            creatorId = null,
-            relatedTransactionId = relatedTransactionId?.toString(),
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-
-    private fun formatDate(timestamp: Long): String {
-        val now = System.currentTimeMillis()
-        val diff = now - timestamp
-        return when {
-            diff < 86400000 -> "Сегодня"
-            diff < 172800000 -> "Вчера"
-            else -> "Дата"
-        }
     }
 
     suspend fun permanentlyDeleteAll() {
