@@ -20,15 +20,3 @@ http://localhost:6080/
 ```json
 {"status":"ok","database":true}
 ```
-
-## 2. Проверка
-
-В браузере (базовая проверка):
-```
-http://localhost:6080/
-```
-
-Должно вернуть:
-```json
-{"status":"ok","database":true}
-```
