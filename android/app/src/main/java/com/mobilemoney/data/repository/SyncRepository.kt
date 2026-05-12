@@ -7,10 +7,13 @@ import com.mobilemoney.BuildConfig
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
+import com.mobilemoney.data.local.CurrencyDao
 import com.mobilemoney.data.local.TransactionDao
+import com.mobilemoney.data.local.CurrencyEntity as CurrencyEntity
 import com.mobilemoney.data.remote.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import android.util.Log
 
 class SyncRepository(context: Context) {
@@ -28,6 +31,7 @@ class SyncRepository(context: Context) {
     private val database = AppDatabase.getDatabase(context)
     private val accountDao: AccountDao = database.accountDao()
     private val categoryDao: CategoryDao = database.categoryDao()
+    private val currencyDao: CurrencyDao = database.currencyDao()
     private val transactionDao: TransactionDao = database.transactionDao()
     private val apiClient = SyncApiClient(context)
 
@@ -125,6 +129,16 @@ class SyncRepository(context: Context) {
             return Result.failure(pushResult.exceptionOrNull() ?: Exception("Push failed"))
         }
 
+        val pullResult = pullChanges()
+        if (pullResult.isFailure) {
+            val errorMsg = pullResult.exceptionOrNull()?.message ?: ""
+            _syncState.value = _syncState.value.copy(
+                isSyncing = false,
+                error = errorMsg
+            )
+            return Result.failure(pullResult.exceptionOrNull() ?: Exception("Pull failed"))
+        }
+
         lastSyncTimestamp = System.currentTimeMillis()
         _syncState.value = _syncState.value.copy(
             isSyncing = false,
@@ -162,40 +176,72 @@ class SyncRepository(context: Context) {
 
     private suspend fun pullChanges(): Result<Unit> {
         val since = lastSyncTimestamp
-        val result = apiClient.getChanges(since)
+        Log.d("SyncRepository", "pullChanges: since=$since")
 
-        return result.map { response ->
-            response.accounts.forEach { dto ->
-                upsertAccount(dto)
+        val hasLocalData = currencyDao.getAllCurrencies().first().isNotEmpty() ||
+                          accountDao.getAllAccounts().first().isNotEmpty() ||
+                          categoryDao.getAllCategories().first().isNotEmpty()
+
+        val useFullPull = since == 0L || !hasLocalData
+        Log.d("SyncRepository", "pullChanges: useFullPull=$useFullPull, hasLocalData=$hasLocalData")
+
+        if (useFullPull) {
+            val result = apiClient.pullAll()
+            Log.d("SyncRepository", "pullAll result: ${result.isSuccess}")
+            result.onFailure { e -> Log.e("SyncRepository", "pullAll error: ${e.message}") }
+            return result.map { response ->
+                val syncedAt = response.timestamp
+                Log.d("SyncRepository", "pullChanges: currencies=${response.currencies.size}, accounts=${response.accounts.size}, categories=${response.categories.size}, syncedAt=$syncedAt")
+                response.currencies.forEach { dto -> upsertCurrency(dto) }
+                response.accounts.forEach { dto -> upsertAccount(dto, syncedAt) }
+                response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
+                response.transactions.forEach { dto -> upsertTransaction(dto, syncedAt) }
             }
-            response.categories.forEach { dto ->
-                upsertCategory(dto)
-            }
-            response.transactions.forEach { dto ->
-                upsertTransaction(dto)
+        } else {
+            val result = apiClient.getChanges(since)
+            Log.d("SyncRepository", "getChanges result: ${result.isSuccess}")
+            result.onFailure { e -> Log.e("SyncRepository", "getChanges error: ${e.message}") }
+            return result.map { response ->
+                val syncedAt = response.timestamp
+                Log.d("SyncRepository", "pullChanges: currencies=${response.currencies.size}, accounts=${response.accounts.size}, categories=${response.categories.size}, syncedAt=$syncedAt")
+                response.currencies.forEach { dto -> upsertCurrency(dto) }
+                response.accounts.forEach { dto -> upsertAccount(dto, syncedAt) }
+                response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
+                response.transactions.forEach { dto -> upsertTransaction(dto, syncedAt) }
             }
         }
     }
 
-    private suspend fun upsertAccount(dto: AccountDto) {
+    private suspend fun upsertAccount(dto: AccountDto, syncedAt: Long) {
         val existing = accountDao.getAccountById(dto.id)
         if (existing == null || existing.updatedAt < dto.updatedAt) {
-            accountDao.insert(dto.toEntity())
+            accountDao.insert(dto.toEntity().copy(syncedAt = syncedAt))
         }
     }
 
-    private suspend fun upsertCategory(dto: CategoryDto) {
+    private suspend fun upsertCategory(dto: CategoryDto, syncedAt: Long) {
         val existing = categoryDao.getCategoryById(dto.id)
         if (existing == null || existing.updatedAt < dto.updatedAt) {
-            categoryDao.insert(dto.toEntity())
+            categoryDao.insert(dto.toEntity().copy(syncedAt = syncedAt))
         }
     }
 
-    private suspend fun upsertTransaction(dto: TransactionDto) {
+    private suspend fun upsertTransaction(dto: TransactionDto, syncedAt: Long) {
         val existing = transactionDao.getTransactionById(dto.id)
         if (existing == null || existing.updatedAt < dto.updatedAt) {
-            transactionDao.insert(dto.toEntity())
+            transactionDao.insert(dto.toEntity().copy(syncedAt = syncedAt))
         }
+    }
+
+private suspend fun upsertCurrency(dto: CurrencyDto) {
+        currencyDao.insert(
+            CurrencyEntity(
+                code = dto.code,
+                name = dto.name,
+                symbol = dto.symbol,
+                updatedAt = System.currentTimeMillis()
+            )
+        )
     }
 
     suspend fun markAccountSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {

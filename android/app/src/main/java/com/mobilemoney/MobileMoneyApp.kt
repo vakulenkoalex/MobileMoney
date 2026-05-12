@@ -51,10 +51,6 @@ class MobileMoneyApp : Application() {
     private fun checkAndInitialize() {
         applicationScope.launch {
             kotlinx.coroutines.delay(1500)
-            val accounts = repository.getAccounts().first()
-            if (accounts.isEmpty()) {
-                repository.initializeDefaultData()
-            }
             prefs.edit().putBoolean("initialized", true).apply()
             isInitialized = true
         }

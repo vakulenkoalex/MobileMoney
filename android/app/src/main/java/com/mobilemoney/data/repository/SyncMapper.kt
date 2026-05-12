@@ -15,7 +15,7 @@ fun AccountEntity.toSyncDto(): AccountDto {
         typeId = typeId,
         currencyCode = currencyCode,
         icon = icon,
-        isDefault = isDefault,
+        isDefault = if (isDefault) 1 else 0,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt
@@ -26,7 +26,7 @@ fun CategoryEntity.toSyncDto(): CategoryDto {
     return CategoryDto(
         id = id,
         name = name,
-        isIncome = isIncome,
+        isIncome = if (isIncome) 1 else 0,
         icon = icon,
         parentId = parentId,
         createdAt = createdAt,
@@ -57,7 +57,7 @@ fun AccountDto.toEntity(): AccountEntity {
         typeId = typeId,
         currencyCode = currencyCode,
         icon = icon,
-        isDefault = isDefault,
+        isDefault = isDefault == 1,
         archived = deletedAt != null,
         createdAt = createdAt,
         updatedAt = updatedAt,
@@ -69,7 +69,7 @@ fun CategoryDto.toEntity(): CategoryEntity {
     return CategoryEntity(
         id = id,
         name = name,
-        isIncome = isIncome,
+        isIncome = isIncome == 1,
         icon = icon,
         parentId = parentId,
         createdAt = createdAt,

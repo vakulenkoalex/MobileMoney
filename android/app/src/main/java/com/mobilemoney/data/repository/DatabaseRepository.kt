@@ -17,7 +17,6 @@ import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.AccountType
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.data.model.TransactionUi
-import com.mobilemoney.data.config.DefaultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -152,12 +151,6 @@ class DatabaseRepository(context: Context) {
 
     suspend fun deleteCategory(id: String) {
         categoryDao.softDelete(id, System.currentTimeMillis())
-    }
-
-    suspend fun initializeDefaultData() {
-        currencyDao.insertAll(DefaultData.currencies)
-        categoryDao.insertAll(DefaultData.categories)
-        accountDao.insertAll(DefaultData.accounts)
     }
 
     suspend fun permanentlyDeleteAll() {

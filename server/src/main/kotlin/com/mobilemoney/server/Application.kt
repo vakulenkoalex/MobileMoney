@@ -89,7 +89,7 @@ fun main() {
                 val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
                 val response = SyncService.getChanges(since)
 
-                val result = "{\"timestamp\":${response.timestamp},\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                val result = "{\"timestamp\":${response.timestamp},\"currencies\":[${response.currencies.joinToString(",")}],\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
                 call.respondText(result)
             }
 
@@ -108,7 +108,7 @@ fun main() {
 
                 val response = SyncService.pull()
 
-                val result = "{\"timestamp\":${response.timestamp},\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                val result = "{\"timestamp\":${response.timestamp},\"currencies\":[${response.currencies.joinToString(",")}],\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
                 call.respondText(result)
             }
         }

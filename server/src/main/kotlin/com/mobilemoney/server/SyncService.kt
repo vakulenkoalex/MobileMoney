@@ -5,6 +5,11 @@ object SyncService {
     fun push(data: SyncPushRequestDto): SyncResponse {
         var syncedCount = 0
 
+        data.currencies.forEach { currency ->
+            upsertCurrency(currency)
+            syncedCount++
+        }
+
         data.accounts.forEach { account ->
             upsertAccount(account)
             syncedCount++
@@ -27,6 +32,7 @@ object SyncService {
     fun getChanges(since: Long): SyncChangesResponse {
         return SyncChangesResponse(
             timestamp = System.currentTimeMillis(),
+            currencies = getCurrencies(since),
             accounts = getAccounts(since),
             categories = getCategories(since),
             transactions = getTransactions(since)
@@ -36,6 +42,7 @@ object SyncService {
     fun pull(): SyncChangesResponse {
         return SyncChangesResponse(
             timestamp = System.currentTimeMillis(),
+            currencies = getAllCurrencies(),
             accounts = getAllAccounts(),
             categories = getAllCategories(),
             transactions = getAllTransactions()
@@ -51,6 +58,7 @@ data class SyncResponse(
 
 data class SyncChangesResponse(
     val timestamp: Long,
+    val currencies: List<String> = emptyList(),
     val accounts: List<String> = emptyList(),
     val categories: List<String> = emptyList(),
     val transactions: List<String> = emptyList()
@@ -280,4 +288,53 @@ fun getAllTransactions(): List<String> {
 
 fun buildJsonTransaction(rs: java.sql.ResultSet): String {
     return """{"id":"${rs.getString("id")}","account_id":"${rs.getString("account_id")}","category_id":${rs.getString("category_id")?.let { "\"$it\"" } ?: "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creator_id":${rs.getString("creator_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"}}"""
+}
+
+fun upsertCurrency(data: CurrencyDto) {
+    Database.getConnection().use { conn ->
+        conn.prepareStatement("""
+            INSERT OR REPLACE INTO currencies (code, name, symbol, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        """).use { stmt ->
+            stmt.setString(1, data.code)
+            stmt.setString(2, data.name)
+            stmt.setString(3, data.symbol)
+            stmt.setLong(4, data.createdAt)
+            stmt.setLong(5, data.updatedAt)
+            stmt.executeUpdate()
+        }
+    }
+}
+
+fun getCurrencies(since: Long): List<String> {
+    val result = mutableListOf<String>()
+    Database.getConnection().use { conn ->
+        conn.prepareStatement("SELECT * FROM currencies WHERE updated_at > ?").use { stmt ->
+            stmt.setLong(1, since)
+            stmt.executeQuery().use { rs ->
+                while (rs.next()) {
+                    result.add(buildJsonCurrency(rs))
+                }
+            }
+        }
+    }
+    return result
+}
+
+fun getAllCurrencies(): List<String> {
+    val result = mutableListOf<String>()
+    Database.getConnection().use { conn ->
+        conn.prepareStatement("SELECT * FROM currencies").use { stmt ->
+            stmt.executeQuery().use { rs ->
+                while (rs.next()) {
+                    result.add(buildJsonCurrency(rs))
+                }
+            }
+        }
+    }
+    return result
+}
+
+fun buildJsonCurrency(rs: java.sql.ResultSet): String {
+    return """{"code":"${rs.getString("code")}","name":"${rs.getString("name")}","symbol":"${rs.getString("symbol")}","created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")}}"""
 }

@@ -21,7 +21,11 @@ object Database {
             stmt.execute("PRAGMA journal_mode=WAL")
         }
         initialized = true
-        return createTables()
+        val tablesCreated = createTables()
+        if (tablesCreated) {
+            insertDefaultData()
+        }
+        return tablesCreated
     }
 
     private fun createTables(): Boolean {
@@ -32,11 +36,11 @@ object Database {
                 existingTables.add(rs.getString(1))
             }
         }
-        
+
         if (existingTables.isNotEmpty()) {
             return false
         }
-        
+
         println("Creating tables...")
         conn?.use { c ->
             c.createStatement().use { stmt ->
@@ -86,6 +90,15 @@ object Database {
                     )
                 """.trimIndent())
                 stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS currencies (
+                        code VARCHAR(10) PRIMARY KEY,
+                        name VARCHAR(255) NOT NULL,
+                        symbol VARCHAR(10) NOT NULL,
+                        created_at BIGINT NOT NULL,
+                        updated_at BIGINT NOT NULL
+                    )
+                """.trimIndent())
+                stmt.execute("""
                     CREATE TABLE IF NOT EXISTS transactions (
                         id VARCHAR(255) PRIMARY KEY,
                         account_id VARCHAR(255) NOT NULL,
@@ -123,4 +136,91 @@ object Database {
     }
 
     fun isConnected(): Boolean = conn != null
+
+    fun insertDefaultData() {
+        val now = System.currentTimeMillis()
+        val conn = getConnection()
+
+        conn.prepareStatement("SELECT COUNT(*) FROM currencies").use { stmt ->
+            stmt.executeQuery().use { rs ->
+                if (rs.next() && rs.getInt(1) > 0) {
+                    println("Default data already exists, skipping")
+                    return
+                }
+            }
+        }
+
+        conn.prepareStatement("""
+            INSERT INTO currencies (code, name, symbol, created_at, updated_at) VALUES (?, ?, ?, ?, ?)
+        """).use { stmt ->
+            listOf(
+                Triple("RUB", "Российский рубль", "₽"),
+                Triple("USD", "Доллар США", "$"),
+                Triple("EUR", "Евро", "€")
+            ).forEach { (code, name, symbol) ->
+                stmt.setString(1, code)
+                stmt.setString(2, name)
+                stmt.setString(3, symbol)
+                stmt.setLong(4, now)
+                stmt.setLong(5, now)
+                stmt.addBatch()
+            }
+            stmt.executeBatch()
+        }
+        println("Default currencies inserted")
+
+        conn.prepareStatement("""
+            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+        """).use { stmt ->
+            listOf(
+                Triple(java.util.UUID.randomUUID().toString(), "Кафе и рестораны", "restaurant"),
+                Triple(java.util.UUID.randomUUID().toString(), "Развлечения", "movie"),
+                Triple(java.util.UUID.randomUUID().toString(), "Здоровье", "local_hospital"),
+                Triple(java.util.UUID.randomUUID().toString(), "Зарплата", "work"),
+                Triple(java.util.UUID.randomUUID().toString(), "Подарок", "card_giftcard")
+            ).forEachIndexed { index, (id, name, icon) ->
+                stmt.setString(1, id)
+                stmt.setString(2, name)
+                stmt.setInt(3, if (index in 3..4) 1 else 0)
+                stmt.setString(4, icon)
+                stmt.setString(5, null)
+                stmt.setLong(6, now)
+                stmt.setLong(7, now)
+                stmt.addBatch()
+            }
+            stmt.executeBatch()
+        }
+        val adjustExpenseId = java.util.UUID.randomUUID().toString()
+        val adjustIncomeId = java.util.UUID.randomUUID().toString()
+        conn.prepareStatement("""
+            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at)
+            VALUES (?, 'Корректировка', ?, 'more_horiz', NULL, ?, ?, NULL)
+        """).use { stmt ->
+            stmt.setString(1, adjustExpenseId)
+            stmt.setInt(2, 0)
+            stmt.setLong(3, now)
+            stmt.setLong(4, now)
+            stmt.addBatch()
+            stmt.setString(1, adjustIncomeId)
+            stmt.setInt(2, 1)
+            stmt.setLong(3, now)
+            stmt.setLong(4, now)
+            stmt.addBatch()
+            stmt.executeBatch()
+        }
+        println("Default categories inserted")
+
+        val accountId = java.util.UUID.randomUUID().toString()
+        conn.prepareStatement("""
+            INSERT INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at)
+            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, ?, ?, NULL)
+        """).use { stmt ->
+            stmt.setString(1, accountId)
+            stmt.setLong(2, now)
+            stmt.setLong(3, now)
+            stmt.executeUpdate()
+        }
+        println("Default account inserted")
+    }
 }

@@ -201,6 +201,7 @@ data class ErrorResponse(
 @Serializable
 data class SyncChangesResponse(
     val timestamp: Long,
+    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
@@ -209,6 +210,7 @@ data class SyncChangesResponse(
 @Serializable
 data class SyncPullResponse(
     val timestamp: Long,
+    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
@@ -216,6 +218,7 @@ data class SyncPullResponse(
 
 @Serializable
 data class SyncPushRequest(
+    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
@@ -235,23 +238,27 @@ data class AccountDto(
     @SerialName("type_id") val typeId: String,
     @SerialName("currency_code") val currencyCode: String?,
     val icon: String,
-    @SerialName("is_default") val isDefault: Boolean = false,
+    @SerialName("is_default") val isDefault: Int = 0,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
     @SerialName("deleted_at") val deletedAt: Long? = null
-)
+) {
+    fun isDefaultAccount(): Boolean = isDefault == 1
+}
 
 @Serializable
 data class CategoryDto(
     val id: String,
     val name: String,
-    @SerialName("is_income") val isIncome: Boolean,
+    @SerialName("is_income") val isIncome: Int = 0,
     val icon: String,
     @SerialName("parent_id") val parentId: String? = null,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
     @SerialName("deleted_at") val deletedAt: Long? = null
-)
+) {
+    fun isIncomeCategory(): Boolean = isIncome == 1
+}
 
 @Serializable
 data class TransactionDto(
@@ -265,4 +272,13 @@ data class TransactionDto(
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
     @SerialName("deleted_at") val deletedAt: Long? = null
+)
+
+@Serializable
+data class CurrencyDto(
+    val code: String,
+    val name: String,
+    val symbol: String,
+    @SerialName("created_at") val createdAt: Long,
+    @SerialName("updated_at") val updatedAt: Long
 )

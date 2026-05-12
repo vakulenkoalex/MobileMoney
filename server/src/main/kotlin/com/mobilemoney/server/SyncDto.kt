@@ -5,9 +5,19 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SyncPushRequestDto(
+    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
+)
+
+@Serializable
+data class CurrencyDto(
+    val code: String,
+    val name: String,
+    val symbol: String,
+    @SerialName("created_at") val createdAt: Long = 0L,
+    @SerialName("updated_at") val updatedAt: Long = 0L
 )
 
 @Serializable
