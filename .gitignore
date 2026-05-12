@@ -8,3 +8,4 @@ deploymentTargetSelector.xml
 server/data/
 misc.xml
 gradle.xml
+*/.kotlin/errors/
