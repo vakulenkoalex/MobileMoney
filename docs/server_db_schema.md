@@ -16,6 +16,13 @@
 - last_seen_at (timestamp, millis)
 - revoked_at (timestamp, millis, nullable) — время отзыва токена
 
+### Валюты (currencies)
+- code (PK) — RUB, USD, EUR...
+- name
+- symbol
+- created_at (timestamp, millis)
+- updated_at (timestamp, millis)
+
 ### Счета (accounts)
 - id (PK) — UUID
 - name
@@ -66,9 +73,10 @@
 | Сущность | Клиент | Сервер |
 |----------|--------|--------|
 | users | полная структура (id, email, name, timestamps) | упрощённая (login, password_hash, salt) |
-| currencies | есть | нет |
+| currencies | есть (с deleted_at) | есть (без deleted_at) |
 | tags | есть | нет |
 | transaction_tags | есть | нет |
 | category_tags | есть | нет |
 | exchange_rates | есть | нет |
 | synced_at поля | есть у accounts, categories, transactions | нет |
+| source/sourceData | есть | нет |

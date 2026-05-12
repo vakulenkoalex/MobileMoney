@@ -119,6 +119,8 @@ data class AccountType(
 enum class TransactionSource { MANUAL, SMS, PUSH }
 ```
 
+> **Реализация:** В текущей версии используется только `MANUAL`. `SMS` и `PUSH` зарезервированы для будущей реализации автоматического импорта из SMS/уведомлений.
+
 ### 2.3 Repository Interfaces
 
 ```kotlin
@@ -374,6 +376,38 @@ class AccountRepositoryImpl(
 }
 ```
 
+### 3.4 BackupRepository
+
+Репозиторий для резервного копирования и восстановления локальной базы данных Room.
+
+```kotlin
+class BackupRepository(private val context: Context) {
+    suspend fun export(uri: Uri): Result<String>  // Экспорт БД в файл
+    suspend fun import(sourceUri: Uri): Result<String>  // Импорт БД из файла
+    fun generateFileName(): String  // Генерация имени файла: mobile_money_yyyy-MM-dd_HH-mm.db
+}
+```
+
+**Особенности:**
+- Закрывает БД перед копированием для обеспечения целостности
+- Копирует напрямую Room DB файл (не JSON/CSV)
+- Удаляет WAL/SHM/JOURNAL файлы после импорта
+
+### 3.5 SyncMapper
+
+Мапперы для конвертации между Entity (Room) и DTO (сервер).
+
+```kotlin
+fun AccountEntity.toSyncDto(): AccountDto
+fun CategoryEntity.toSyncDto(): CategoryDto
+fun TransactionEntity.toSyncDto(): TransactionDto
+fun AccountDto.toEntity(): AccountEntity
+fun CategoryDto.toEntity(): CategoryEntity
+fun TransactionDto.toEntity(): TransactionEntity
+```
+
+**Важно:** При конвертации `TransactionDto → TransactionEntity` поля `source`, `sourceData`, `relatedTransactionId` устанавливаются в значения по умолчанию (MANUAL, null, null), так как сервер не хранит эти данные.
+
 ---
 
 ## 4. Presentation слой (UI)
@@ -381,52 +415,43 @@ class AccountRepositoryImpl(
 ### 4.1 Структура экранов
 
 ```
-presentation/
-├── navigation/
-│   ├── AppNavigation.kt
-│   └── Screen.kt
-├── screens/
-│   ├── auth/
-│   │   ├── LoginScreen.kt
-│   │   └── RegisterScreen.kt
-│   ├── main/
-│   │   ├── HomeScreen.kt (дашборд)
-│   │   ├── AccountListScreen.kt
-│   │   ├── AccountDetailScreen.kt
-│   │   ├── AddAccountScreen.kt
-│   │   ├── CategoryListScreen.kt
-│   │   ├── AddCategoryScreen.kt
-│   │   ├── TransactionListScreen.kt
-│   │   ├── AddTransactionScreen.kt
-│   │   ├── TransferScreen.kt
-│   │   ├── ReportsScreen.kt
-│   │   ├── TagsScreen.kt
-│   │   └── SettingsScreen.kt
-│   └── autoimport/
-│       ├── SmsImportScreen.kt
-│       ├── NotificationImportScreen.kt
-│       └── AutoTransactionScreen.kt
-├── components/
-│   ├── AccountCard.kt
-│   ├── CategoryChip.kt
-│   ├── TransactionItem.kt
-│   ├── BalanceDisplay.kt
-│   ├── DateRangePicker.kt
-│   └── ChartComponent.kt
-├── viewmodels/
-│   ├── AuthViewModel.kt
-│   ├── HomeViewModel.kt
-│   ├── AccountViewModel.kt
-│   ├── CategoryViewModel.kt
-│   ├── TransactionViewModel.kt
-│   ├── ReportViewModel.kt
-│   ├── SettingsViewModel.kt
-│   └── AutoImportViewModel.kt
-└── theme/
-    ├── Theme.kt
-    ├── Color.kt
-    └── Typography.kt
+android/app/src/main/java/com/mobilemoney/
+├── MainActivity.kt
+├── MobileMoneyApp.kt           # Application class
+├── data/
+│   ├── config/                # CategoryIcons, AccountIcons, Currencies
+│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers
+│   ├── model/                 # Domain models
+│   ├── remote/                # SyncApiClient
+│   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository
+├── ui/
+│   ├── navigation/            # AppNavigation.kt
+│   ├── screens/               # Compose UI screens
+│   ├── theme/                 # Theme.kt
+│   └── utils/                 # FormatUtils
+├── viewmodel/                 # ViewModels
+│   ├── LoginViewModel.kt
+│   ├── AccountListViewModel.kt
+│   ├── AccountFormViewModel.kt
+│   ├── CategoryListViewModel.kt
+│   ├── CategoryFormViewModel.kt
+│   ├── TransactionListViewModel.kt
+│   ├── TransactionFormViewModel.kt
+│   └── SettingsViewModel.kt
+└── worker/                    # SyncWorker.kt
+
+ui/screens/
+├── LoginScreen.kt
+├── AccountListScreen.kt
+├── AccountFormScreen.kt       # Add/Edit account
+├── CategoryListScreen.kt
+├── CategoryFormScreen.kt      # Add/Edit category
+├── TransactionListScreen.kt
+├── TransactionFormScreen.kt    # Add/Edit transaction
+└── SettingsScreen.kt
 ```
+
+> **Примечание:** UI компоненты (AccountCard, TransactionItem и т.д.) реализованы inline внутри экранов, а не вынесены в отдельные файлы.
 
 ### 4.2 ViewModel State
 
@@ -644,7 +669,7 @@ class SyncWorker(
 | Lifecycle | | 2.10.0 |
 | Navigation Compose | | 2.9.8 |
 | Networking | Ktor client | 3.0.2 |
-| Serialization | Kotlin Serialization | 1.7.3 |
+| Serialization | Kotlin Serialization | 1.6.2 |
 | Local DB | Room | 2.8.4 |
 | Async | Kotlin Coroutines + Flow | 1.9.0 |
 | Background | WorkManager | 2.10.0 |

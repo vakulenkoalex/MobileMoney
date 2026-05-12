@@ -86,7 +86,7 @@ Invoke-RestMethod http://localhost:6080/
 ## References
 
 - Architecture: `docs/architecture.md`
-- DB schema: `docs/db_schema.md`
+- DB schema: `docs/android_db_schema.md`, `docs/server_db_schema.md`
 - Server run: `docs/SERVER_RUN.md`
-- Build: `docs/BUILD.md`
+- Build: `docs/ANDROID_BUILD.md`
 - CI: `.github/workflows/android.yml` (builds on PR to master)
