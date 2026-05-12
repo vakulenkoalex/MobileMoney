@@ -16,10 +16,23 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "SERVER_URL", "\"http://10.0.2.2:6080\"")
-        
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("emulator") {
+            dimension = "environment"
+            applicationIdSuffix = ".emulator"
+            buildConfigField("String", "SERVER_URL", "\"http://10.0.2.2:6080\"")
+        }
+        create("device") {
+            dimension = "environment"
+            applicationIdSuffix = ".device"
+            buildConfigField("String", "SERVER_URL", 
+                "\"${project.findProperty("deviceServerUrl") ?: "http://10.0.2.2:6080"}\"")
         }
     }
 
