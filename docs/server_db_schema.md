@@ -8,9 +8,8 @@
 - salt — соль для хеширования
 
 ### Устройства (devices)
-- id (PK, autoincrement)
-- device_id — уникальный ID устройства
-- device_name — название устройства
+- device_id (PK) — уникальный ID устройства
+- device_name (NOT NULL) — название устройства
 - token — JWT токен авторизации
 - login (FK -> users.login)
 - created_at (timestamp, millis)

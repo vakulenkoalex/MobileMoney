@@ -46,16 +46,15 @@ object Database {
             c.createStatement().use { stmt ->
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS users (
-                        login VARCHAR(255) PRIMARY KEY,
+                        login VARCHAR(255) PRIMARY KEY NOT NULL,
                         password_hash VARCHAR(64) NOT NULL,
                         salt VARCHAR(32) NOT NULL
                     )
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS devices (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
                         device_id VARCHAR(255) NOT NULL UNIQUE,
-                        device_name VARCHAR(255),
+                        device_name VARCHAR(255) NOT NULL,
                         token VARCHAR(255) UNIQUE NOT NULL,
                         login VARCHAR(255) NOT NULL,
                         created_at BIGINT NOT NULL,
