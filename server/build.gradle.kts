@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "2.0.21"
-    kotlin("plugin.serialization") version "2.0.21"
-    id("io.ktor.plugin") version "3.0.2"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.serialization") version "2.3.21"
+    id("io.ktor.plugin") version "3.4.3"
 }
 
 group = "com.mobilemoney"
@@ -23,12 +23,12 @@ kotlin {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:3.0.2")
-    implementation("io.ktor:ktor-server-netty:3.0.2")
-    implementation("io.ktor:ktor-server-call-logging:3.0.2")
-    implementation("io.ktor:ktor-server-status-pages:3.0.2")
+    implementation("io.ktor:ktor-server-core:3.4.3")
+    implementation("io.ktor:ktor-server-netty:3.4.3")
+    implementation("io.ktor:ktor-server-call-logging:3.4.3")
+    implementation("io.ktor:ktor-server-status-pages:3.4.3")
 
     implementation("org.xerial:sqlite-jdbc:3.45.1.0")
     implementation("com.zaxxer:HikariCP:5.1.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 }
