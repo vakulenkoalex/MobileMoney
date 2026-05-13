@@ -28,7 +28,7 @@
 - id (PK)
 - name
 - type_id (varchar) - тип счёта: cash, card, account (строка, не enum)
-- currency_code (FK -> currencies.code)
+- currency_code (FK -> currencies.code, NOT NULL)
 - icon (varchar)
 - is_default (boolean) - использовать по умолчанию для новых операций
 - archived (boolean) - для скрытия старых счетов

@@ -9,7 +9,7 @@ fun AccountEntity.toUiModel(balance: Double = 0.0): AccountUi {
         id = UUID.fromString(id),
         name = name,
         type = AccountType.entries.find { it.id == typeId } ?: AccountType.CASH,
-        currency = currencyCode ?: "₽",
+        currency = currencyCode,
         icon = icon,
         isDefault = isDefault,
         balance = balance

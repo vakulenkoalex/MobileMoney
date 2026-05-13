@@ -236,7 +236,7 @@ data class AccountDto(
     val id: String,
     val name: String,
     @SerialName("type_id") val typeId: String,
-    @SerialName("currency_code") val currencyCode: String?,
+    @SerialName("currency_code") val currencyCode: String,
     val icon: String,
     @SerialName("is_default") val isDefault: Int = 0,
     @SerialName("created_at") val createdAt: Long,

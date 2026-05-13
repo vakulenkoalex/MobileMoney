@@ -36,7 +36,7 @@ data class AccountEntity(
     @PrimaryKey val id: String,
     val name: String,
     val typeId: String,
-    val currencyCode: String?,
+    val currencyCode: String,
     val icon: String,
     val isDefault: Boolean = false,
     val archived: Boolean = false,
