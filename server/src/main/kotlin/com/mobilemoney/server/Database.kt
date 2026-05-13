@@ -73,7 +73,8 @@ object Database {
                         archived INTEGER DEFAULT 0,
                         created_at BIGINT NOT NULL,
                         updated_at BIGINT NOT NULL,
-                        deleted_at BIGINT
+                        deleted_at BIGINT,
+                        server_received_at BIGINT
                     )
                 """.trimIndent())
                 stmt.execute("""
@@ -85,7 +86,8 @@ object Database {
                         parent_id VARCHAR(255),
                         created_at BIGINT NOT NULL,
                         updated_at BIGINT NOT NULL,
-                        deleted_at BIGINT
+                        deleted_at BIGINT,
+                        server_received_at BIGINT
                     )
                 """.trimIndent())
                 stmt.execute("""
@@ -94,7 +96,8 @@ object Database {
                         name VARCHAR(255) NOT NULL,
                         symbol VARCHAR(10) NOT NULL,
                         created_at BIGINT NOT NULL,
-                        updated_at BIGINT NOT NULL
+                        updated_at BIGINT NOT NULL,
+                        server_received_at BIGINT
                     )
                 """.trimIndent())
                 stmt.execute("""
@@ -111,7 +114,8 @@ object Database {
                         related_transaction_id VARCHAR(255),
                         created_at BIGINT NOT NULL,
                         updated_at BIGINT NOT NULL,
-                        deleted_at BIGINT
+                        deleted_at BIGINT,
+                        server_received_at BIGINT
                     )
                 """.trimIndent())
                 
@@ -150,7 +154,7 @@ object Database {
         }
 
         conn.prepareStatement("""
-            INSERT INTO currencies (code, name, symbol, created_at, updated_at) VALUES (?, ?, ?, ?, ?)
+            INSERT INTO currencies (code, name, symbol, created_at, updated_at, server_received_at) VALUES (?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             listOf(
                 Triple("RUB", "Российский рубль", "₽"),
@@ -162,6 +166,7 @@ object Database {
                 stmt.setString(3, symbol)
                 stmt.setLong(4, now)
                 stmt.setLong(5, now)
+                stmt.setLong(6, now)
                 stmt.addBatch()
             }
             stmt.executeBatch()
@@ -169,8 +174,8 @@ object Database {
         println("Default currencies inserted")
 
         conn.prepareStatement("""
-            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NULL)
+            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at, server_received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)
         """).use { stmt ->
             listOf(
                 Triple(java.util.UUID.randomUUID().toString(), "Кафе и рестораны", "restaurant"),
@@ -186,6 +191,7 @@ object Database {
                 stmt.setString(5, null)
                 stmt.setLong(6, now)
                 stmt.setLong(7, now)
+                stmt.setLong(8, now)
                 stmt.addBatch()
             }
             stmt.executeBatch()
@@ -193,18 +199,20 @@ object Database {
         val adjustExpenseId = java.util.UUID.randomUUID().toString()
         val adjustIncomeId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at)
-            VALUES (?, 'Корректировка', ?, 'more_horiz', NULL, ?, ?, NULL)
+            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at, server_received_at)
+            VALUES (?, 'Корректировка', ?, 'more_horiz', NULL, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, adjustExpenseId)
             stmt.setInt(2, 0)
             stmt.setLong(3, now)
             stmt.setLong(4, now)
+            stmt.setLong(5, now)
             stmt.addBatch()
             stmt.setString(1, adjustIncomeId)
             stmt.setInt(2, 1)
             stmt.setLong(3, now)
             stmt.setLong(4, now)
+            stmt.setLong(5, now)
             stmt.addBatch()
             stmt.executeBatch()
         }
@@ -212,12 +220,13 @@ object Database {
 
         val accountId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at)
-            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, ?, ?, NULL)
+            INSERT INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at, server_received_at)
+            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, accountId)
             stmt.setLong(2, now)
             stmt.setLong(3, now)
+            stmt.setLong(4, now)
             stmt.executeUpdate()
         }
         println("Default account inserted")

@@ -58,14 +58,21 @@ fun main() {
 
                 val verifyResult = AuthService.verify(auth)
                 if (verifyResult.isFailure) {
-                    call.respondText("{\"error\":\"Invalid token\"}", status = HttpStatusCode.Unauthorized)
+                    call.respondText("{\"error\":\"Invalid or expired token\",\"code\":\"AUTH_FAILED\"}", status = HttpStatusCode.Unauthorized)
                     return@post
                 }
 
                 val body = call.receiveText()
                 try {
                     val request = kotlinx.serialization.json.Json.decodeFromString<SyncPushRequestDto>(body)
-                    val response = SyncService.push(request)
+                    val response = try {
+                        SyncService.push(request)
+                    } catch (e: Exception) {
+                        println("ERROR in push: ${e.message}")
+                        e.printStackTrace()
+                        call.respondText("{\"error\":\"Internal server error: ${e.message}\"}", status = HttpStatusCode.InternalServerError)
+                        return@post
+                    }
                     call.respondText("{\"success\":${response.success},\"timestamp\":${response.timestamp},\"synced\":${response.synced}}")
                 } catch (e: Exception) {
                     println("ERROR parsing push: ${e.message}")
@@ -74,23 +81,46 @@ fun main() {
             }
 
             get("/api/v1/sync/changes") {
+                print("=== /api/v1/sync/changes called ===")
+                System.out.flush()
                 val auth = call.request.headers["Authorization"]
+                print("Auth header: ${auth?.take(20)}...")
+                System.out.flush()
                 if (auth == null) {
                     call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
                     return@get
                 }
 
                 val verifyResult = AuthService.verify(auth)
+                print("verifyResult: $verifyResult, ")
+                System.out.flush()
                 if (verifyResult.isFailure) {
-                    call.respondText("{\"error\":\"Invalid token\"}", status = HttpStatusCode.Unauthorized)
+                    print("AUTH FAILED, ")
+                    System.out.flush()
+                    call.respondText("{\"error\":\"Invalid or expired token\",\"code\":\"AUTH_FAILED\"}", status = HttpStatusCode.Unauthorized)
                     return@get
                 }
-
-                val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
-                val response = SyncService.getChanges(since)
+                print("AUTH OK, ")
+                System.out.flush()
+val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
+                print("since=$since, ")
+                System.out.flush()
+                val response = try {
+                    SyncService.getChanges(since)
+                } catch (e: Exception) {
+                    println("ERROR in getChanges: ${e.message}")
+                    e.printStackTrace()
+                    call.respondText("{\"error\":\"Internal server error: ${e.message}\"}", status = HttpStatusCode.InternalServerError)
+                    return@get
+                }
+                print("getChanges done, ")
+                System.out.flush()
 
                 val result = "{\"timestamp\":${response.timestamp},\"currencies\":[${response.currencies.joinToString(",")}],\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                print("responding... ")
+                System.out.flush()
                 call.respondText(result)
+                println("DONE")
             }
 
             get("/api/v1/sync/pull") {
@@ -102,11 +132,18 @@ fun main() {
 
                 val verifyResult = AuthService.verify(auth)
                 if (verifyResult.isFailure) {
-                    call.respondText("{\"error\":\"Invalid token\"}", status = HttpStatusCode.Unauthorized)
+                    call.respondText("{\"error\":\"Invalid or expired token\",\"code\":\"AUTH_FAILED\"}", status = HttpStatusCode.Unauthorized)
                     return@get
                 }
 
-                val response = SyncService.pull()
+                val response = try {
+                    SyncService.pull()
+                } catch (e: Exception) {
+                    println("ERROR in pull: ${e.message}")
+                    e.printStackTrace()
+                    call.respondText("{\"error\":\"Internal server error: ${e.message}\"}", status = HttpStatusCode.InternalServerError)
+                    return@get
+                }
 
                 val result = "{\"timestamp\":${response.timestamp},\"currencies\":[${response.currencies.joinToString(",")}],\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
                 call.respondText(result)

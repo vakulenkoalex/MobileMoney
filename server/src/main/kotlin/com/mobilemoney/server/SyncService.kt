@@ -72,10 +72,11 @@ fun upsertAccount(data: AccountDto) {
         return
     }
 
+    val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at, server_received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
             stmt.setString(2, data.name)
@@ -87,6 +88,7 @@ fun upsertAccount(data: AccountDto) {
             stmt.setLong(8, data.createdAt)
             stmt.setLong(9, data.updatedAt)
             stmt.setString(10, data.deletedAt?.toString())
+            stmt.setLong(11, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
@@ -114,10 +116,11 @@ fun upsertCategory(data: CategoryDto) {
         return
     }
 
+    val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at, server_received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
             stmt.setString(2, data.name)
@@ -127,6 +130,7 @@ fun upsertCategory(data: CategoryDto) {
             stmt.setLong(6, data.createdAt)
             stmt.setLong(7, data.updatedAt)
             stmt.setString(8, data.deletedAt?.toString())
+            stmt.setLong(9, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
@@ -154,10 +158,11 @@ fun upsertTransaction(data: TransactionDto) {
         return
     }
 
+    val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO transactions (id, account_id, category_id, amount, date, comment, source, source_data, creator_id, related_transaction_id, created_at, updated_at, deleted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO transactions (id, account_id, category_id, amount, date, comment, source, source_data, creator_id, related_transaction_id, created_at, updated_at, deleted_at, server_received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
             stmt.setString(2, data.accountId)
@@ -172,6 +177,7 @@ fun upsertTransaction(data: TransactionDto) {
             stmt.setLong(11, data.createdAt)
             stmt.setLong(12, data.updatedAt)
             stmt.setString(13, data.deletedAt?.toString())
+            stmt.setLong(14, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
@@ -194,7 +200,7 @@ fun getTransactionUpdatedAt(id: String): Long? {
 fun getAccounts(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM accounts WHERE updated_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM accounts WHERE server_received_at > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -221,13 +227,14 @@ fun getAllAccounts(): List<String> {
 }
 
 fun buildJsonAccount(rs: java.sql.ResultSet): String {
-    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","type_id":"${rs.getString("type_id")}","currency_code":"${rs.getString("currency_code") ?: ""}","icon":"${rs.getString("icon") ?: ""}","is_default":${rs.getInt("is_default")},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"}}"""
+    val serverReceivedAt = rs.getLong("server_received_at")
+    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","type_id":"${rs.getString("type_id")}","currency_code":"${rs.getString("currency_code") ?: ""}","icon":"${rs.getString("icon") ?: ""}","is_default":${rs.getInt("is_default")},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun getCategories(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM categories WHERE updated_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM categories WHERE server_received_at > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -254,13 +261,14 @@ fun getAllCategories(): List<String> {
 }
 
 fun buildJsonCategory(rs: java.sql.ResultSet): String {
-    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","is_income":${rs.getInt("is_income")},"icon":"${rs.getString("icon") ?: ""}","parent_id":${rs.getString("parent_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"}}"""
+    val serverReceivedAt = rs.getLong("server_received_at")
+    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","is_income":${rs.getInt("is_income")},"icon":"${rs.getString("icon") ?: ""}","parent_id":${rs.getString("parent_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun getTransactions(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM transactions WHERE updated_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM transactions WHERE server_received_at > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -287,20 +295,23 @@ fun getAllTransactions(): List<String> {
 }
 
 fun buildJsonTransaction(rs: java.sql.ResultSet): String {
-    return """{"id":"${rs.getString("id")}","account_id":"${rs.getString("account_id")}","category_id":${rs.getString("category_id")?.let { "\"$it\"" } ?: "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creator_id":${rs.getString("creator_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"}}"""
+    val serverReceivedAt = rs.getLong("server_received_at")
+    return """{"id":"${rs.getString("id")}","account_id":"${rs.getString("account_id")}","category_id":${rs.getString("category_id")?.let { "\"$it\"" } ?: "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creator_id":${rs.getString("creator_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun upsertCurrency(data: CurrencyDto) {
+    val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO currencies (code, name, symbol, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO currencies (code, name, symbol, created_at, updated_at, server_received_at)
+            VALUES (?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.code)
             stmt.setString(2, data.name)
             stmt.setString(3, data.symbol)
             stmt.setLong(4, data.createdAt)
             stmt.setLong(5, data.updatedAt)
+            stmt.setLong(6, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
@@ -309,7 +320,7 @@ fun upsertCurrency(data: CurrencyDto) {
 fun getCurrencies(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM currencies WHERE updated_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM currencies WHERE server_received_at > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -336,5 +347,6 @@ fun getAllCurrencies(): List<String> {
 }
 
 fun buildJsonCurrency(rs: java.sql.ResultSet): String {
-    return """{"code":"${rs.getString("code")}","name":"${rs.getString("name")}","symbol":"${rs.getString("symbol")}","created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")}}"""
+    val serverReceivedAt = rs.getLong("server_received_at")
+    return """{"code":"${rs.getString("code")}","name":"${rs.getString("name")}","symbol":"${rs.getString("symbol")}","created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }

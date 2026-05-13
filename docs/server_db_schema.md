@@ -22,6 +22,7 @@
 - symbol
 - created_at (timestamp, millis)
 - updated_at (timestamp, millis)
+- server_received_at (timestamp, millis) — время получения записи сервером
 
 ### Счета (accounts)
 - id (PK) — UUID
@@ -34,6 +35,7 @@
 - created_at (timestamp, millis)
 - updated_at (timestamp, millis)
 - deleted_at (timestamp, nullable)
+- server_received_at (timestamp, millis) — время получения записи сервером
 
 ### Категории (categories)
 - id (PK) — UUID
@@ -44,6 +46,7 @@
 - created_at (timestamp, millis)
 - updated_at (timestamp, millis)
 - deleted_at (timestamp, nullable)
+- server_received_at (timestamp, millis) — время получения записи сервером
 
 ### Операции (transactions)
 - id (PK) — UUID
@@ -59,6 +62,7 @@
 - created_at (timestamp, millis)
 - updated_at (timestamp, millis)
 - deleted_at (timestamp, nullable)
+- server_received_at (timestamp, millis) — время получения записи сервером
 
 ## Связи
 
