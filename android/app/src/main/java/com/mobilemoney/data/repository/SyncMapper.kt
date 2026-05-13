@@ -15,7 +15,7 @@ fun AccountEntity.toSyncDto(): AccountDto {
         typeId = typeId,
         currencyCode = currencyCode,
         icon = icon,
-        isDefault = if (isDefault) 1 else 0,
+        isDefault = isDefault,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt
@@ -57,7 +57,7 @@ fun AccountDto.toEntity(): AccountEntity {
         typeId = typeId,
         currencyCode = currencyCode,
         icon = icon,
-        isDefault = isDefault == 1,
+        isDefault = isDefault,
         archived = deletedAt != null,
         createdAt = createdAt,
         updatedAt = updatedAt,

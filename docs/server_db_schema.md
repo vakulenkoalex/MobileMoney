@@ -25,17 +25,17 @@
 - server_received_at (timestamp, millis) — время получения записи сервером
 
 ### Счета (accounts)
-- id (PK) — UUID
-- name
-- type_id — тип счёта: cash, card, account
-- currency_code (FK -> currencies.code)
-- icon
-- is_default (boolean)
-- archived (boolean)
-- created_at (timestamp, millis)
-- updated_at (timestamp, millis)
-- deleted_at (timestamp, nullable)
-- server_received_at (timestamp, millis) — время получения записи сервером
+- id (PK) — UUID, NOT NULL
+- name (NOT NULL)
+- typeId (NOT NULL) — тип счёта: cash, card, account
+- currencyCode (NOT NULL) — FK -> currencies.code
+- icon (NOT NULL)
+- isDefault (boolean, NOT NULL, DEFAULT 0)
+- archived (boolean, NOT NULL, DEFAULT 0)
+- createdAt (timestamp, NOT NULL)
+- updatedAt (timestamp, NOT NULL)
+- deletedAt (timestamp)
+- serverReceivedAt (timestamp) — время получения записи сервером
 
 ### Категории (categories)
 - id (PK) — UUID

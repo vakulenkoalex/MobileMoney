@@ -27,15 +27,15 @@
 ### Счета (accounts)
 - id (PK)
 - name
-- type_id (varchar) - тип счёта: cash, card, account (строка, не enum)
-- currency_code (FK -> currencies.code, NOT NULL)
-- icon (varchar)
-- is_default (boolean) - использовать по умолчанию для новых операций
-- archived (boolean) - для скрытия старых счетов
-- created_at (timestamp, millis)
-- updated_at (timestamp, millis)
-- deleted_at (timestamp, nullable)
-- synced_at (timestamp, nullable) - время последней синхронизации
+- typeId - тип счёта: cash, card, account (строка, не enum)
+- currencyCode (FK -> currencies.code, NOT NULL)
+- icon (NOT NULL)
+- isDefault (boolean, NOT NULL) - использовать по умолчанию для новых операций
+- archived (boolean, NOT NULL) - для скрытия старых счетов
+- createdAt (timestamp, NOT NULL)
+- updatedAt (timestamp, NOT NULL)
+- deletedAt (timestamp)
+- syncedAt (timestamp) - время последней синхронизации
 
 ### Категории (categories)
 - id (PK)

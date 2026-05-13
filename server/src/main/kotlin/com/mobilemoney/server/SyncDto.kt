@@ -24,14 +24,15 @@ data class CurrencyDto(
 data class AccountDto(
     val id: String,
     val name: String,
-    @SerialName("type_id") val typeId: String = "cash",
-    @SerialName("currency_code") val currencyCode: String? = null,
+    val typeId: String = "cash",
+    val currencyCode: String? = null,
     val icon: String = "",
-    @SerialName("is_default") val isDefault: Boolean = false,
+    val isDefault: Boolean = false,
     val archived: Boolean = false,
-    @SerialName("created_at") val createdAt: Long = 0L,
-    @SerialName("updated_at") val updatedAt: Long = 0L,
-    @SerialName("deleted_at") val deletedAt: Long? = null
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L,
+    val deletedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 )
 
 @Serializable

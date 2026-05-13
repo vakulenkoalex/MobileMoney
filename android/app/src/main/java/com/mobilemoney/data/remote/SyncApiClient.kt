@@ -235,15 +235,15 @@ data class SyncPushResponse(
 data class AccountDto(
     val id: String,
     val name: String,
-    @SerialName("type_id") val typeId: String,
-    @SerialName("currency_code") val currencyCode: String,
+    val typeId: String,
+    val currencyCode: String,
     val icon: String,
-    @SerialName("is_default") val isDefault: Int = 0,
-    @SerialName("created_at") val createdAt: Long,
-    @SerialName("updated_at") val updatedAt: Long,
-    @SerialName("deleted_at") val deletedAt: Long? = null
+    val isDefault: Boolean = false,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null
 ) {
-    fun isDefaultAccount(): Boolean = isDefault == 1
+    fun isDefaultAccount(): Boolean = isDefault
 }
 
 @Serializable

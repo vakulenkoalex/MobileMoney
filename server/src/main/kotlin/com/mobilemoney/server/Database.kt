@@ -64,17 +64,17 @@ object Database {
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS accounts (
-                        id VARCHAR(255) PRIMARY KEY,
-                        name VARCHAR(255) NOT NULL,
-                        type_id VARCHAR(50) NOT NULL,
-                        currency_code VARCHAR(10),
-                        icon VARCHAR(50),
-                        is_default INTEGER DEFAULT 0,
-                        archived INTEGER DEFAULT 0,
-                        created_at BIGINT NOT NULL,
-                        updated_at BIGINT NOT NULL,
-                        deleted_at BIGINT,
-                        server_received_at BIGINT
+                        id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        typeId TEXT NOT NULL,
+                        currencyCode TEXT NOT NULL,
+                        icon TEXT NOT NULL,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
+                        archived INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        deletedAt INTEGER,
+                        serverReceivedAt INTEGER
                     )
                 """.trimIndent())
                 stmt.execute("""
@@ -220,7 +220,7 @@ object Database {
 
         val accountId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO accounts (id, name, type_id, currency_code, icon, is_default, archived, created_at, updated_at, deleted_at, server_received_at)
+            INSERT INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, createdAt, updatedAt, deletedAt, serverReceivedAt)
             VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, accountId)
