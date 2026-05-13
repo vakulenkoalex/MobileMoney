@@ -1,36 +1,11 @@
 package com.mobilemoney.data.local
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-
-@Dao
-interface UserDao {
-    @Query("SELECT * FROM users WHERE deletedAt IS NULL")
-    fun getAllUsers(): Flow<List<UserEntity>>
-
-    @Query("SELECT * FROM users WHERE id = :id AND deletedAt IS NULL")
-    suspend fun getUserById(id: String): UserEntity?
-
-    @Query("SELECT * FROM users WHERE email = :email AND deletedAt IS NULL")
-    suspend fun getUserByEmail(email: String): UserEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(user: UserEntity)
-
-    @Update
-    suspend fun update(user: UserEntity)
-
-    @Query("UPDATE users SET deletedAt = :deletedAt WHERE id = :id")
-    suspend fun softDelete(id: String, deletedAt: Long)
-
-    @Query("DELETE FROM users WHERE deletedAt IS NOT NULL")
-    suspend fun permanentDeleteAll()
-}
 
 @Dao
 interface CurrencyDao {
@@ -147,37 +122,6 @@ interface CategoryDao {
 }
 
 @Dao
-interface TagDao {
-    @Query("SELECT * FROM tags WHERE deletedAt IS NULL")
-    fun getAllTags(): Flow<List<TagEntity>>
-
-    @Query("SELECT * FROM tags WHERE id = :id AND deletedAt IS NULL")
-    suspend fun getTagById(id: String): TagEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(tag: TagEntity)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(tags: List<TagEntity>)
-
-    @Update
-    suspend fun update(tag: TagEntity)
-
-    @Query("UPDATE tags SET deletedAt = :deletedAt WHERE id = :id")
-    suspend fun softDelete(id: String, deletedAt: Long)
-
-    @Query("DELETE FROM tags WHERE deletedAt IS NOT NULL")
-    suspend fun permanentDeleteAll()
-
-    @Query("""
-        SELECT t.* FROM tags t
-        INNER JOIN transaction_tags tt ON t.id = tt.tagId
-        WHERE tt.transactionId = :transactionId AND t.deletedAt IS NULL
-    """)
-    fun getTagsForTransaction(transactionId: String): Flow<List<TagEntity>>
-}
-
-@Dao
 interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE deletedAt IS NULL ORDER BY date DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
@@ -233,52 +177,4 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET syncedAt = :syncedAt WHERE id = :id")
     suspend fun markSynced(id: String, syncedAt: Long)
-}
-
-@Dao
-interface TransactionTagDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(crossRef: TransactionTagCrossRef)
-
-    @Delete
-    suspend fun delete(crossRef: TransactionTagCrossRef)
-
-    @Query("DELETE FROM transaction_tags WHERE transactionId = :transactionId")
-    suspend fun deleteAllForTransaction(transactionId: String)
-
-    @Query("SELECT * FROM transaction_tags WHERE transactionId = :transactionId")
-    fun getTagsForTransaction(transactionId: String): Flow<List<TransactionTagCrossRef>>
-}
-
-@Dao
-interface CategoryTagDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(crossRef: CategoryTagCrossRef)
-
-    @Delete
-    suspend fun delete(crossRef: CategoryTagCrossRef)
-
-    @Query("DELETE FROM category_tags WHERE categoryId = :categoryId")
-    suspend fun deleteAllForCategory(categoryId: String)
-
-    @Query("SELECT * FROM category_tags WHERE categoryId = :categoryId")
-    fun getTagsForCategory(categoryId: String): Flow<List<CategoryTagCrossRef>>
-}
-
-@Dao
-interface ExchangeRateDao {
-    @Query("SELECT * FROM exchange_rates WHERE currencyFrom = :from AND currencyTo = :to")
-    fun getExchangeRates(from: String, to: String): Flow<List<ExchangeRateEntity>>
-
-    @Query("SELECT * FROM exchange_rates WHERE currencyFrom = :from AND currencyTo = :to AND date = :date")
-    suspend fun getExchangeRate(from: String, to: String, date: Long): ExchangeRateEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(exchangeRate: ExchangeRateEntity)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(exchangeRates: List<ExchangeRateEntity>)
-
-    @Query("DELETE FROM exchange_rates WHERE date < :date")
-    suspend fun deleteOldRates(date: Long)
 }

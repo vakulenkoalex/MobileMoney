@@ -7,29 +7,19 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [
-        UserEntity::class,
         CurrencyEntity::class,
         AccountEntity::class,
         CategoryEntity::class,
-        TagEntity::class,
-        TransactionEntity::class,
-        TransactionTagCrossRef::class,
-        CategoryTagCrossRef::class,
-        ExchangeRateEntity::class
+        TransactionEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun userDao(): UserDao
     abstract fun currencyDao(): CurrencyDao
     abstract fun accountDao(): AccountDao
     abstract fun categoryDao(): CategoryDao
-    abstract fun tagDao(): TagDao
     abstract fun transactionDao(): TransactionDao
-    abstract fun transactionTagDao(): TransactionTagDao
-    abstract fun categoryTagDao(): CategoryTagDao
-    abstract fun exchangeRateDao(): ExchangeRateDao
 
     companion object {
         @Volatile

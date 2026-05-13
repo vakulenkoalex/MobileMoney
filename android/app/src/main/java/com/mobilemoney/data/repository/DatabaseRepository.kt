@@ -6,8 +6,6 @@ import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.CurrencyDao
 import com.mobilemoney.data.local.CurrencyEntity
-import com.mobilemoney.data.local.ExchangeRateDao
-import com.mobilemoney.data.local.TagDao
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.CategoryEntity
@@ -24,13 +22,10 @@ import java.util.UUID
 
 class DatabaseRepository(context: Context) {
     private val database = AppDatabase.getDatabase(context)
-    private val userDao = database.userDao()
     private val currencyDao = database.currencyDao()
     private val accountDao = database.accountDao()
     private val categoryDao = database.categoryDao()
-    private val tagDao = database.tagDao()
     private val transactionDao = database.transactionDao()
-    private val exchangeRateDao = database.exchangeRateDao()
 
     fun getAccounts(): Flow<List<AccountUi>> {
         return combine(
@@ -157,6 +152,5 @@ class DatabaseRepository(context: Context) {
         transactionDao.permanentDeleteAll()
         accountDao.permanentDeleteAll()
         categoryDao.permanentDeleteAll()
-        tagDao.permanentDeleteAll()
     }
 }
