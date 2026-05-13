@@ -1,9 +1,5 @@
 # Структура базы данных (Android)
 
-> Серверная БД описана в [server_db_schema.md](server_db_schema.md)
-
----
-
 **Иконки** - название иконки из Material Design Icons (https://fonts.google.com/icons), например `food`, `car`, `account-balance-wallet`
 
 ## Таблицы
