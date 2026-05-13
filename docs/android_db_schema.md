@@ -39,8 +39,8 @@
 - is_income (boolean) - true=приход, false=расход
 - icon (varchar)
 - parent_id (FK -> categories.id, nullable)
-- created_at (timestamp, millis)
-- updated_at (timestamp, millis)
+- created_at (timestamp)
+- updated_at (timestamp)
 - deleted_at (timestamp, nullable)
 - synced_at (timestamp, nullable)
 
@@ -57,7 +57,7 @@
 - accountId (FK -> accounts.id)
 - categoryId (FK -> categories.id, nullable)
 - amount (decimal)
-- date (timestamp, millis)
+- date (timestamp)
 - comment (text, nullable)
 - source (text, NOT NULL) - источник: MANUAL, SMS, PUSH
 - sourceData (text, nullable) - необработанные данные от источника
