@@ -59,6 +59,7 @@
 - Docs are in Russian (`docs/*.md`)
 - Icons: Material Design Icons names (e.g., `food`, `account-balance-wallet`)
 - `READ_SMS` is a restricted permission on Android 14+; Google Play may reject apps using it
+- Не забывай актуализировать документацию если что то меняешь
 
 ## Known Issues & Solutions
 
