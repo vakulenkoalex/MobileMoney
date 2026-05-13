@@ -132,8 +132,6 @@ SyncWorker            SyncRepository           Сервер                     
 
 **Trigger:** pull данных с момента последней синхронизации
 
-**NOTE:** В текущей реализации `pullChanges()` отключён (`// pullChanges() disabled`). Сценарий зарезервирован для будущего.
-
 ```
 Клиент                    Сервер                     БД
   │                         │                        │
@@ -178,10 +176,6 @@ SyncWorker            SyncRepository           Сервер                     
   │     categories:[...],    │                        │
   │     transactions:[...]}──│                        │
 ```
-
-**NOTE:** В текущей реализации `pullAll()` отключён. Первичная синхронизация не реализована.
-
----
 
 ## 5. Health Check
 
