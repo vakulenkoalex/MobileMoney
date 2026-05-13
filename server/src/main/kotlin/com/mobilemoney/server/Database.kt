@@ -46,20 +46,20 @@ object Database {
             c.createStatement().use { stmt ->
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS users (
-                        login VARCHAR(255) PRIMARY KEY NOT NULL,
-                        password_hash VARCHAR(64) NOT NULL,
-                        salt VARCHAR(32) NOT NULL
+                        login TEXT PRIMARY KEY NOT NULL,
+                        passwordHash TEXT NOT NULL,
+                        salt TEXT NOT NULL
                     )
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS devices (
-                        device_id VARCHAR(255) NOT NULL UNIQUE,
-                        device_name VARCHAR(255) NOT NULL,
-                        token VARCHAR(255) UNIQUE NOT NULL,
-                        login VARCHAR(255) NOT NULL,
-                        created_at BIGINT NOT NULL,
-                        last_seen_at BIGINT NOT NULL,
-                        revoked_at BIGINT
+                        deviceId TEXT NOT NULL UNIQUE,
+                        deviceName TEXT NOT NULL,
+                        token TEXT UNIQUE NOT NULL,
+                        login TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        lastSeenAt INTEGER NOT NULL,
+                        revokedAt INTEGER
                     )
                 """.trimIndent())
                 stmt.execute("""
@@ -79,43 +79,43 @@ object Database {
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS categories (
-                        id VARCHAR(255) PRIMARY KEY,
-                        name VARCHAR(255) NOT NULL,
-                        is_income INTEGER NOT NULL,
-                        icon VARCHAR(50),
-                        parent_id VARCHAR(255),
-                        created_at BIGINT NOT NULL,
-                        updated_at BIGINT NOT NULL,
-                        deleted_at BIGINT,
-                        server_received_at BIGINT
+                        id TEXT PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL,
+                        isIncome INTEGER NOT NULL,
+                        icon TEXT NOT NULL,
+                        parentId TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        deletedAt INTEGER,
+                        serverReceivedAt INTEGER
                     )
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS currencies (
-                        code VARCHAR(10) PRIMARY KEY,
-                        name VARCHAR(255) NOT NULL,
-                        symbol VARCHAR(10) NOT NULL,
-                        created_at BIGINT NOT NULL,
-                        updated_at BIGINT NOT NULL,
-                        server_received_at BIGINT
+                        code TEXT PRIMARY KEY NOT NULL,
+                        name TEXT NOT NULL,
+                        symbol TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        serverReceivedAt INTEGER
                     )
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS transactions (
-                        id VARCHAR(255) PRIMARY KEY,
-                        account_id VARCHAR(255) NOT NULL,
-                        category_id VARCHAR(255),
+                        id TEXT PRIMARY KEY NOT NULL,
+                        accountId TEXT NOT NULL,
+                        categoryId TEXT,
                         amount REAL NOT NULL,
-                        date BIGINT NOT NULL,
+                        date INTEGER NOT NULL,
                         comment TEXT,
-                        source VARCHAR(50),
-                        source_data TEXT,
-                        creator_id VARCHAR(255),
-                        related_transaction_id VARCHAR(255),
-                        created_at BIGINT NOT NULL,
-                        updated_at BIGINT NOT NULL,
-                        deleted_at BIGINT,
-                        server_received_at BIGINT
+                        source TEXT,
+                        sourceData TEXT,
+                        creatorId TEXT,
+                        relatedTransactionId TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        deletedAt INTEGER,
+                        serverReceivedAt INTEGER
                     )
                 """.trimIndent())
                 
@@ -154,7 +154,7 @@ object Database {
         }
 
         conn.prepareStatement("""
-            INSERT INTO currencies (code, name, symbol, created_at, updated_at, server_received_at) VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO currencies (code, name, symbol, createdAt, updatedAt, serverReceivedAt) VALUES (?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             listOf(
                 Triple("RUB", "Российский рубль", "₽"),
@@ -174,7 +174,7 @@ object Database {
         println("Default currencies inserted")
 
         conn.prepareStatement("""
-            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at, server_received_at)
+            INSERT INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, serverReceivedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)
         """).use { stmt ->
             listOf(
@@ -199,7 +199,7 @@ object Database {
         val adjustExpenseId = java.util.UUID.randomUUID().toString()
         val adjustIncomeId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at, server_received_at)
+            INSERT INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, serverReceivedAt)
             VALUES (?, 'Корректировка', ?, 'more_horiz', NULL, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, adjustExpenseId)

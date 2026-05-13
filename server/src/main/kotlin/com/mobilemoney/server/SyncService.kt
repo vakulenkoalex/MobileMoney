@@ -119,7 +119,7 @@ fun upsertCategory(data: CategoryDto) {
     val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO categories (id, name, is_income, icon, parent_id, created_at, updated_at, deleted_at, server_received_at)
+            INSERT OR REPLACE INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, serverReceivedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
@@ -138,11 +138,11 @@ fun upsertCategory(data: CategoryDto) {
 
 fun getCategoryUpdatedAt(id: String): Long? {
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT updated_at FROM categories WHERE id = ?").use { stmt ->
+        conn.prepareStatement("SELECT updatedAt FROM categories WHERE id = ?").use { stmt ->
             stmt.setString(1, id)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) {
-                    return rs.getLong("updated_at")
+                    return rs.getLong("updatedAt")
                 }
             }
         }
@@ -161,7 +161,7 @@ fun upsertTransaction(data: TransactionDto) {
     val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO transactions (id, account_id, category_id, amount, date, comment, source, source_data, creator_id, related_transaction_id, created_at, updated_at, deleted_at, server_received_at)
+            INSERT OR REPLACE INTO transactions (id, accountId, categoryId, amount, date, comment, source, sourceData, creatorId, relatedTransactionId, createdAt, updatedAt, deletedAt, serverReceivedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
@@ -185,11 +185,11 @@ fun upsertTransaction(data: TransactionDto) {
 
 fun getTransactionUpdatedAt(id: String): Long? {
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT updated_at FROM transactions WHERE id = ?").use { stmt ->
+        conn.prepareStatement("SELECT updatedAt FROM transactions WHERE id = ?").use { stmt ->
             stmt.setString(1, id)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) {
-                    return rs.getLong("updated_at")
+                    return rs.getLong("updatedAt")
                 }
             }
         }
@@ -236,7 +236,7 @@ fun buildJsonAccount(rs: java.sql.ResultSet): String {
 fun getCategories(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM categories WHERE server_received_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM categories WHERE serverReceivedAt > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -251,7 +251,7 @@ fun getCategories(since: Long): List<String> {
 fun getAllCategories(): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM categories WHERE deleted_at IS NULL").use { stmt ->
+        conn.prepareStatement("SELECT * FROM categories WHERE deletedAt IS NULL").use { stmt ->
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
                     result.add(buildJsonCategory(rs))
@@ -263,14 +263,17 @@ fun getAllCategories(): List<String> {
 }
 
 fun buildJsonCategory(rs: java.sql.ResultSet): String {
-    val serverReceivedAt = rs.getLong("server_received_at")
-    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","is_income":${rs.getInt("is_income")},"icon":"${rs.getString("icon") ?: ""}","parent_id":${rs.getString("parent_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
+    val serverReceivedAt = rs.getLong("serverReceivedAt")
+    val deletedAtVal = rs.getString("deletedAt")
+    val isIncome = rs.getInt("isIncome") == 1
+    val parentId = rs.getString("parentId")
+    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","isIncome":$isIncome,"icon":"${rs.getString("icon") ?: ""}","parentId":${if (parentId != null) "\"$parentId\"" else "null"},"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun getTransactions(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM transactions WHERE server_received_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM transactions WHERE serverReceivedAt > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -285,7 +288,7 @@ fun getTransactions(since: Long): List<String> {
 fun getAllTransactions(): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM transactions WHERE deleted_at IS NULL").use { stmt ->
+        conn.prepareStatement("SELECT * FROM transactions WHERE deletedAt IS NULL").use { stmt ->
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
                     result.add(buildJsonTransaction(rs))
@@ -297,15 +300,18 @@ fun getAllTransactions(): List<String> {
 }
 
 fun buildJsonTransaction(rs: java.sql.ResultSet): String {
-    val serverReceivedAt = rs.getLong("server_received_at")
-    return """{"id":"${rs.getString("id")}","account_id":"${rs.getString("account_id")}","category_id":${rs.getString("category_id")?.let { "\"$it\"" } ?: "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creator_id":${rs.getString("creator_id")?.let { "\"$it\"" } ?: "null"},"created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"deleted_at":${rs.getString("deleted_at") ?: "null"},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
+    val serverReceivedAt = rs.getLong("serverReceivedAt")
+    val deletedAtVal = rs.getString("deletedAt")
+    val categoryId = rs.getString("categoryId")
+    val creatorId = rs.getString("creatorId")
+    return """{"id":"${rs.getString("id")}","accountId":"${rs.getString("accountId")}","categoryId":${if (categoryId != null) "\"$categoryId\"" else "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creatorId":${if (creatorId != null) "\"$creatorId\"" else "null"},"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun upsertCurrency(data: CurrencyDto) {
     val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO currencies (code, name, symbol, created_at, updated_at, server_received_at)
+            INSERT OR REPLACE INTO currencies (code, name, symbol, createdAt, updatedAt, serverReceivedAt)
             VALUES (?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.code)
@@ -322,7 +328,7 @@ fun upsertCurrency(data: CurrencyDto) {
 fun getCurrencies(since: Long): List<String> {
     val result = mutableListOf<String>()
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM currencies WHERE server_received_at > ?").use { stmt ->
+        conn.prepareStatement("SELECT * FROM currencies WHERE serverReceivedAt > ?").use { stmt ->
             stmt.setLong(1, since)
             stmt.executeQuery().use { rs ->
                 while (rs.next()) {
@@ -349,6 +355,6 @@ fun getAllCurrencies(): List<String> {
 }
 
 fun buildJsonCurrency(rs: java.sql.ResultSet): String {
-    val serverReceivedAt = rs.getLong("server_received_at")
-    return """{"code":"${rs.getString("code")}","name":"${rs.getString("name")}","symbol":"${rs.getString("symbol")}","created_at":${rs.getLong("created_at")},"updated_at":${rs.getLong("updated_at")},"server_received_at":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
+    val serverReceivedAt = rs.getLong("serverReceivedAt")
+    return """{"code":"${rs.getString("code")}","name":"${rs.getString("name")}","symbol":"${rs.getString("symbol")}","createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }

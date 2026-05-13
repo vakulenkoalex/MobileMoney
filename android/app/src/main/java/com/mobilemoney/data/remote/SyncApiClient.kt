@@ -250,28 +250,28 @@ data class AccountDto(
 data class CategoryDto(
     val id: String,
     val name: String,
-    @SerialName("is_income") val isIncome: Int = 0,
+    val isIncome: Boolean = false,
     val icon: String,
-    @SerialName("parent_id") val parentId: String? = null,
-    @SerialName("created_at") val createdAt: Long,
-    @SerialName("updated_at") val updatedAt: Long,
-    @SerialName("deleted_at") val deletedAt: Long? = null
+    val parentId: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null
 ) {
-    fun isIncomeCategory(): Boolean = isIncome == 1
+    fun isIncomeCategory(): Boolean = isIncome
 }
 
 @Serializable
 data class TransactionDto(
     val id: String,
-    @SerialName("account_id") val accountId: String,
-    @SerialName("category_id") val categoryId: String?,
+    val accountId: String,
+    val categoryId: String?,
     val amount: Double,
     val date: Long,
-    val comment: String,
-    @SerialName("creator_id") val creatorId: String? = null,
-    @SerialName("created_at") val createdAt: Long,
-    @SerialName("updated_at") val updatedAt: Long,
-    @SerialName("deleted_at") val deletedAt: Long? = null
+    val comment: String? = null,
+    val creatorId: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null
 )
 
 @Serializable
@@ -279,6 +279,6 @@ data class CurrencyDto(
     val code: String,
     val name: String,
     val symbol: String,
-    @SerialName("created_at") val createdAt: Long,
-    @SerialName("updated_at") val updatedAt: Long
+    val createdAt: Long,
+    val updatedAt: Long
 )

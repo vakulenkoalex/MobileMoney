@@ -84,7 +84,7 @@ data class TransactionEntity(
     val categoryId: String?,
     val amount: Double,
     val date: Long,
-    val comment: String,
+    val comment: String?,
     val source: TransactionSource = TransactionSource.MANUAL,
     val sourceData: String?,
     val creatorId: String?,

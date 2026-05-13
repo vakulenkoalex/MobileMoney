@@ -13,7 +13,7 @@ object AuthService {
         val salt = user["salt"] ?: ""
         val hash = sha256(password + salt)
 
-        if (hash != user["password_hash"]) {
+        if (hash != user["passwordHash"]) {
             return Result.failure(Exception("Invalid password"))
         }
 
@@ -28,20 +28,20 @@ object AuthService {
         if (device == null) {
             return Result.failure(Exception("Invalid token"))
         }
-        if (device["revoked_at"]?.isNotEmpty() == true) {
+        if (device["revokedAt"]?.isNotEmpty() == true) {
             return Result.failure(Exception("Token revoked"))
         }
         updateLastSeen(token)
         return Result.success(Device(
-            device["device_id"] ?: "",
-            device["device_name"] ?: "",
+            device["deviceId"] ?: "",
+            device["deviceName"] ?: "",
             device["login"] ?: ""
         ))
     }
 
     fun revoke(token: String): Result<Unit> {
         Database.getConnection().use { conn ->
-            conn.prepareStatement("UPDATE devices SET revoked_at = ? WHERE token = ?").use { stmt ->
+            conn.prepareStatement("UPDATE devices SET revokedAt = ? WHERE token = ?").use { stmt ->
                 stmt.setLong(1, System.currentTimeMillis())
                 stmt.setString(2, token)
                 stmt.executeUpdate()
@@ -55,13 +55,13 @@ data class Device(val deviceId: String, val deviceName: String, val login: Strin
 
 fun findUser(login: String): Map<String, String>? {
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT login, password_hash, salt FROM users WHERE login = ?").use { stmt ->
+        conn.prepareStatement("SELECT login, passwordHash, salt FROM users WHERE login = ?").use { stmt ->
             stmt.setString(1, login)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) {
                     return mapOf(
                         "login" to rs.getString("login"),
-                        "password_hash" to rs.getString("password_hash"),
+                        "passwordHash" to rs.getString("passwordHash"),
                         "salt" to rs.getString("salt")
                     )
                 }
@@ -73,21 +73,21 @@ fun findUser(login: String): Map<String, String>? {
 
 fun findDeviceByToken(token: String): Map<String, String>? {
     Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT device_id, device_name, token, login, revoked_at FROM devices WHERE token = ?").use { stmt ->
+        conn.prepareStatement("SELECT deviceId, deviceName, token, login, revokedAt FROM devices WHERE token = ?").use { stmt ->
             stmt.setString(1, token)
             stmt.executeQuery().use { rs ->
                 if (rs.next()) {
-                    val deviceId = rs.getString("device_id")
-                    val deviceName = rs.getString("device_name")
+                    val deviceId = rs.getString("deviceId")
+                    val deviceName = rs.getString("deviceName")
                     val login = rs.getString("login")
-                    val revokedAt = rs.getString("revoked_at")
-                    println("Device found: device_id=$deviceId, device_name=$deviceName, login=$login, revoked_at=$revokedAt")
+                    val revokedAt = rs.getString("revokedAt")
+                    println("Device found: deviceId=$deviceId, deviceName=$deviceName, login=$login, revokedAt=$revokedAt")
                     return mapOf(
-                        "device_id" to deviceId,
-                        "device_name" to deviceName,
+                        "deviceId" to deviceId,
+                        "deviceName" to deviceName,
                         "token" to rs.getString("token"),
                         "login" to login,
-                        "revoked_at" to (revokedAt ?: "")
+                        "revokedAt" to (revokedAt ?: "")
                     )
                 }
             }
@@ -100,7 +100,7 @@ fun insertDevice(deviceId: String, deviceName: String, token: String, login: Str
     val now = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement(
-            "INSERT OR REPLACE INTO devices (device_id, device_name, token, login, created_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)"
+            "INSERT OR REPLACE INTO devices (deviceId, deviceName, token, login, createdAt, lastSeenAt) VALUES (?, ?, ?, ?, ?, ?)"
         ).use { stmt ->
             stmt.setString(1, deviceId)
             stmt.setString(2, deviceName)
@@ -115,7 +115,7 @@ fun insertDevice(deviceId: String, deviceName: String, token: String, login: Str
 
 fun updateLastSeen(token: String) {
     Database.getConnection().use { conn ->
-        conn.prepareStatement("UPDATE devices SET last_seen_at = ? WHERE token = ?").use { stmt ->
+        conn.prepareStatement("UPDATE devices SET lastSeenAt = ? WHERE token = ?").use { stmt ->
             stmt.setLong(1, System.currentTimeMillis())
             stmt.setString(2, token)
             stmt.executeUpdate()

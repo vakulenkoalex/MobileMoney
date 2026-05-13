@@ -26,7 +26,7 @@ fun CategoryEntity.toSyncDto(): CategoryDto {
     return CategoryDto(
         id = id,
         name = name,
-        isIncome = if (isIncome) 1 else 0,
+        isIncome = isIncome,
         icon = icon,
         parentId = parentId,
         createdAt = createdAt,
@@ -69,7 +69,7 @@ fun CategoryDto.toEntity(): CategoryEntity {
     return CategoryEntity(
         id = id,
         name = name,
-        isIncome = isIncome == 1,
+        isIncome = isIncome,
         icon = icon,
         parentId = parentId,
         createdAt = createdAt,

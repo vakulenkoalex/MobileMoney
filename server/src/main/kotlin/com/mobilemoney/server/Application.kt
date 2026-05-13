@@ -28,8 +28,8 @@ fun main() {
                 val json = parseJson(body)
                 val login = json["login"] ?: ""
                 val password = json["password"] ?: ""
-                val deviceId = json["device_id"] ?: "unknown"
-                val deviceName = json["device_name"] ?: "Unknown"
+                val deviceId = json["deviceId"] ?: "unknown"
+                val deviceName = json["deviceName"] ?: "Unknown"
 
                 if (login.isEmpty() || password.isEmpty()) {
                     call.respondText("{\"error\":\"Missing login or password\"}", status = HttpStatusCode.BadRequest)

@@ -58,19 +58,19 @@
 
 ### Операции (transactions)
 - id (PK)
-- account_id (FK -> accounts.id)
-- category_id (FK -> categories.id, nullable)
+- accountId (FK -> accounts.id)
+- categoryId (FK -> categories.id, nullable)
 - amount (decimal)
 - date (timestamp, millis)
-- comment (text)
-- source (text) - источник: MANUAL, SMS, PUSH
-- source_data (text) - необработанные данные от источника
-- creator_id (FK -> users.id, nullable)
-- related_transaction_id (varchar, nullable) - UUID для связывания переводов (не FK)
-- created_at (timestamp, millis)
-- updated_at (timestamp, millis)
-- deleted_at (timestamp, nullable)
-- synced_at (timestamp, nullable)
+- comment (text, nullable)
+- source (text, NOT NULL) - источник: MANUAL, SMS, PUSH
+- sourceData (text, nullable) - необработанные данные от источника
+- creatorId (FK -> users.id, nullable)
+- relatedTransactionId (text, nullable) - UUID для связывания переводов (не FK)
+- createdAt (timestamp)
+- updatedAt (timestamp)
+- deletedAt (timestamp, nullable)
+- syncedAt (timestamp, nullable)
 
 ### Связь операций и меток (transaction_tags)
 - transaction_id (FK -> transactions.id)

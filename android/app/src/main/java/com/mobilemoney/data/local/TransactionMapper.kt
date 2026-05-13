@@ -8,7 +8,7 @@ fun TransactionEntity.toUiModel(account: AccountEntity?, category: CategoryEntit
         id = UUID.fromString(id),
         title = category?.name ?: "Без категории",
         subtitle = account?.name ?: formatDate(date),
-        comment = comment,
+        comment = comment ?: "",
         amount = amount,
         currency = account?.currencyCode ?: "₽",
         icon = category?.icon ?: "receipt",
