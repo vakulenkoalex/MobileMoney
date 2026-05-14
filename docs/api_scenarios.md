@@ -70,11 +70,13 @@ SyncWorker            SyncRepository           Сервер                     
     │───────────────────▶│                     │                        │
     │                    │                     │                        │
     │                    │ pushChanges() ─────▶│ POST /api/v1/sync/push │
-    │                    │   {accounts:[...],   │                        │
+    │                    │   {currencies:[...],│                        │
+    │                    │    accounts:[...],  │                        │
     │                    │    categories:[...], │                        │
     │                    │    transactions:[...]}│                       │
-    │                    │                     │──── upsert accounts ──▶│
-    │                    │                     │──── upsert categories ─▶│
+    │                    │                     │──── upsert currencies ─▶│
+    │                    │                     │──── upsert accounts ────▶│
+    │                    │                     │──── upsert categories ──▶│
     │                    │                     │──── upsert transactions─▶│
     │                    │                     │                        │
     ├─200 ───────────────│ {success,timestamp,  │                        │
@@ -103,8 +105,25 @@ SyncWorker            SyncRepository           Сервер                     
       "deletedAt": null
     }
   ],
+  "currencies": [...],
   "categories": [...],
-  "transactions": [...]
+  "transactions": [
+    {
+      "id": "uuid",
+      "accountId": "uuid",
+      "categoryId": "uuid",
+      "amount": 1500.00,
+      "date": 1700000000000,
+      "comment": "Продукты",
+      "source": "manual",
+      "sourceData": null,
+      "creatorId": null,
+      "relatedTransactionId": null,
+      "createdAt": 1700000000000,
+      "updatedAt": 1700000000000,
+      "deletedAt": null
+    }
+  ]
 }
 ```
 
@@ -137,22 +156,23 @@ SyncWorker            SyncRepository           Сервер                     
   │                         │                        │
   │──── getChanges(since) ─▶│ GET /api/v1/sync/       │
   │   ?since=1700000000000   │   changes?since=...     │
-  │                         │──── SELECT WHERE ──────▶│
-  │                         │   updated_at > since     │
+│                         │──── SELECT WHERE ──────▶│
+   │                         │   serverReceivedAt > since │
   │                         │                        │
-  │◀── {timestamp,accounts,◀│                        │
-  │     categories,          │                        │
-  │     transactions} ───────│                        │
+│◀── {timestamp,currencies,◀│                        │
+│     accounts,categories,  │                        │
+│     transactions} ───────│                        │
 ```
 
 **Request params:**
-- `since` — timestamp в миллисекундах
+- `since` — timestamp в миллисекундах (serverReceivedAt)
 
 **Response (200):**
 ```json
 {
   "timestamp": 1700000000000,
   "accounts": [...],
+  "currencies": [...],
   "categories": [...],
   "transactions": [...]
 }
@@ -171,10 +191,11 @@ SyncWorker            SyncRepository           Сервер                     
   │                         │──── SELECT WHERE ─────▶│
   │                         │   deleted_at IS NULL   │
   │                         │                        │
-  │◀── {timestamp,          ◀│                        │
-  │     accounts:[...],     │                        │
-  │     categories:[...],    │                        │
-  │     transactions:[...]}──│                        │
+│◀── {timestamp,          ◀│                        │
+│     currencies:[...],   │                        │
+│     accounts:[...],     │                        │
+│     categories:[...],    │                        │
+│     transactions:[...]}──│                        │
 ```
 
 ## 5. Health Check
