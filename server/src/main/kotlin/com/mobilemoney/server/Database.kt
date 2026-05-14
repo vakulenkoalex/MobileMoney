@@ -108,7 +108,7 @@ object Database {
                         amount REAL NOT NULL,
                         date INTEGER NOT NULL,
                         comment TEXT,
-                        source TEXT,
+                        source TEXT NOT NULL,
                         sourceData TEXT,
                         creatorId TEXT,
                         relatedTransactionId TEXT,
