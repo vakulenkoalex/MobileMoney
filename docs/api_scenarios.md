@@ -92,38 +92,10 @@ SyncWorker            SyncRepository           Сервер                     
 **Request:**
 ```json
 {
-  "accounts": [
-    {
-      "id": "uuid",
-      "name": "Наличные",
-      "typeId": "cash",
-      "currencyCode": "RUB",
-      "icon": "account-balance-wallet",
-      "isDefault": true,
-      "createdAt": 1700000000000,
-      "updatedAt": 1700000000000,
-      "deletedAt": null
-    }
-  ],
+  "accounts": [...],
   "currencies": [...],
   "categories": [...],
-  "transactions": [
-    {
-      "id": "uuid",
-      "accountId": "uuid",
-      "categoryId": "uuid",
-      "amount": 1500.00,
-      "date": 1700000000000,
-      "comment": "Продукты",
-      "source": "manual",
-      "sourceData": null,
-      "creatorId": null,
-      "relatedTransactionId": null,
-      "createdAt": 1700000000000,
-      "updatedAt": 1700000000000,
-      "deletedAt": null
-    }
-  ]
+  "transactions": [...]
 }
 ```
 
@@ -212,54 +184,3 @@ SyncWorker            SyncRepository           Сервер                     
 ```
 
 ---
-
-## Сводная таблица: Error Handling
-
-| Status | Причина | Действие |
-|--------|---------|----------|
-| 200 | OK | Продолжить |
-| 400 | Bad request | Показать ошибку |
-| 401 | Token invalid/revoked | logout(), показать логин |
-| 404 | Not found | Показать ошибку |
-| 500 | Server error | Retry via WorkManager |
-| timeout | Нет сети | Retry via WorkManager |
-
----
-
-## Flow: Авторизация → Синхронизация
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ App Startup                                                │
-│  │                                                        │
-│  ├─ loadToken() from EncryptedSharedPreferences           │
-│  │                                                        │
-│  └─ if (token == null)                                    │
-│       показать экран логина                                │
-│       └── login() → saveToken() → main app                │
-│                     │                                     │
-│                     ▼                                     │
-│              sync() через WorkManager                      │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ WorkManager (periodic, 15 min)                              │
-│  │                                                        │
-│  └─ sync()                                                │
-│       │                                                    │
-│       ├─ if (token == null) → failure "Не авторизован"   │
-│       │                                                    │
-│       └─ pushChanges()                                     │
-│            │                                               │
-│            ├─ 200 → success, update timestamp             │
-│            ├─ 401 → logout(), failure                     │
-│            └─ 500 → retry (max 3 attempts)                │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ User-initiated Sync                                        │
-│  │                                                        │
-│  └─ sync() — same as WorkManager                          │
-│       (отличается только UI feedback)                      │
-└─────────────────────────────────────────────────────────────┘
-```
