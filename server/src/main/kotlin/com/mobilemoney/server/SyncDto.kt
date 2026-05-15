@@ -1,6 +1,5 @@
 package com.mobilemoney.server
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
