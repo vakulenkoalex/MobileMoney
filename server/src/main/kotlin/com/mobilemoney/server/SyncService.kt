@@ -5,11 +5,6 @@ object SyncService {
     fun push(data: SyncPushRequestDto): SyncResponse {
         var syncedCount = 0
 
-        data.currencies.forEach { currency ->
-            upsertCurrency(currency)
-            syncedCount++
-        }
-
         data.accounts.forEach { account ->
             upsertAccount(account)
             syncedCount++
@@ -32,7 +27,6 @@ object SyncService {
     fun getChanges(since: Long): SyncChangesResponse {
         return SyncChangesResponse(
             timestamp = System.currentTimeMillis(),
-            currencies = getCurrencies(since),
             accounts = getAccounts(since),
             categories = getCategories(since),
             transactions = getTransactions(since)
@@ -42,7 +36,6 @@ object SyncService {
     fun pull(): SyncChangesResponse {
         return SyncChangesResponse(
             timestamp = System.currentTimeMillis(),
-            currencies = getAllCurrencies(),
             accounts = getAllAccounts(),
             categories = getAllCategories(),
             transactions = getAllTransactions()
@@ -58,25 +51,17 @@ data class SyncResponse(
 
 data class SyncChangesResponse(
     val timestamp: Long,
-    val currencies: List<String> = emptyList(),
     val accounts: List<String> = emptyList(),
     val categories: List<String> = emptyList(),
     val transactions: List<String> = emptyList()
 )
 
 fun upsertAccount(data: AccountDto) {
-    val incomingUpdatedAt = data.updatedAt
-    val existingUpdatedAt = getAccountUpdatedAt(data.id)
-
-    if (existingUpdatedAt != null && incomingUpdatedAt <= existingUpdatedAt) {
-        return
-    }
-
     val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, createdAt, updatedAt, deletedAt, serverReceivedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
             stmt.setString(2, data.name)
@@ -88,39 +73,19 @@ fun upsertAccount(data: AccountDto) {
             stmt.setLong(8, data.createdAt)
             stmt.setLong(9, data.updatedAt)
             stmt.setString(10, data.deletedAt?.toString())
-            stmt.setLong(11, serverReceivedAt)
+            stmt.setString(11, data.syncedAt?.toString())
+            stmt.setLong(12, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
 }
 
-fun getAccountUpdatedAt(id: String): Long? {
-    Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT updatedAt FROM accounts WHERE id = ?").use { stmt ->
-            stmt.setString(1, id)
-            stmt.executeQuery().use { rs ->
-                if (rs.next()) {
-                    return rs.getLong("updatedAt")
-                }
-            }
-        }
-    }
-    return null
-}
-
 fun upsertCategory(data: CategoryDto) {
-    val incomingUpdatedAt = data.updatedAt
-    val existingUpdatedAt = getCategoryUpdatedAt(data.id)
-
-    if (existingUpdatedAt != null && incomingUpdatedAt <= existingUpdatedAt) {
-        return
-    }
-
     val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, serverReceivedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
             stmt.setString(2, data.name)
@@ -130,39 +95,19 @@ fun upsertCategory(data: CategoryDto) {
             stmt.setLong(6, data.createdAt)
             stmt.setLong(7, data.updatedAt)
             stmt.setString(8, data.deletedAt?.toString())
-            stmt.setLong(9, serverReceivedAt)
+            stmt.setString(9, data.syncedAt?.toString())
+            stmt.setLong(10, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
 }
 
-fun getCategoryUpdatedAt(id: String): Long? {
-    Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT updatedAt FROM categories WHERE id = ?").use { stmt ->
-            stmt.setString(1, id)
-            stmt.executeQuery().use { rs ->
-                if (rs.next()) {
-                    return rs.getLong("updatedAt")
-                }
-            }
-        }
-    }
-    return null
-}
-
 fun upsertTransaction(data: TransactionDto) {
-    val incomingUpdatedAt = data.updatedAt
-    val existingUpdatedAt = getTransactionUpdatedAt(data.id)
-
-    if (existingUpdatedAt != null && incomingUpdatedAt <= existingUpdatedAt) {
-        return
-    }
-
     val serverReceivedAt = System.currentTimeMillis()
     Database.getConnection().use { conn ->
         conn.prepareStatement("""
-            INSERT OR REPLACE INTO transactions (id, accountId, categoryId, amount, date, comment, source, sourceData, creatorId, relatedTransactionId, createdAt, updatedAt, deletedAt, serverReceivedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO transactions (id, accountId, categoryId, amount, date, comment, source, sourceData, creatorId, relatedTransactionId, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """).use { stmt ->
             stmt.setString(1, data.id)
             stmt.setString(2, data.accountId)
@@ -177,24 +122,11 @@ fun upsertTransaction(data: TransactionDto) {
             stmt.setLong(11, data.createdAt)
             stmt.setLong(12, data.updatedAt)
             stmt.setString(13, data.deletedAt?.toString())
-            stmt.setLong(14, serverReceivedAt)
+            stmt.setString(14, data.syncedAt?.toString())
+            stmt.setLong(15, serverReceivedAt)
             stmt.executeUpdate()
         }
     }
-}
-
-fun getTransactionUpdatedAt(id: String): Long? {
-    Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT updatedAt FROM transactions WHERE id = ?").use { stmt ->
-            stmt.setString(1, id)
-            stmt.executeQuery().use { rs ->
-                if (rs.next()) {
-                    return rs.getLong("updatedAt")
-                }
-            }
-        }
-    }
-    return null
 }
 
 fun getAccounts(since: Long): List<String> {
@@ -227,10 +159,11 @@ fun getAllAccounts(): List<String> {
 }
 
 fun buildJsonAccount(rs: java.sql.ResultSet): String {
+    val syncedAt = rs.getLong("syncedAt")
     val serverReceivedAt = rs.getLong("serverReceivedAt")
     val deletedAtVal = rs.getString("deletedAt")
     val isDefault = rs.getInt("isDefault") == 1
-    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","typeId":"${rs.getString("typeId")}","currencyCode":"${rs.getString("currencyCode") ?: ""}","icon":"${rs.getString("icon") ?: ""}","isDefault":$isDefault,"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
+    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","typeId":"${rs.getString("typeId")}","currencyCode":"${rs.getString("currencyCode") ?: ""}","icon":"${rs.getString("icon") ?: ""}","isDefault":$isDefault,"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"syncedAt":${if (syncedAt > 0) syncedAt else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun getCategories(since: Long): List<String> {
@@ -263,11 +196,12 @@ fun getAllCategories(): List<String> {
 }
 
 fun buildJsonCategory(rs: java.sql.ResultSet): String {
+    val syncedAt = rs.getLong("syncedAt")
     val serverReceivedAt = rs.getLong("serverReceivedAt")
     val deletedAtVal = rs.getString("deletedAt")
     val isIncome = rs.getInt("isIncome") == 1
     val parentId = rs.getString("parentId")
-    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","isIncome":$isIncome,"icon":"${rs.getString("icon") ?: ""}","parentId":${if (parentId != null) "\"$parentId\"" else "null"},"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
+    return """{"id":"${rs.getString("id")}","name":"${rs.getString("name")}","isIncome":$isIncome,"icon":"${rs.getString("icon") ?: ""}","parentId":${if (parentId != null) "\"$parentId\"" else "null"},"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"syncedAt":${if (syncedAt > 0) syncedAt else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }
 
 fun getTransactions(since: Long): List<String> {
@@ -300,61 +234,10 @@ fun getAllTransactions(): List<String> {
 }
 
 fun buildJsonTransaction(rs: java.sql.ResultSet): String {
+    val syncedAt = rs.getLong("syncedAt")
     val serverReceivedAt = rs.getLong("serverReceivedAt")
     val deletedAtVal = rs.getString("deletedAt")
     val categoryId = rs.getString("categoryId")
     val creatorId = rs.getString("creatorId")
-    return """{"id":"${rs.getString("id")}","accountId":"${rs.getString("accountId")}","categoryId":${if (categoryId != null) "\"$categoryId\"" else "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creatorId":${if (creatorId != null) "\"$creatorId\"" else "null"},"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
-}
-
-fun upsertCurrency(data: CurrencyDto) {
-    val serverReceivedAt = System.currentTimeMillis()
-    Database.getConnection().use { conn ->
-        conn.prepareStatement("""
-            INSERT OR REPLACE INTO currencies (code, name, symbol, createdAt, updatedAt, serverReceivedAt)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """).use { stmt ->
-            stmt.setString(1, data.code)
-            stmt.setString(2, data.name)
-            stmt.setString(3, data.symbol)
-            stmt.setLong(4, data.createdAt)
-            stmt.setLong(5, data.updatedAt)
-            stmt.setLong(6, serverReceivedAt)
-            stmt.executeUpdate()
-        }
-    }
-}
-
-fun getCurrencies(since: Long): List<String> {
-    val result = mutableListOf<String>()
-    Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM currencies WHERE serverReceivedAt > ?").use { stmt ->
-            stmt.setLong(1, since)
-            stmt.executeQuery().use { rs ->
-                while (rs.next()) {
-                    result.add(buildJsonCurrency(rs))
-                }
-            }
-        }
-    }
-    return result
-}
-
-fun getAllCurrencies(): List<String> {
-    val result = mutableListOf<String>()
-    Database.getConnection().use { conn ->
-        conn.prepareStatement("SELECT * FROM currencies").use { stmt ->
-            stmt.executeQuery().use { rs ->
-                while (rs.next()) {
-                    result.add(buildJsonCurrency(rs))
-                }
-            }
-        }
-    }
-    return result
-}
-
-fun buildJsonCurrency(rs: java.sql.ResultSet): String {
-    val serverReceivedAt = rs.getLong("serverReceivedAt")
-    return """{"code":"${rs.getString("code")}","name":"${rs.getString("name")}","symbol":"${rs.getString("symbol")}","createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
+    return """{"id":"${rs.getString("id")}","accountId":"${rs.getString("accountId")}","categoryId":${if (categoryId != null) "\"$categoryId\"" else "null"},"amount":${rs.getDouble("amount")},"date":${rs.getLong("date")},"comment":"${rs.getString("comment") ?: ""}","creatorId":${if (creatorId != null) "\"$creatorId\"" else "null"},"createdAt":${rs.getLong("createdAt")},"updatedAt":${rs.getLong("updatedAt")},"deletedAt":${if (deletedAtVal != null) deletedAtVal else "null"},"syncedAt":${if (syncedAt > 0) syncedAt else "null"},"serverReceivedAt":${if (serverReceivedAt > 0) serverReceivedAt else "null"}}"""
 }

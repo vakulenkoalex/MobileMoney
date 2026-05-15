@@ -116,7 +116,7 @@ val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
                 print("getChanges done, ")
                 System.out.flush()
 
-                val result = "{\"timestamp\":${response.timestamp},\"currencies\":[${response.currencies.joinToString(",")}],\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                val result = "{\"timestamp\":${response.timestamp},\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
                 print("responding... ")
                 System.out.flush()
                 call.respondText(result)
@@ -145,7 +145,7 @@ val since = call.request.queryParameters["since"]?.toLongOrNull() ?: 0L
                     return@get
                 }
 
-                val result = "{\"timestamp\":${response.timestamp},\"currencies\":[${response.currencies.joinToString(",")}],\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
+                val result = "{\"timestamp\":${response.timestamp},\"accounts\":[${response.accounts.joinToString(",")}],\"categories\":[${response.categories.joinToString(",")}],\"transactions\":[${response.transactions.joinToString(",")}]}"
                 call.respondText(result)
             }
         }

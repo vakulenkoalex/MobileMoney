@@ -7,16 +7,14 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [
-        CurrencyEntity::class,
         AccountEntity::class,
         CategoryEntity::class,
         TransactionEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun currencyDao(): CurrencyDao
     abstract fun accountDao(): AccountDao
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao

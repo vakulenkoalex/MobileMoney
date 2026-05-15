@@ -4,53 +4,39 @@
 
 ## Таблицы
 
-### Пользователи (users)
-- id (PK)
-- email
-- password_hash
-- name
-- created_at (timestamp)
-- updated_at (timestamp)
-- deleted_at (timestamp, nullable) - пометка на удаление
-
-### Валюты (currencies)
-- code (PK) - RUB, USD, EUR...
-- name
-- symbol
-- updated_at (timestamp)
-- deleted_at (timestamp, nullable)
-
 ### Счета (accounts)
 - id (PK)
 - name
 - typeId - тип счёта: cash, card, account (строка, не enum)
-- currencyCode (FK -> currencies.code, NOT NULL)
+- currencyCode (text, NOT NULL) - код валюты: RUB, USD, EUR
 - icon (NOT NULL)
 - isDefault (boolean, NOT NULL) - использовать по умолчанию для новых операций
 - archived (boolean, NOT NULL) - для скрытия старых счетов
 - createdAt (timestamp, NOT NULL)
 - updatedAt (timestamp, NOT NULL)
-- deletedAt (timestamp)
-- syncedAt (timestamp) - время последней синхронизации
+- deletedAt (timestamp, nullable)
+- syncedAt (timestamp, nullable) - время последней синхронизации
+- serverReceivedAt (timestamp, nullable)
 
 ### Категории (categories)
 - id (PK)
 - name
-- is_income (boolean) - true=приход, false=расход
+- isIncome (boolean) - true=приход, false=расход
 - icon (varchar)
-- parent_id (FK -> categories.id, nullable)
-- created_at (timestamp)
-- updated_at (timestamp)
-- deleted_at (timestamp, nullable)
-- synced_at (timestamp, nullable)
+- parentId (FK -> categories.id, nullable)
+- createdAt (timestamp)
+- updatedAt (timestamp)
+- deletedAt (timestamp, nullable)
+- syncedAt (timestamp, nullable)
+- serverReceivedAt (timestamp, nullable)
 
 ### Метки (tags)
 - id (PK)
 - name
 - color
-- created_at (timestamp)
-- updated_at (timestamp)
-- deleted_at (timestamp, nullable)
+- createdAt (timestamp)
+- updatedAt (timestamp)
+- deletedAt (timestamp, nullable)
 
 ### Операции (transactions)
 - id (PK)
@@ -67,6 +53,7 @@
 - updatedAt (timestamp)
 - deletedAt (timestamp, nullable)
 - syncedAt (timestamp, nullable)
+- serverReceivedAt (timestamp, nullable)
 
 ### Связь операций и меток (transaction_tags)
 - transaction_id (FK -> transactions.id)
@@ -78,19 +65,23 @@
 - tag_id (FK -> tags.id)
 - PK (category_id, tag_id)
 
-### Курсы валют (exchange_rates)
-- currency_from (FK -> currencies.code)
-- currency_to (FK -> currencies.code)
-- rate (decimal)
-- date (PK)
-- PK (currency_from, currency_to, date)
+## Справочники
+
+### Валюты (currencies) - enum
+```kotlin
+enum class Currency(val code: String, val name: String, val symbol: String) {
+    RUB("RUB", "Российский рубль", "₽"),
+    USD("Доллар США", "$"),
+    EUR("Евро", "€")
+}
+```
+Не хранится в БД, определён в коде.
 
 ## Связи
 
-- Счета принадлежат одной валюте
+- Счета принадлежат одной валюте (по currencyCode)
 - Тип счёта (type_id) - перечисление (cash, card, account), не внешний ключ
 - Категории образуют иерархию через parent_id
 - Операции привязаны к счету, категории, пользователю
 - Метки можно назначить категории или операции
 - Перевод между счетами - две связанные операции (расход с одного счёта, приход на другой) с общим UUID в related_transaction_id
-

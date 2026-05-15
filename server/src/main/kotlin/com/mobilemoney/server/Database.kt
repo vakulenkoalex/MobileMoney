@@ -74,6 +74,7 @@ object Database {
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
+                        syncedAt INTEGER,
                         serverReceivedAt INTEGER
                     )
                 """.trimIndent())
@@ -87,16 +88,7 @@ object Database {
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
-                        serverReceivedAt INTEGER
-                    )
-                """.trimIndent())
-                stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS currencies (
-                        code TEXT PRIMARY KEY NOT NULL,
-                        name TEXT NOT NULL,
-                        symbol TEXT NOT NULL,
-                        createdAt INTEGER NOT NULL,
-                        updatedAt INTEGER NOT NULL,
+                        syncedAt INTEGER,
                         serverReceivedAt INTEGER
                     )
                 """.trimIndent())
@@ -115,6 +107,7 @@ object Database {
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
+                        syncedAt INTEGER,
                         serverReceivedAt INTEGER
                     )
                 """.trimIndent())
@@ -143,35 +136,6 @@ object Database {
     fun insertDefaultData() {
         val now = System.currentTimeMillis()
         val conn = getConnection()
-
-        conn.prepareStatement("SELECT COUNT(*) FROM currencies").use { stmt ->
-            stmt.executeQuery().use { rs ->
-                if (rs.next() && rs.getInt(1) > 0) {
-                    println("Default data already exists, skipping")
-                    return
-                }
-            }
-        }
-
-        conn.prepareStatement("""
-            INSERT INTO currencies (code, name, symbol, createdAt, updatedAt, serverReceivedAt) VALUES (?, ?, ?, ?, ?, ?)
-        """).use { stmt ->
-            listOf(
-                Triple("RUB", "Российский рубль", "₽"),
-                Triple("USD", "Доллар США", "$"),
-                Triple("EUR", "Евро", "€")
-            ).forEach { (code, name, symbol) ->
-                stmt.setString(1, code)
-                stmt.setString(2, name)
-                stmt.setString(3, symbol)
-                stmt.setLong(4, now)
-                stmt.setLong(5, now)
-                stmt.setLong(6, now)
-                stmt.addBatch()
-            }
-            stmt.executeBatch()
-        }
-        println("Default currencies inserted")
 
         conn.prepareStatement("""
             INSERT INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, serverReceivedAt)

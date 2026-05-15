@@ -18,7 +18,9 @@ fun AccountEntity.toSyncDto(): AccountDto {
         isDefault = isDefault,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
     )
 }
 
@@ -31,7 +33,9 @@ fun CategoryEntity.toSyncDto(): CategoryDto {
         parentId = parentId,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
     )
 }
 
@@ -46,7 +50,9 @@ fun TransactionEntity.toSyncDto(): TransactionDto {
         creatorId = creatorId,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
     )
 }
 
@@ -61,7 +67,9 @@ fun AccountDto.toEntity(): AccountEntity {
         archived = deletedAt != null,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
     )
 }
 
@@ -74,7 +82,9 @@ fun CategoryDto.toEntity(): CategoryEntity {
         parentId = parentId,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
     )
 }
 
@@ -92,6 +102,8 @@ fun TransactionDto.toEntity(): TransactionEntity {
         relatedTransactionId = null,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        deletedAt = deletedAt
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
     )
 }

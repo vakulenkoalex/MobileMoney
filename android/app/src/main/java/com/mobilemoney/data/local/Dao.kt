@@ -8,30 +8,6 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface CurrencyDao {
-    @Query("SELECT * FROM currencies WHERE deletedAt IS NULL")
-    fun getAllCurrencies(): Flow<List<CurrencyEntity>>
-
-    @Query("SELECT * FROM currencies WHERE code = :code AND deletedAt IS NULL")
-    suspend fun getCurrencyByCode(code: String): CurrencyEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(currency: CurrencyEntity)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(currencies: List<CurrencyEntity>)
-
-    @Update
-    suspend fun update(currency: CurrencyEntity)
-
-    @Query("UPDATE currencies SET deletedAt = :deletedAt WHERE code = :code")
-    suspend fun softDelete(code: String, deletedAt: Long)
-
-    @Query("DELETE FROM currencies WHERE deletedAt IS NOT NULL")
-    suspend fun permanentDeleteAll()
-}
-
-@Dao
 interface AccountDao {
     @Query("SELECT * FROM accounts WHERE deletedAt IS NULL AND archived = 0")
     fun getAllAccounts(): Flow<List<AccountEntity>>
@@ -69,7 +45,7 @@ interface AccountDao {
     @Query("UPDATE accounts SET isDefault = 0")
     suspend fun clearDefaultAccounts()
 
-    @Query("SELECT * FROM accounts WHERE syncedAt IS NULL AND updatedAt > 0")
+    @Query("SELECT * FROM accounts WHERE syncedAt IS NULL")
     suspend fun getUnsyncedAccounts(): List<AccountEntity>
 
     @Query("UPDATE accounts SET syncedAt = :syncedAt WHERE id = :id")
@@ -114,7 +90,7 @@ interface CategoryDao {
     @Query("DELETE FROM categories WHERE deletedAt IS NOT NULL")
     suspend fun permanentDeleteAll()
 
-    @Query("SELECT * FROM categories WHERE syncedAt IS NULL AND updatedAt > 0")
+    @Query("SELECT * FROM categories WHERE syncedAt IS NULL")
     suspend fun getUnsyncedCategories(): List<CategoryEntity>
 
     @Query("UPDATE categories SET syncedAt = :syncedAt WHERE id = :id")
@@ -172,7 +148,7 @@ interface TransactionDao {
     """)
     suspend fun getAccountBalance(accountId: String): Double?
 
-    @Query("SELECT * FROM transactions WHERE syncedAt IS NULL AND updatedAt > 0")
+    @Query("SELECT * FROM transactions WHERE syncedAt IS NULL")
     suspend fun getUnsyncedTransactions(): List<TransactionEntity>
 
     @Query("UPDATE transactions SET syncedAt = :syncedAt WHERE id = :id")

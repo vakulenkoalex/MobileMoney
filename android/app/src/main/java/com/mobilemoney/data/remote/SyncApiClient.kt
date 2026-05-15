@@ -201,7 +201,6 @@ data class ErrorResponse(
 @Serializable
 data class SyncChangesResponse(
     val timestamp: Long,
-    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
@@ -210,7 +209,6 @@ data class SyncChangesResponse(
 @Serializable
 data class SyncPullResponse(
     val timestamp: Long,
-    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
@@ -218,7 +216,6 @@ data class SyncPullResponse(
 
 @Serializable
 data class SyncPushRequest(
-    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
@@ -241,7 +238,9 @@ data class AccountDto(
     val isDefault: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 ) {
     fun isDefaultAccount(): Boolean = isDefault
 }
@@ -255,7 +254,9 @@ data class CategoryDto(
     val parentId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 ) {
     fun isIncomeCategory(): Boolean = isIncome
 }
@@ -271,14 +272,7 @@ data class TransactionDto(
     val creatorId: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
-@Serializable
-data class CurrencyDto(
-    val code: String,
-    val name: String,
-    val symbol: String,
-    val createdAt: Long,
-    val updatedAt: Long
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 )

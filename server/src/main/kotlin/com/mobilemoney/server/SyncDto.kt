@@ -5,20 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SyncPushRequestDto(
-    val currencies: List<CurrencyDto> = emptyList(),
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList()
-)
-
-@Serializable
-data class CurrencyDto(
-    val code: String,
-    val name: String,
-    val symbol: String,
-    val createdAt: Long = 0L,
-    val updatedAt: Long = 0L,
-    val serverReceivedAt: Long? = null
 )
 
 @Serializable
@@ -33,6 +22,7 @@ data class AccountDto(
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L,
     val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
     val serverReceivedAt: Long? = null
 )
 
@@ -46,6 +36,7 @@ data class CategoryDto(
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L,
     val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
     val serverReceivedAt: Long? = null
 )
 
@@ -64,5 +55,6 @@ data class TransactionDto(
     val createdAt: Long = 0L,
     val updatedAt: Long = 0L,
     val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
     val serverReceivedAt: Long? = null
 )

@@ -16,25 +16,18 @@
 - lastSeenAt (INTEGER NOT NULL)
 - revokedAt (INTEGER) — время отзыва токена
 
-### Валюты (currencies)
-- code (PK) — TEXT NOT NULL, RUB, USD, EUR...
-- name (TEXT NOT NULL)
-- symbol (TEXT NOT NULL)
-- createdAt (INTEGER NOT NULL)
-- updatedAt (INTEGER NOT NULL)
-- serverReceivedAt (INTEGER) — время получения записи сервером
-
 ### Счета (accounts)
 - id (PK) — TEXT NOT NULL, UUID
 - name (TEXT)
 - typeId (TEXT NOT NULL) — тип счёта: cash, card, account
-- currencyCode (TEXT NOT NULL) — FK -> currencies.code
+- currencyCode (TEXT NOT NULL) — код валюты: RUB, USD, EUR
 - icon (TEXT NOT NULL)
 - isDefault (INTEGER NOT NULL)
 - archived (INTEGER NOT NULL)
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)
+- syncedAt (INTEGER)
 - serverReceivedAt (INTEGER) — время получения записи сервером
 
 ### Категории (categories)
@@ -46,6 +39,7 @@
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)
+- syncedAt (INTEGER)
 - serverReceivedAt (INTEGER) — время получения записи сервером
 
 ### Операции (transactions)
@@ -62,25 +56,27 @@
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)
+- syncedAt (INTEGER)
 - serverReceivedAt (INTEGER) — время получения записи сервером
+
+## Справочники
+
+### Валюты (currencies) - объект в коде
+```kotlin
+object Currencies {
+    val all = listOf(
+        Currency("RUB", "Российский рубль", "₽"),
+        Currency("USD", "Доллар США", "$"),
+        Currency("EUR", "Евро", "€")
+    )
+}
+```
+Не хранится в БД, определён в коде.
 
 ## Связи
 
 - devices принадлежит users (по login)
-- accounts принадлежит одной валюте (currency_code)
+- accounts принадлежит одной валюте (по currencyCode)
 - categories образуют иерархию через parent_id
 - transactions привязаны к account, category
 - Перевод между счетами — две связанные операции с общим UUID в related_transaction_id
-
-## Отличия от клиентской БД
-
-| Сущность | Клиент | Сервер |
-|----------|--------|--------|
-| users | полная структура (id, email, name, timestamps) | упрощённая (login, password_hash, salt) |
-| currencies | есть (с deleted_at) | есть (без deleted_at) |
-| tags | есть | нет |
-| transaction_tags | есть | нет |
-| category_tags | есть | нет |
-| exchange_rates | есть | нет |
-| synced_at поля | есть у accounts, categories, transactions | нет |
-| source/sourceData | есть | нет |

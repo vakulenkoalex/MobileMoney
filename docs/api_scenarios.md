@@ -70,11 +70,9 @@ SyncWorker            SyncRepository           Сервер                     
     │───────────────────▶│                     │                        │
     │                    │                     │                        │
     │                    │ pushChanges() ─────▶│ POST /api/v1/sync/push │
-    │                    │   {currencies:[...],│                        │
-    │                    │    accounts:[...],  │                        │
+    │                    │   {accounts:[...],  │                        │
     │                    │    categories:[...], │                        │
     │                    │    transactions:[...]}│                       │
-    │                    │                     │──── upsert currencies ─▶│
     │                    │                     │──── upsert accounts ────▶│
     │                    │                     │──── upsert categories ──▶│
     │                    │                     │──── upsert transactions─▶│
@@ -93,7 +91,6 @@ SyncWorker            SyncRepository           Сервер                     
 ```json
 {
   "accounts": [...],
-  "currencies": [...],
   "categories": [...],
   "transactions": [...]
 }
@@ -113,27 +110,13 @@ SyncWorker            SyncRepository           Сервер                     
 - 401 → logout(), показать экран логина
 - 500 → retry via WorkManager (exponential backoff, max 3 attempts)
 
-**Conflict resolution:** last-write-wins по `updatedAt`
-- Сервер сохраняет запись только если `incoming.updatedAt > existing.updatedAt`
-- Иначе пропускает
+**Conflict resolution:** last-write-wins по времени получения на сервере
+- Сервер всегда записывает данные при push (без проверки updatedAt)
+- Последний push перезаписывает предыдущие данные
 
 ### Выборка изменений на клиенте
 
 Клиент выбирает записи для отправки по принципу: `syncedAt IS NULL` — не синхронизированные.
-
-```
-Критерии выборки:
-┌─────────────────┬──────────────────────────┬─────────────────────────────────┐
-│ Сущность        │ SQL условие              │ Описание                        │
-├─────────────────┼──────────────────────────┼─────────────────────────────────┤
-│ Account         │ syncedAt IS NULL         │ Все аккаунты с непустым         │
-│                 │ AND updatedAt > 0        │ updatedAt (были созданы/изменены)│
-├─────────────────┼──────────────────────────┼─────────────────────────────────┤
-│ Category        │ syncedAt IS NULL         │ Не синхронизированные категории │
-├─────────────────┼──────────────────────────┼─────────────────────────────────┤
-│ Transaction     │ syncedAt IS NULL         │ Не синхронизированные           │
-│                 │                          │ транзакции                      │
-└─────────────────┴──────────────────────────┴─────────────────────────────────┘
 
 Flow:
 1. Пользователь создаёт/изменяет запись
@@ -155,12 +138,12 @@ Flow:
   │                         │                        │
   │──── getChanges(since) ─▶│ GET /api/v1/sync/       │
   │   ?since=1700000000000   │   changes?since=...     │
-│                         │──── SELECT WHERE ──────▶│
+  │                         │──── SELECT WHERE ──────▶│
    │                         │   serverReceivedAt > since │
   │                         │                        │
-│◀── {timestamp,currencies,◀│                        │
-│     accounts,categories,  │                        │
-│     transactions} ───────│                        │
+  │◀── {timestamp,         ◀│                        │
+  │     accounts,categories,│                        │
+  │     transactions} ───────│                        │
 ```
 
 **Request params:**
@@ -171,7 +154,6 @@ Flow:
 {
   "timestamp": 1700000000000,
   "accounts": [...],
-  "currencies": [...],
   "categories": [...],
   "transactions": [...]
 }
@@ -190,11 +172,10 @@ Flow:
   │                         │──── SELECT WHERE ─────▶│
   │                         │   deleted_at IS NULL   │
   │                         │                        │
-│◀── {timestamp,          ◀│                        │
-│     currencies:[...],   │                        │
-│     accounts:[...],     │                        │
-│     categories:[...],    │                        │
-│     transactions:[...]}──│                        │
+  │◀── {timestamp,          ◀│                        │
+  │     accounts:[...],     │                        │
+  │     categories:[...],    │                        │
+  │     transactions:[...]}──│                        │
 ```
 
 ## 5. Health Check
@@ -211,3 +192,16 @@ Flow:
 ```
 
 ---
+## 6. Семантика полей timestamp
+
+| Поле | Кто пишет | Когда | На сервер? | Смысл |
+|------|-----------|-------|------------|-------|
+| createdAt | клиент | при создании | да | дата создания записи |
+| updatedAt | клиент | при каждом изменении | да | last-write-wins конфликт resolution |
+| deletedAt | клиент | при soft-delete | да | запись считается удалённой |
+| syncedAt | клиент | после успешного push (server timestamp) | **нет** | не отправлять повторно синхронизированные |
+| serverReceivedAt | сервер | при получении записи | **нет** | инкрементальный sync (параметр `since`) |
+
+**Клиент отправляет:** createdAt, updatedAt, deletedAt
+**Клиент получает:** server timestamp в ответе push → записывает в syncedAt
+**Сервер хранит:** createdAt, updatedAt, deletedAt, serverReceivedAt

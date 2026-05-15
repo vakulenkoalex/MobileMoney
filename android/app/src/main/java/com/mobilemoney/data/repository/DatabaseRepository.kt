@@ -4,8 +4,6 @@ import android.content.Context
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
-import com.mobilemoney.data.local.CurrencyDao
-import com.mobilemoney.data.local.CurrencyEntity
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.CategoryEntity
@@ -22,7 +20,6 @@ import java.util.UUID
 
 class DatabaseRepository(context: Context) {
     private val database = AppDatabase.getDatabase(context)
-    private val currencyDao = database.currencyDao()
     private val accountDao = database.accountDao()
     private val categoryDao = database.categoryDao()
     private val transactionDao = database.transactionDao()

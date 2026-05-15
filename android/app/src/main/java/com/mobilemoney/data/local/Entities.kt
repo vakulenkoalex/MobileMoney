@@ -11,25 +11,8 @@ enum class TransactionSource {
     PUSH
 }
 
-@Entity(tableName = "currencies")
-data class CurrencyEntity(
-    @PrimaryKey val code: String,
-    val name: String,
-    val symbol: String,
-    val updatedAt: Long,
-    val deletedAt: Long? = null
-)
-
 @Entity(
     tableName = "accounts",
-    foreignKeys = [
-        ForeignKey(
-            entity = CurrencyEntity::class,
-            parentColumns = ["code"],
-            childColumns = ["currencyCode"],
-            onDelete = ForeignKey.SET_NULL
-        )
-    ],
     indices = [Index("currencyCode")]
 )
 data class AccountEntity(
@@ -43,7 +26,8 @@ data class AccountEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    val syncedAt: Long? = null
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 )
 
 @Entity(
@@ -67,7 +51,8 @@ data class CategoryEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    val syncedAt: Long? = null
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 )
 
 @Entity(
@@ -92,5 +77,6 @@ data class TransactionEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
-    val syncedAt: Long? = null
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
 )
