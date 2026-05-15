@@ -10,3 +10,4 @@ misc.xml
 gradle.xml
 */.kotlin/errors/
 */.kotlin/sessions
+*/.idea/workspace.xml
