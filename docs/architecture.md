@@ -98,7 +98,7 @@ ui/screens/
 | Lifecycle | | 2.10.0 |
 | Navigation Compose | | 2.9.8 |
 | Networking | Ktor client | 3.0.2 |
-| Serialization | Kotlin Serialization | 1.6.2 |
+| Serialization | Kotlin Serialization | 1.11.0 |
 | Local DB | Room | 2.8.4 |
 | Async | Kotlin Coroutines + Flow | 1.9.0 |
 | Background | WorkManager | 2.10.0 |
