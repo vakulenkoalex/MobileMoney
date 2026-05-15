@@ -9,3 +9,4 @@ server/data/
 misc.xml
 gradle.xml
 */.kotlin/errors/
+*/.kotlin/sessions
