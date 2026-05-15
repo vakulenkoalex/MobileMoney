@@ -1,13 +1,9 @@
 .gradle/
 build/
-*/.idea/caches/
+*/.idea/
 local.properties
 build.bat
-deploymentTargetSelector.xml
 */gradle/gradle-daemon-jvm.properties
 server/data/
-misc.xml
-gradle.xml
 */.kotlin/errors/
 */.kotlin/sessions
-*/.idea/workspace.xml
