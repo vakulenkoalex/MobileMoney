@@ -7,11 +7,9 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.mobilemoney.data.repository.DatabaseRepository
 import com.mobilemoney.data.repository.SyncRepository
-import com.mobilemoney.worker.SyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MobileMoneyApp : Application() {

@@ -17,7 +17,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.viewmodel.LoginViewModel
 import com.mobilemoney.viewmodel.ServerStatus
@@ -27,7 +26,6 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
     val context = LocalContext.current
-    val app = context.applicationContext as MobileMoneyApp
     val viewModel: LoginViewModel = remember { LoginViewModel() }
 
     var login by remember { mutableStateOf("") }
