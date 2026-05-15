@@ -1,0 +1,22 @@
+package com.mobilemoney.server.model.dto
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class TransactionDto(
+    val id: String,
+    val accountId: String,
+    val categoryId: String,
+    val amount: Double,
+    val date: Long,
+    val comment: String,
+    val source: String,
+    val sourceData: String?,
+    val creatorId: String?,
+    val relatedTransactionId: String?,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long?,
+    val syncedAt: Long?,
+    val serverReceivedAt: Long?
+)
