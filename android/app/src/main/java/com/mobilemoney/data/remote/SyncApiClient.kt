@@ -46,7 +46,7 @@ class SyncApiClient(private val context: Context) {
                 conn.connectTimeout = 30000
                 conn.readTimeout = 30000
 
-                val body = """{"login":"$login","password":"$password","device_id":"$deviceId","device_name":"$deviceName"}"""
+                val body = """{"login":"$login","password":"$password","deviceId":"$deviceId","deviceName":"$deviceName"}"""
                 conn.outputStream.use { it.write(body.toByteArray()) }
 
                 val responseCode = conn.responseCode
@@ -235,12 +235,13 @@ data class AccountDto(
     val typeId: String,
     val currencyCode: String,
     val icon: String,
-    val isDefault: Boolean = false,
+    val isDefault: Boolean,
+    val archived: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null,
-    val syncedAt: Long? = null,
-    val serverReceivedAt: Long? = null
+    val deletedAt: Long?,
+    val syncedAt: Long?,
+    val serverReceivedAt: Long?
 ) {
     fun isDefaultAccount(): Boolean = isDefault
 }
@@ -249,14 +250,14 @@ data class AccountDto(
 data class CategoryDto(
     val id: String,
     val name: String,
-    val isIncome: Boolean = false,
+    val isIncome: Boolean,
     val icon: String,
-    val parentId: String? = null,
+    val parentId: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null,
-    val syncedAt: Long? = null,
-    val serverReceivedAt: Long? = null
+    val deletedAt: Long?,
+    val syncedAt: Long?,
+    val serverReceivedAt: Long?
 ) {
     fun isIncomeCategory(): Boolean = isIncome
 }
@@ -265,14 +266,17 @@ data class CategoryDto(
 data class TransactionDto(
     val id: String,
     val accountId: String,
-    val categoryId: String?,
+    val categoryId: String,
     val amount: Double,
     val date: Long,
-    val comment: String? = null,
-    val creatorId: String? = null,
+    val comment: String,
+    val source: String,
+    val sourceData: String?,
+    val creatorId: String?,
+    val relatedTransactionId: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val deletedAt: Long? = null,
-    val syncedAt: Long? = null,
-    val serverReceivedAt: Long? = null
+    val deletedAt: Long?,
+    val syncedAt: Long?,
+    val serverReceivedAt: Long?
 )

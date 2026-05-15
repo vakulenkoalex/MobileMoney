@@ -24,8 +24,8 @@ fun TransactionEntity.toUiModel(account: AccountEntity?, category: CategoryEntit
 fun TransactionUi.toEntity(): TransactionEntity {
     return TransactionEntity(
         id = id.toString(),
-        accountId = accountId?.toString() ?: "",
-        categoryId = categoryId?.toString(),
+        accountId = accountId.toString(),
+        categoryId = categoryId.toString(),
         amount = amount,
         date = date,
         comment = comment,

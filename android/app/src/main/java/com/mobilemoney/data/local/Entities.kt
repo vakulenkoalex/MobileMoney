@@ -66,10 +66,10 @@ data class CategoryEntity(
 data class TransactionEntity(
     @PrimaryKey val id: String,
     val accountId: String,
-    val categoryId: String?,
+    val categoryId: String,
     val amount: Double,
     val date: Long,
-    val comment: String?,
+    val comment: String,
     val source: TransactionSource = TransactionSource.MANUAL,
     val sourceData: String?,
     val creatorId: String?,
