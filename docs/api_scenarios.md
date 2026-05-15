@@ -205,3 +205,30 @@ Flow:
 **Клиент отправляет:** createdAt, updatedAt, deletedAt
 **Клиент получает:** server timestamp в ответе push → записывает в syncedAt
 **Сервер хранит:** createdAt, updatedAt, deletedAt, serverReceivedAt
+
+---
+
+## 7. Sync на клиенте
+
+```
+полный цикл синхронизации
+
+1. Проверка токена (deviceToken)
+   → Нет токена → ошибка "Войдите в аккаунт"
+
+2. pullChanges() — получить изменения с сервера
+   ├─ lastSyncTimestamp == 0 ИЛИ нет локальных данных
+   │   → GET /api/v1/sync/pull (полный дамп)
+   └─ иначе
+       → GET /api/v1/sync/changes?since=... (инкрементальный)
+
+   Условия сохранения данных с сервера в Room:
+   | existing == null         | insert (записи нет) |
+   | existing.syncedAt != null| insert (сервер свежее)|
+   | existing.syncedAt == null | пропуск (локальные не отправлены) |
+
+3. pushChanges() — отправить локальные изменения
+   ├─ SELECT * FROM [table] WHERE syncedAt IS NULL
+   └─ POST /api/v1/sync/push
+       → При успехе: UPDATE syncedAt = serverTimestamp
+```
