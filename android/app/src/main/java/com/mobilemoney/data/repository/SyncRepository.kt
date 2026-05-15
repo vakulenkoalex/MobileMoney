@@ -108,6 +108,16 @@ class SyncRepository(context: Context) {
             return Result.failure(Exception("Войдите в аккаунт"))
         }
 
+        val pullResult = pullChanges()
+        if (pullResult.isFailure) {
+            val errorMsg = pullResult.exceptionOrNull()?.message ?: ""
+            _syncState.value = _syncState.value.copy(
+                isSyncing = false,
+                error = errorMsg
+            )
+            return Result.failure(pullResult.exceptionOrNull() ?: Exception("Pull failed"))
+        }
+
         val pushResult = pushChanges()
         if (pushResult.isFailure) {
             val errorMsg = pushResult.exceptionOrNull()?.message ?: ""
@@ -126,17 +136,6 @@ class SyncRepository(context: Context) {
             return Result.failure(pushResult.exceptionOrNull() ?: Exception("Push failed"))
         }
 
-        val pullResult = pullChanges()
-        if (pullResult.isFailure) {
-            val errorMsg = pullResult.exceptionOrNull()?.message ?: ""
-            _syncState.value = _syncState.value.copy(
-                isSyncing = false,
-                error = errorMsg
-            )
-            return Result.failure(pullResult.exceptionOrNull() ?: Exception("Pull failed"))
-        }
-
-        lastSyncTimestamp = System.currentTimeMillis()
         _syncState.value = _syncState.value.copy(
             isSyncing = false,
             lastSyncTime = lastSyncTimestamp
@@ -198,6 +197,7 @@ class SyncRepository(context: Context) {
             result.onFailure { e -> Log.e("SyncRepository", "getChanges error: ${e.message}") }
             return result.map { response ->
                 val syncedAt = response.timestamp
+                lastSyncTimestamp = syncedAt
                 Log.d("SyncRepository", "pullChanges: accounts=${response.accounts.size}, categories=${response.categories.size}, syncedAt=$syncedAt")
                 response.accounts.forEach { dto -> upsertAccount(dto, syncedAt) }
                 response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
@@ -207,22 +207,22 @@ class SyncRepository(context: Context) {
     }
 
     private suspend fun upsertAccount(dto: AccountDto, syncedAt: Long) {
-        val existing = accountDao.getAccountById(dto.id)
-        if (existing == null || existing.updatedAt < dto.updatedAt) {
+        val existing = transactionDao.getTransactionById(dto.id)
+        if (existing == null || existing.syncedAt != null) {
             accountDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
         }
     }
 
     private suspend fun upsertCategory(dto: CategoryDto, syncedAt: Long) {
-        val existing = categoryDao.getCategoryById(dto.id)
-        if (existing == null || existing.updatedAt < dto.updatedAt) {
+        val existing = transactionDao.getTransactionById(dto.id)
+        if (existing == null || existing.syncedAt != null) {
             categoryDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
         }
     }
 
     private suspend fun upsertTransaction(dto: TransactionDto, syncedAt: Long) {
         val existing = transactionDao.getTransactionById(dto.id)
-        if (existing == null || existing.updatedAt < dto.updatedAt) {
+        if (existing == null || existing.syncedAt != null) {
             transactionDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
         }
     }
