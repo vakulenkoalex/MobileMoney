@@ -207,14 +207,14 @@ class SyncRepository(context: Context) {
     }
 
     private suspend fun upsertAccount(dto: AccountDto, syncedAt: Long) {
-        val existing = transactionDao.getTransactionById(dto.id)
+        val existing = transactionDao.getAccountById(dto.id)
         if (existing == null || existing.syncedAt != null) {
             accountDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
         }
     }
 
     private suspend fun upsertCategory(dto: CategoryDto, syncedAt: Long) {
-        val existing = transactionDao.getTransactionById(dto.id)
+        val existing = transactionDao.getCategoryById(dto.id)
         if (existing == null || existing.syncedAt != null) {
             categoryDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
         }
