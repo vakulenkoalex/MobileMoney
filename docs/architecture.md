@@ -19,24 +19,41 @@ enum class TransactionSource { MANUAL, SMS, PUSH }
 - Копирует напрямую Room DB файл (не JSON/CSV)
 - Удаляет WAL/SHM/JOURNAL файлы после импорта
 
-## 4. Presentation слой (UI)
+## 4. Архитектура приложения
 
-### 4.1 Структура экранов
+### 4.1 Структура проекта (Clean Architecture)
 
 ```
 android/app/src/main/java/com/mobilemoney/
 ├── MainActivity.kt
-├── MobileMoneyApp.kt           # Application class
+├── MobileMoneyApp.kt
 ├── data/
 │   ├── config/                # CategoryIcons, AccountIcons, Currencies
 │   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers
-│   ├── model/                 # Domain models
+│   ├── model/                 # Domain models (DTO)
 │   ├── remote/                # SyncApiClient
 │   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository
+├── domain/                    # Domain layer
+│   ├── model/                 # Transaction, Category, Account (domain models)
+│   ├── repository/            # Repository interfaces
+│   │   ├── AccountRepository.kt
+│   │   ├── CategoryRepository.kt
+│   │   ├── TransactionRepository.kt
+│   │   └── SyncRepository.kt
+│   └── usecase/
+│       ├── account/
+│       │   ├── CreateAccountUseCase.kt
+│       │   └── GetAccountsUseCase.kt
+│       ├── category/
+│       │   └── GetCategoriesUseCase.kt
+│       └── transaction/
+│           ├── GetTransactionsUseCase.kt
+│           └── SaveTransactionUseCase.kt
+├── di/                        # DI.kt (ручной DI)
 ├── ui/
-│   ├── navigation/            # AppNavigation.kt
+│   ├── navigation/            # Navigation.kt
 │   ├── screens/               # Compose UI screens
-│   ├── theme/                 # Theme.kt
+│   ├── theme/                 # Theme.kt, Typography.kt
 │   └── utils/                 # FormatUtils
 ├── viewmodel/                 # ViewModels
 │   ├── LoginViewModel.kt
@@ -48,7 +65,11 @@ android/app/src/main/java/com/mobilemoney/
 │   ├── TransactionFormViewModel.kt
 │   └── SettingsViewModel.kt
 └── worker/                    # SyncWorker.kt
+```
 
+### 4.2 UI Screens
+
+```
 ui/screens/
 ├── LoginScreen.kt
 ├── AccountListScreen.kt
@@ -56,7 +77,7 @@ ui/screens/
 ├── CategoryListScreen.kt
 ├── CategoryFormScreen.kt      # Add/Edit category
 ├── TransactionListScreen.kt
-├── TransactionFormScreen.kt    # Add/Edit transaction
+├── TransactionFormScreen.kt   # Add/Edit transaction, split mode
 └── SettingsScreen.kt
 ```
 
@@ -79,17 +100,16 @@ ui/screens/
 | Target/Min SDK | API 34 (Android 14) | |
 | Gradle | | 9.4.1 |
 | AGP | Android Gradle Plugin | 9.2.0 |
-| UI | Jetpack Compose + Material 3 | BOM 2024.02.00 |
+| UI | Jetpack Compose + Material 3 | BOM 2026.03.00 |
 | Compose Compiler Plugin | Kotlin | 2.3.21 |
 | Lifecycle | | 2.10.0 |
 | Navigation Compose | | 2.9.8 |
-| Networking | Ktor client | 3.0.2 |
+| Networking | HttpURLConnection (ручной) | - |
 | Serialization | Kotlin Serialization | 1.11.0 |
 | Local DB | Room | 2.8.4 |
 | Async | Kotlin Coroutines + Flow | 1.9.0 |
-| Background | WorkManager | 2.10.0 |
-| Security | EncryptedSharedPreferences, BiometricPrompt | |
-| Pagination | Paging 3 | |
+| Background | WorkManager | 2.11.1 |
+| Security | EncryptedSharedPreferences | |
 
 ---
 
