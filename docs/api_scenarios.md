@@ -136,7 +136,7 @@ Flow:
 ```
 Клиент                    Сервер                     БД
   │                         │                        │
-  │──── getChanges(since) ─▶│ GET /api/v1/sync/       │
+  │──── getChanges(since) ─▶│ GET /api/v1/sync/changes?since=... │
   │   ?since=1700000000000   │   changes?since=...     │
   │                         │──── SELECT WHERE ──────▶│
    │                         │   serverReceivedAt > since │
