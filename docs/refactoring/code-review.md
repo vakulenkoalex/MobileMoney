@@ -24,11 +24,6 @@ data (repository, local/Room, remote/Ktor)
 Application.kt (routes) → AuthService/SyncService → Database.kt (JDBC)
 ```
 
-- Все в одном файле `Application.kt`
-- Нет разделения на слои (controller/service/dao)
-
----
-
 ## Дублирование кода
 
 ### Критические (приоритет 1)
@@ -335,26 +330,6 @@ fun <T> SelectionBottomSheet(
 
 ---
 
-### 5. Server: Разделить слои
-
-```
-server/src/main/kotlin/com/mobilemoney/server/
-├── Application.kt       # Routes (оставить текущий код)
-├── auth/
-│   └── AuthService.kt   #移动到 сервис
-├── sync/
-│   └── SyncService.kt   #移动到 сервис
-├── db/
-│   └── Database.kt      #移动到 repository
-├── model/
-│   ├── SyncDto.kt       # DTOs
-│   └── Entities.kt      # (создать)
-└── util/
-    └── HashUtil.kt      #移动到 util
-```
-
----
-
 ### 6. DI (опционально)
 
 Если планируется использовать Hilt (как указано в AGENTS.md):
@@ -375,17 +350,16 @@ class AccountFormViewModel @Inject constructor(
 
 ## Оценка трудозатрат
 
-| Приоритет | Задача | Время |
-|-----------|--------|-------|
-| 1 | API Client рефакторинг | ~1 час |
-| 1 | Upsert generalization | ~30 минут |
-| 2 | Base ViewModel | ~1 час |
-| 2 | UI компоненты (FormScaffold, IconPicker) | ~2 часа |
-| 2 | Mapper utilities | ~30 минут |
-| 3 | Server layer separation | ~2 часа |
-| 3 | Hilt DI | ~2 часа |
+| Приоритет | Задача | Время | Статус |
+|-----------|--------|-------|--------|
+| 1 | API Client рефакторинг | ~1 час | |
+| 1 | Upsert generalization | ~30 минут | |
+| 2 | Base ViewModel | ~1 час | |
+| 2 | UI компоненты (FormScaffold, IconPicker) | ~2 часа | |
+| 2 | Mapper utilities | ~30 минут | |
+| 3 | Hilt DI | ~2 часа | |
 
-**Итого:** ~9 часов для полного рефакторинга
+**Итого:** ~7 часов для полного рефакторинга
 
 ---
 

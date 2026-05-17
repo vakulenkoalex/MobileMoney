@@ -1,8 +1,10 @@
 # DTO Refactoring Plan
 
+**Status:** NOT STARTED — низкий приоритет
+
 ## Problem
 DTOs are duplicated between Android and Server:
-- `AccountDto` - in `android/.../SyncApiClient.kt` and `server/.../SyncDto.kt`
+- `AccountDto` - in `android/.../SyncApiClient.kt` and `server/.../model/dto/AccountDto.kt`
 - `CategoryDto` - same locations
 - `TransactionDto` - same locations
 

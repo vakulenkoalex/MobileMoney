@@ -12,11 +12,9 @@ Full architectural refactoring of both Android and Server projects using increme
 
 Current state analysis:
 
-- **No domain layer**: ViewModels call repositories directly, business logic scattered
 - **Hilt declared but not implemented**: Manual DI via `MobileMoneyApp.getRepository()`
 - **Large monolith files**: TransactionFormScreen (671 lines), Navigation (289 lines)
 - **DTO duplication**: AccountDto, CategoryDto, TransactionDto exist in both Android and Server with different types
-- **Server issues**: Manual JSON parsing via regex, no layered architecture, all `object` singletons
 - **Critical bugs**: `fallbackToDestructiveMigration(dropAllTables = true)`, split transactions without rollback
 - **Zero tests**: No test files in either project
 
@@ -50,56 +48,6 @@ common/
 - No dependencies except `kotlinx-serialization`
 - Both projects include `implementation(project(":common"))`
 - Mapping `Int ↔ Boolean` remains in Android mappers (Room Entity uses Int, not Boolean)
-
----
-
-## Section 2: Android — Domain Layer
-
-**Current:** ViewModels directly call `DatabaseRepository`, `SyncRepository`. Business logic (balance, mapping, validation) is spread across repositories and viewmodels.
-
-**Target:**
-```
-android/app/src/main/java/com/mobilemoney/
-├── domain/
-│   ├── model/           // Domain entities (Account, Category, Transaction)
-│   ├── repository/      // Repository interfaces
-│   │   ├── AccountRepository.kt
-│   │   ├── CategoryRepository.kt
-│   │   ├── TransactionRepository.kt
-│   │   └── SyncRepository.kt
-│   └── usecase/         // Use Cases
-│       ├── account/
-│       │   ├── GetAccountsUseCase.kt
-│       │   ├── CreateAccountUseCase.kt
-│       │   └── ...
-│       ├── category/
-│       ├── transaction/
-│       └── sync/
-├── data/                // Existing: Room + Remote + Repository implementations
-├── presentation/        // renamed from ui/
-│   ├── screens/
-│   ├── navigation/
-│   ├── theme/
-│   └── viewmodel/
-└── worker/
-```
-
-**Use Cases** — simple classes with single `invoke()`:
-```kotlin
-class GetAccountsUseCase(
-    private val accountRepository: AccountRepository
-) {
-    operator fun invoke(includeArchived: Boolean = false): Flow<List<Account>> =
-        accountRepository.getAccounts(includeArchived)
-}
-```
-
-**Use Case responsibilities:**
-- Encapsulate business logic (balance, validation, formatting)
-- Wrap results in `Result<T>` for consistent error handling
-- Use existing `DatabaseRepository` as implementation
-
-**Benefit:** Testability — Use Cases can be mocked. ViewModels become "thin" — only UI state and delegation.
 
 ---
 
@@ -168,35 +116,24 @@ object RepositoryModule {
 
 ---
 
-## Section 5: Server — Layered Architecture
+## Section 5: Server — Layered Architecture ✅ PARTIALLY DONE
 
-**Current:** 6 files in one package, all in `object` singletons, manual JSON via regex.
+**Already created:**
+- `server/service/AuthService.kt`
+- `server/service/SyncService.kt`
+- `server/repository/` — Database, AccountRepository, CategoryRepository, TransactionRepository, DeviceRepository, UserRepository
+- `server/route/AuthRoute.kt`
+- `server/route/SyncRoute.kt`
+- `server/route/HealthRoute.kt`
 
-**Target:**
+**Remaining:**
 ```
 server/src/main/kotlin/com/mobilemoney/server/
-├── controller/
-│   ├── AuthController.kt
-│   ├── SyncController.kt
-│   └── HealthController.kt
-├── service/
-│   ├── AuthService.kt
-│   ├── SyncService.kt
-│   └── ValidationService.kt
-├── dao/
-│   ├── UserDao.kt
-│   ├── AccountDao.kt
-│   ├── CategoryDao.kt
-│   ├── TransactionDao.kt
-│   └── Database.kt (exposed wrapper)
-├── dto/
-│   ├── RequestDto.kt
-│   └── ResponseDto.kt
-├── middleware/
-│   ├── ErrorHandling.kt
-│   ├── RequestLogging.kt
-│   └── RateLimiting.kt
-└── Application.kt  (only configuration and routes)
+├── controller/          # rename route → controller
+├── dao/                 # extract from repository
+├── middleware/          # ErrorHandling, RequestLogging, RateLimiting
+├── model/dto/           # refactor to separate from model/entity
+└── Application.kt      # cleanup
 ```
 
 **Key changes:**
@@ -242,10 +179,9 @@ val ds = HikariDataSource(config)
 
 ```
 1. common/      → create module, move DTOs, link in both projects
-2. Android domain → create interfaces + Use Cases (without changing implementation yet)
 3. Android Hilt  → add dependencies, @HiltAndroidApp, @HiltViewModel, module
 4. Android code → split files, extract UI components
-5. Server layers → create controller/service/dao, replace manual JSON
+5. Server layers → ✅ PARTIALLY DONE (service/repository/route created, need controller/dao/middleware)
 6. Bug fixes   → fix migrations, split transactions, catch blocks
 ```
 
