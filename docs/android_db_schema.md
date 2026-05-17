@@ -41,10 +41,10 @@
 ### Операции (transactions)
 - id (PK)
 - accountId (FK -> accounts.id)
-- categoryId (FK -> categories.id, nullable)
+- categoryId (FK -> categories.id)
 - amount (decimal)
 - date (timestamp)
-- comment (text, nullable)
+- comment (text)
 - source (text, NOT NULL) - источник: MANUAL, SMS, PUSH
 - sourceData (text, nullable) - необработанные данные от источника
 - creatorId (FK -> users.id, nullable)
