@@ -1,6 +1,7 @@
 package com.mobilemoney.server.service
 
 import com.mobilemoney.server.model.entity.Device
+import com.mobilemoney.server.sha512
 import com.mobilemoney.server.repository.DeviceRepository
 import com.mobilemoney.server.repository.UserRepository
 import java.util.UUID
@@ -14,7 +15,7 @@ class AuthService(
         val user = userRepository.findByLogin(login)
             ?: return Result.failure(Exception("User not found"))
 
-        val hash = sha256(password + user.salt)
+        val hash = sha512(password + user.salt)
         if (hash != user.passwordHash) {
             return Result.failure(Exception("Invalid password"))
         }
@@ -48,9 +49,3 @@ class AuthService(
     }
 }
 
-private fun sha256(input: String): String {
-    val bytes = input.toByteArray(java.nio.charset.StandardCharsets.UTF_8)
-    val digest = java.security.MessageDigest.getInstance("SHA-512")
-    val hash = digest.digest(bytes)
-    return hash.joinToString("") { "%02x".format(it) }
-}
