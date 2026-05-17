@@ -17,23 +17,23 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.UUID
 import androidx.compose.ui.Alignment
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mobilemoney.data.config.AppIcons
-import com.mobilemoney.data.model.TransactionUi
+import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.Transaction
 import com.mobilemoney.ui.utils.FormatUtils
 import com.mobilemoney.viewmodel.TransactionListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListScreen(
-    viewModel: TransactionListViewModel = viewModel(),
+    onTransactionClick: (UUID) -> Unit,
     onAddClick: () -> Unit,
-    onTransactionClick: (UUID) -> Unit
+    viewModel: TransactionListViewModel = DI.transactionListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -114,7 +114,7 @@ fun headerTitle(date: LocalDate): String {
 
 @Composable
 fun TransactionItem(
-    transaction: TransactionUi,
+    transaction: Transaction,
     onClick: () -> Unit
 ) {
     Row(

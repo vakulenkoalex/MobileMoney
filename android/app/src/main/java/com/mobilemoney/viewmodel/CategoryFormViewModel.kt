@@ -1,13 +1,13 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.data.config.CategoryIconOption
 import com.mobilemoney.data.config.CategoryIcons
 import com.mobilemoney.data.model.CategoryUi
-import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.Category
+import com.mobilemoney.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,9 +27,9 @@ data class CategoryFormState(
     val isSaved: Boolean = false
 )
 
-class CategoryFormViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
+class CategoryFormViewModel(
+    private val categoryRepository: CategoryRepository = DI.categoryRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoryFormState())
     val uiState: StateFlow<CategoryFormState> = _uiState.asStateFlow()
@@ -37,7 +37,7 @@ class CategoryFormViewModel(application: Application) : AndroidViewModel(applica
     fun loadCategory(categoryId: UUID) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val categories = repository.getCategories().first()
+            val categories = categoryRepository.getCategories().first()
             val category = categories.find { it.id == categoryId }
             if (category != null) {
                 _uiState.value = _uiState.value.copy(
@@ -77,7 +77,7 @@ class CategoryFormViewModel(application: Application) : AndroidViewModel(applica
             return false
         }
 
-        val category = CategoryUi(
+        val category = Category(
             id = state.categoryId ?: UUID.randomUUID(),
             name = state.name,
             icon = state.icon,
@@ -86,9 +86,9 @@ class CategoryFormViewModel(application: Application) : AndroidViewModel(applica
 
         viewModelScope.launch {
             if (state.isEditing) {
-                repository.updateCategory(category)
+                categoryRepository.updateCategory(category)
             } else {
-                repository.addCategory(category)
+                categoryRepository.addCategory(category)
             }
         }
 

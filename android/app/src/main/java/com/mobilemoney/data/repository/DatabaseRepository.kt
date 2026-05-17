@@ -1,7 +1,8 @@
 package com.mobilemoney.data.repository
 
-import android.content.Context
-import com.mobilemoney.data.local.AppDatabase
+import com.mobilemoney.data.local.AccountDao
+import com.mobilemoney.data.local.CategoryDao
+import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.local.toEntity
 import com.mobilemoney.data.local.toUiModel
 import com.mobilemoney.data.model.AccountUi
@@ -11,11 +12,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
-class DatabaseRepository(context: Context) {
-    private val database = AppDatabase.getDatabase(context)
-    private val accountDao = database.accountDao()
-    private val categoryDao = database.categoryDao()
-    private val transactionDao = database.transactionDao()
+class DatabaseRepository(
+    private val accountDao: AccountDao,
+    private val categoryDao: CategoryDao,
+    private val transactionDao: TransactionDao
+) {
 
     fun getAccounts(): Flow<List<AccountUi>> {
         return combine(

@@ -1,14 +1,13 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.MobileMoneyApp
 import com.mobilemoney.data.config.AccountIcons
 import com.mobilemoney.data.config.Currencies
-import com.mobilemoney.data.model.AccountUi
-import com.mobilemoney.data.model.AccountType
-import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.domain.model.Account
+import com.mobilemoney.domain.model.AccountType
+import com.mobilemoney.domain.usecase.account.CreateAccountUseCase
+import com.mobilemoney.domain.usecase.account.GetAccountsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,9 +32,10 @@ data class AccountFormState(
     val isSaved: Boolean = false
 )
 
-class AccountFormViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
+class AccountFormViewModel(
+    private val getAccountsUseCase: GetAccountsUseCase,
+    private val createAccountUseCase: CreateAccountUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AccountFormState())
     val uiState: StateFlow<AccountFormState> = _uiState.asStateFlow()
@@ -43,7 +43,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
     fun loadAccount(accountId: UUID) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val account = repository.getAccounts().first().find { it.id == accountId }
+            val account = getAccountsUseCase().first().find { it.id == accountId }
             if (account != null) {
                 val currency = uiState.value.currencies.find { it.code == account.currency }
                 _uiState.value = _uiState.value.copy(
@@ -98,7 +98,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
             return false
         }
 
-        val account = AccountUi(
+        val account = Account(
             id = state.accountId ?: UUID.randomUUID(),
             name = state.name,
             type = state.type,
@@ -108,14 +108,7 @@ class AccountFormViewModel(application: Application) : AndroidViewModel(applicat
         )
 
         viewModelScope.launch {
-            if (state.isDefault) {
-                repository.clearDefaultAccounts()
-            }
-            if (state.isEditing) {
-                repository.updateAccount(account)
-            } else {
-                repository.addAccount(account)
-            }
+            createAccountUseCase(account, state.isDefault)
         }
 
         _uiState.value = state.copy(isSaved = true)

@@ -9,12 +9,14 @@ import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.remote.*
+import com.mobilemoney.domain.repository.SyncRepository as DomainSyncRepository
+import com.mobilemoney.domain.repository.SyncState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import android.util.Log
 
-class SyncRepository(context: Context) {
+class SyncRepository(context: Context) : DomainSyncRepository {
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
@@ -33,7 +35,7 @@ class SyncRepository(context: Context) {
     private val apiClient = SyncApiClient(context)
 
     private val _syncState = MutableStateFlow(SyncState())
-    val syncState: StateFlow<SyncState> = _syncState
+    override val syncState: StateFlow<SyncState> = _syncState
 
     companion object {
         @Volatile
@@ -46,7 +48,7 @@ class SyncRepository(context: Context) {
         }
     }
 
-    var serverUrl: String
+    override var serverUrl: String
         get() = prefs.getString("server_url", null) ?: BuildConfig.SERVER_URL
         set(value) = prefs.edit().putString("server_url", value).apply()
 
@@ -68,7 +70,7 @@ class SyncRepository(context: Context) {
         get() = prefs.getString("user_login", null)
         set(value) = prefs.edit().putString("user_login", value).apply()
 
-    suspend fun login(login: String, password: String): Result<String> {
+    override suspend fun login(login: String, password: String): Result<String> {
         apiClient.setBaseUrl(serverUrl)
         val result = apiClient.login(login, password)
         result.onSuccess { token ->
@@ -90,7 +92,7 @@ class SyncRepository(context: Context) {
         return transactionDao.getUnsyncedTransactions().map { it.toSyncDto() }
     }
 
-    suspend fun sync(): Result<Unit> {
+    override suspend fun sync(): Result<Unit> {
         Log.d("SyncRepository", "=== sync() START ===")
         Log.d("SyncRepository", "deviceToken: ${deviceToken?.take(10)}...")
 
@@ -239,22 +241,16 @@ class SyncRepository(context: Context) {
         transactionDao.markSynced(id, syncedAt)
     }
 
-    fun logout() {
+    override fun logout() {
         deviceToken = null
         userLogin = null
         lastSyncTimestamp = 0L
     }
 
-    fun isLoggedIn(): Boolean = deviceToken != null
+    override fun isLoggedIn(): Boolean = deviceToken != null
 
-    suspend fun ping(): Result<Unit> {
+    override suspend fun ping(): Result<Unit> {
         apiClient.setBaseUrl(serverUrl)
         return apiClient.ping()
     }
 }
-
-data class SyncState(
-    val isSyncing: Boolean = false,
-    val error: String? = null,
-    val lastSyncTime: Long = 0L
-)

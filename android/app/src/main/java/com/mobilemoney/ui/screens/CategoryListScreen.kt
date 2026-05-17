@@ -17,9 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.data.config.AppIcons
-import com.mobilemoney.data.model.CategoryUi
+import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.Category
 import com.mobilemoney.viewmodel.CategoryListViewModel
 import java.util.UUID
 
@@ -28,7 +28,7 @@ import java.util.UUID
 fun CategoryListScreen(
     onAddClick: () -> Unit,
     onCategoryClick: (UUID) -> Unit,
-    viewModel: CategoryListViewModel = viewModel()
+    viewModel: CategoryListViewModel = DI.categoryListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -122,7 +122,7 @@ fun CategoryListScreen(
 
 @Composable
 fun CategoryItem(
-    category: CategoryUi,
+    category: Category,
     onClick: () -> Unit
 ) {
     Card(

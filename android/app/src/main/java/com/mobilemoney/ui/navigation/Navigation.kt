@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mobilemoney.MobileMoneyApp
+import com.mobilemoney.di.DI
 import com.mobilemoney.ui.screens.AccountFormScreen
 import com.mobilemoney.ui.screens.CategoryFormScreen
 import com.mobilemoney.ui.screens.LoginScreen
@@ -93,7 +94,7 @@ fun MobileMoneyNavigation() {
         return
     }
 
-    var loginState by remember { mutableStateOf(app.syncRepository.isLoggedIn()) }
+    var loginState by remember { mutableStateOf<Boolean>(DI.syncRepository.isLoggedIn()) }
 
     if (!loginState) {
         LoginScreen(

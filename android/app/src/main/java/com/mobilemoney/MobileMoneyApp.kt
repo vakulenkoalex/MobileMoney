@@ -5,18 +5,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
-import com.mobilemoney.data.repository.DatabaseRepository
-import com.mobilemoney.data.repository.SyncRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class MobileMoneyApp : Application() {
-    lateinit var repository: DatabaseRepository
-        private set
-    lateinit var syncRepository: SyncRepository
-        private set
 
     var isInitialized = false
         private set
@@ -40,8 +34,6 @@ class MobileMoneyApp : Application() {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
 
-        repository = DatabaseRepository(this)
-        syncRepository = SyncRepository(this)
         checkAndInitialize()
         enableSync()
     }
@@ -67,10 +59,6 @@ class MobileMoneyApp : Application() {
     companion object {
         lateinit var instance: MobileMoneyApp
             private set
-
-        fun getRepository(context: Context): DatabaseRepository {
-            return (context.applicationContext as MobileMoneyApp).repository
-        }
 
         fun isAppInitialized(context: Context): Boolean {
             return (context.applicationContext as? MobileMoneyApp)?.isInitialized ?: false

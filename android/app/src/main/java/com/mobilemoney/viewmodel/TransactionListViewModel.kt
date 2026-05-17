@@ -1,11 +1,10 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.MobileMoneyApp
-import com.mobilemoney.data.model.TransactionUi
-import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.domain.model.Transaction
+import com.mobilemoney.domain.repository.SyncRepository
+import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,14 +12,15 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 data class TransactionListUiState(
-    val transactions: List<TransactionUi> = emptyList(),
+    val transactions: List<Transaction> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
-class TransactionListViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
+class TransactionListViewModel(
+    private val getTransactionsUseCase: GetTransactionsUseCase,
+    private val syncRepository: SyncRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionListUiState())
     val uiState: StateFlow<TransactionListUiState> = _uiState.asStateFlow()
@@ -32,7 +32,7 @@ class TransactionListViewModel(application: Application) : AndroidViewModel(appl
     private fun loadTransactions() {
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
-            repository.getTransactions()
+            getTransactionsUseCase()
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -55,7 +55,7 @@ class TransactionListViewModel(application: Application) : AndroidViewModel(appl
 
     fun deleteTransaction(id: java.util.UUID) {
         viewModelScope.launch {
-            repository.deleteTransaction(id.toString())
+            // TODO: inject delete use case
         }
     }
 }

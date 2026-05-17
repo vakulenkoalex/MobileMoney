@@ -1,12 +1,11 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobilemoney.data.repository.BackupRepository
-import com.mobilemoney.data.repository.DatabaseRepository
-import com.mobilemoney.data.repository.SyncRepository
+import com.mobilemoney.di.DI
+import com.mobilemoney.domain.repository.SyncRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -19,11 +18,10 @@ data class SettingsUiState(
     val isSyncing: Boolean = false
 )
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val backupRepository = BackupRepository(application)
-    private val databaseRepository = DatabaseRepository(application)
-    private val syncRepository = SyncRepository.getInstance(application)
+class SettingsViewModel(
+    private val syncRepository: SyncRepository = DI.syncRepository,
+    private val backupRepository: BackupRepository = BackupRepository(DI.context)
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState
@@ -68,7 +66,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, message = null) }
             try {
-                databaseRepository.permanentlyDeleteAll()
+                DI.databaseRepository.permanentlyDeleteAll()
                 _uiState.update {
                     it.copy(isLoading = false, message = "Удалённые записи удалены", isSuccess = true)
                 }

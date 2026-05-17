@@ -1,25 +1,23 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.MobileMoneyApp
-import com.mobilemoney.data.model.CategoryUi
-import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.domain.model.Category
+import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class CategoryListState(
-    val categories: List<CategoryUi> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
-class CategoryListViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
+class CategoryListViewModel(
+    private val getCategoriesUseCase: GetCategoriesUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoryListState())
     val uiState: StateFlow<CategoryListState> = _uiState.asStateFlow()
@@ -31,7 +29,7 @@ class CategoryListViewModel(application: Application) : AndroidViewModel(applica
     private fun loadCategories() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.getCategories().collect { categories ->
+            getCategoriesUseCase().collect { categories ->
                 _uiState.value = _uiState.value.copy(
                     categories = categories,
                     isLoading = false

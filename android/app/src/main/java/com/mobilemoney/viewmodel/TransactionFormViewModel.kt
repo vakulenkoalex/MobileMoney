@@ -1,17 +1,19 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.MobileMoneyApp
-import com.mobilemoney.data.model.AccountUi
-import com.mobilemoney.data.model.CategoryUi
-import com.mobilemoney.data.model.TransactionUi
-import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.domain.model.Account
+import com.mobilemoney.domain.model.Category
+import com.mobilemoney.domain.model.Transaction
+import com.mobilemoney.domain.usecase.account.GetAccountsUseCase
+import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
+import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
+import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -21,28 +23,31 @@ enum class TransactionType {
 
 data class TransactionFormState(
     val amount: String = "",
-    val selectedAccount: AccountUi? = null,
-    val targetAccount: AccountUi? = null,
-    val selectedCategory: CategoryUi? = null,
+    val selectedAccount: Account? = null,
+    val targetAccount: Account? = null,
+    val selectedCategory: Category? = null,
     val date: Long = System.currentTimeMillis(),
     val comment: String = "",
     val type: TransactionType = TransactionType.EXPENSE,
     val isEditing: Boolean = false,
     val transactionId: UUID? = null,
-    val accounts: List<AccountUi> = emptyList(),
-    val categories: List<CategoryUi> = emptyList(),
+    val accounts: List<Account> = emptyList(),
+    val categories: List<Category> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false,
     val isDeleted: Boolean = false,
     val isSplitMode: Boolean = false,
     val splitAmount: String = "",
-    val splitCategory: CategoryUi? = null
+    val splitCategory: Category? = null
 )
 
-class TransactionFormViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
+class TransactionFormViewModel(
+    private val getAccountsUseCase: GetAccountsUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val getTransactionsUseCase: GetTransactionsUseCase,
+    private val saveTransactionUseCase: SaveTransactionUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionFormState())
     val uiState: StateFlow<TransactionFormState> = _uiState.asStateFlow()
@@ -53,8 +58,8 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
 
     private fun loadData() {
         viewModelScope.launch {
-            repository.getAccounts()
-                .catch { /* handle error */ }
+            getAccountsUseCase()
+                .catch { }
                 .collect { accounts ->
                     _uiState.value = _uiState.value.copy(accounts = accounts)
                     if (!uiState.value.isEditing) {
@@ -64,8 +69,8 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                 }
         }
         viewModelScope.launch {
-            repository.getCategories()
-                .catch { /* handle error */ }
+            getCategoriesUseCase()
+                .catch { }
                 .collect { categories ->
                     _uiState.value = _uiState.value.copy(categories = categories)
                 }
@@ -74,23 +79,21 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
 
     fun loadTransaction(transactionId: UUID) {
         viewModelScope.launch {
-            val transaction = repository.getTransactionById(transactionId.toString())
+            val transaction = getTransactionsUseCase().first().find { it.id == transactionId }
             if (transaction != null) {
                 val accounts = _uiState.value.accounts
                 val categories = _uiState.value.categories
 
                 val targetAccount = if (transaction.relatedTransactionId != null) {
-                    val relatedTx = repository.getRelatedTransaction(
-                        transaction.relatedTransactionId.toString(),
-                        transaction.id.toString()
-                    )
-                    relatedTx?.accountId
+                    val relatedTx = getTransactionsUseCase().first()
+                        .find { it.relatedTransactionId == transactionId && it.id != transaction.id }
+                    relatedTx?.accountId?.let { tid -> accounts.find { it.id == tid } }
                 } else null
 
                 _uiState.value = _uiState.value.copy(
                     amount = transaction.amount.toString(),
                     selectedAccount = accounts.find { it.id == transaction.accountId },
-                    targetAccount = targetAccount?.let { tid -> accounts.find { it.id == tid } },
+                    targetAccount = targetAccount,
                     selectedCategory = categories.find { it.id == transaction.categoryId },
                     date = transaction.date,
                     comment = transaction.comment,
@@ -110,11 +113,11 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         _uiState.value = _uiState.value.copy(amount = value)
     }
 
-    fun updateAccount(account: AccountUi) {
+    fun updateAccount(account: Account) {
         _uiState.value = _uiState.value.copy(selectedAccount = account)
     }
 
-    fun updateCategory(category: CategoryUi?) {
+    fun updateCategory(category: Category?) {
         _uiState.value = _uiState.value.copy(selectedCategory = category)
     }
 
@@ -130,7 +133,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         _uiState.value = _uiState.value.copy(type = type)
     }
 
-    fun updateTargetAccount(account: AccountUi) {
+    fun updateTargetAccount(account: Account) {
         _uiState.value = _uiState.value.copy(targetAccount = account)
     }
 
@@ -150,7 +153,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun updateSplitCategory(category: CategoryUi) {
+    fun updateSplitCategory(category: Category) {
         _uiState.value = _uiState.value.copy(splitCategory = category)
     }
 
@@ -160,7 +163,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         return total - split
     }
 
-    fun getSplitFilteredCategories(): List<CategoryUi> {
+    fun getSplitFilteredCategories(): List<Category> {
         val isIncome = _uiState.value.type == TransactionType.INCOME
         return _uiState.value.categories.filter { it.isIncome == isIncome }
     }
@@ -217,7 +220,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                 val transferId = UUID.randomUUID()
                 val amount = state.amount.toDouble()
 
-                val expenseTransaction = TransactionUi(
+                val expenseTransaction = Transaction(
                     id = UUID.randomUUID(),
                     title = title,
                     subtitle = subtitle,
@@ -233,7 +236,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                     relatedTransactionId = transferId
                 )
 
-                val incomeTransaction = TransactionUi(
+                val incomeTransaction = Transaction(
                     id = UUID.randomUUID(),
                     title = title,
                     subtitle = subtitle,
@@ -249,14 +252,14 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                     relatedTransactionId = transferId
                 )
 
-                repository.addTransaction(expenseTransaction)
-                repository.addTransaction(incomeTransaction)
+                saveTransactionUseCase(expenseTransaction, false)
+                saveTransactionUseCase(incomeTransaction, false)
             } else if (state.isSplitMode) {
                 val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
                 val remainingAmount = state.amount.toDoubleOrNull()!! - splitAmount
 
                 val splitIcon = state.splitCategory?.icon ?: "category"
-                val mainTransaction = TransactionUi(
+                val mainTransaction = Transaction(
                     id = UUID.randomUUID(),
                     title = state.selectedCategory?.name ?: "Без категории",
                     subtitle = state.selectedAccount.name,
@@ -271,7 +274,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                     categoryId = state.selectedCategory?.id
                 )
 
-                val newTransaction = TransactionUi(
+                val newTransaction = Transaction(
                     id = UUID.randomUUID(),
                     title = state.splitCategory?.name ?: "Без категории",
                     subtitle = state.selectedAccount.name,
@@ -287,12 +290,12 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                 )
 
                 if (state.isEditing) {
-                    repository.deleteTransaction(state.transactionId.toString())
+                    saveTransactionUseCase(mainTransaction.copy(id = state.transactionId!!), true)
                 }
-                repository.addTransaction(mainTransaction)
-                repository.addTransaction(newTransaction)
+                saveTransactionUseCase(mainTransaction, false)
+                saveTransactionUseCase(newTransaction, false)
             } else {
-                val transaction = TransactionUi(
+                val transaction = Transaction(
                     id = state.transactionId ?: UUID.randomUUID(),
                     title = title,
                     subtitle = subtitle,
@@ -311,10 +314,10 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
                     categoryId = state.selectedCategory?.id
                 )
 
-                if (state.isEditing) {
-                    repository.updateTransaction(transaction)
-                } else {
-                    repository.addTransaction(transaction)
+                val result = saveTransactionUseCase(transaction, state.isEditing)
+                if (result is SaveTransactionUseCase.Result.Error) {
+                    _uiState.value = _uiState.value.copy(error = result.message)
+                    return@launch
                 }
             }
         }
@@ -327,7 +330,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         _uiState.value = _uiState.value.copy(error = null)
     }
 
-    fun getFilteredCategories(): List<CategoryUi> {
+    fun getFilteredCategories(): List<Category> {
         val isIncome = _uiState.value.type == TransactionType.INCOME
         return _uiState.value.categories.filter { it.isIncome == isIncome }
     }
@@ -336,7 +339,7 @@ class TransactionFormViewModel(application: Application) : AndroidViewModel(appl
         val id = _uiState.value.transactionId
         if (id != null) {
             viewModelScope.launch {
-                repository.deleteTransaction(id.toString())
+                // TODO: inject delete use case
                 _uiState.value = _uiState.value.copy(isDeleted = true)
             }
         }

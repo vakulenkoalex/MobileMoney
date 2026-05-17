@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.config.CategoryIconOption
+import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.CategoryFormViewModel
 import java.util.UUID
 
@@ -30,7 +30,7 @@ import java.util.UUID
 fun CategoryFormScreen(
     categoryId: UUID?,
     onNavigateBack: () -> Unit,
-    viewModel: CategoryFormViewModel = viewModel()
+    viewModel: CategoryFormViewModel = DI.categoryFormViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showIconSheet by remember { mutableStateOf(false) }

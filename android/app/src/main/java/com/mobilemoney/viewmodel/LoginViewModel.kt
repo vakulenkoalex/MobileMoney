@@ -2,6 +2,7 @@ package com.mobilemoney.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mobilemoney.di.DI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,8 +30,7 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            val app = com.mobilemoney.MobileMoneyApp.instance
-            val syncRepository = app.syncRepository
+            val syncRepository = DI.syncRepository
 
             val result = syncRepository.login(login, password)
 
@@ -49,8 +49,7 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(serverStatus = ServerStatus.CHECKING)
 
-            val app = com.mobilemoney.MobileMoneyApp.instance
-            val syncRepository = app.syncRepository
+            val syncRepository = DI.syncRepository
 
             android.util.Log.d("LoginVM", "Server URL: ${syncRepository.serverUrl}")
             val result = syncRepository.ping()

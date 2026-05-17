@@ -19,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.config.IconOption
+import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.AccountFormViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,7 +29,7 @@ import com.mobilemoney.viewmodel.AccountFormViewModel
 fun AccountFormScreen(
     accountId: java.util.UUID?,
     onNavigateBack: () -> Unit,
-    viewModel: AccountFormViewModel = viewModel()
+    viewModel: AccountFormViewModel = DI.accountFormViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showCurrencySheet by remember { mutableStateOf(false) }

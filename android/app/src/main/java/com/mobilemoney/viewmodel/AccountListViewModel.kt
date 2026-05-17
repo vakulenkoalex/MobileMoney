@@ -1,11 +1,9 @@
 package com.mobilemoney.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.MobileMoneyApp
-import com.mobilemoney.data.model.AccountUi
-import com.mobilemoney.data.repository.DatabaseRepository
+import com.mobilemoney.domain.model.Account
+import com.mobilemoney.domain.usecase.account.GetAccountsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,14 +11,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 data class AccountListState(
-    val accounts: List<AccountUi> = emptyList(),
+    val accounts: List<Account> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
 
-class AccountListViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: DatabaseRepository = MobileMoneyApp.getRepository(application)
+class AccountListViewModel(
+    private val getAccountsUseCase: GetAccountsUseCase
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AccountListState())
     val uiState: StateFlow<AccountListState> = _uiState.asStateFlow()
@@ -32,7 +30,7 @@ class AccountListViewModel(application: Application) : AndroidViewModel(applicat
     private fun loadAccounts() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            repository.getAccounts()
+            getAccountsUseCase()
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,

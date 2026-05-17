@@ -26,9 +26,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mobilemoney.data.config.AppIcons
-import com.mobilemoney.data.model.CategoryUi
+import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.Category
 import com.mobilemoney.viewmodel.TransactionFormViewModel
 import com.mobilemoney.viewmodel.TransactionType
 import java.text.SimpleDateFormat
@@ -39,7 +39,7 @@ import java.util.*
 fun TransactionFormScreen(
     transactionId: UUID?,
     onNavigateBack: () -> Unit,
-    viewModel: TransactionFormViewModel = viewModel()
+    viewModel: TransactionFormViewModel = DI.transactionFormViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAccountSheet by remember { mutableStateOf(false) }
@@ -628,7 +628,7 @@ fun TransactionFormScreen(
 
 @Composable
 fun CategoryGridItem(
-    category: CategoryUi,
+    category: Category,
     selected: Boolean,
     onClick: () -> Unit
 ) {
