@@ -8,7 +8,7 @@
 - salt — TEXT NOT NULL, соль для хеширования
 
 ### Устройства (devices)
-- deviceId (PK) — TEXT NOT NULL, уникальный ID устройства
+- deviceId — TEXT NOT NULL UNIQUE, уникальный ID устройства
 - deviceName (NOT NULL) — TEXT, название устройства
 - token — TEXT, JWT токен авторизации
 - login (TEXT NOT NULL) — FK -> users.login
@@ -17,7 +17,7 @@
 - revokedAt (INTEGER) — время отзыва токена
 
 ### Счета (accounts)
-- id (PK) — TEXT NOT NULL, UUID
+- id — TEXT NOT NULL, UUID
 - name (TEXT)
 - typeId (TEXT NOT NULL) — тип счёта: cash, card, account
 - currencyCode (TEXT NOT NULL) — код валюты: RUB, USD, EUR
@@ -49,7 +49,7 @@
 - amount (REAL NOT NULL)
 - date (INTEGER NOT NULL)
 - comment (TEXT)
-- source (TEXT) — источник: MANUAL, SMS, PUSH
+- source (TEXT NOT NULL) — источник: MANUAL, SMS, PUSH
 - sourceData (TEXT)
 - creatorId (TEXT)
 - relatedTransactionId (TEXT) — UUID для связывания переводов
