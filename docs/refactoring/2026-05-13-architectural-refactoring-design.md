@@ -26,28 +26,9 @@ Current state analysis:
 
 ---
 
-## Section 1: Common Module (DTO)
+## Section 1: Common Module (DTO) ✅ DONE
 
-**Problem:** `AccountDto`, `CategoryDto`, `TransactionDto`, `CurrencyDto` duplicated in `android/.../SyncApiClient.kt` and `server/.../SyncDto.kt` with different field types (`isDefault: Int` vs `isDefault: Boolean`).
-
-**Solution:** Create `common/` as plain Kotlin/JVM module:
-
-```
-common/
-├── build.gradle.kts
-└── src/main/kotlin/com/mobilemoney/dto/
-    ├── AccountDto.kt
-    ├── CategoryDto.kt
-    ├── TransactionDto.kt
-    ├── CurrencyDto.kt
-    └── SyncRequests.kt  (SyncPushRequest, SyncPullResponse)
-```
-
-**Details:**
-- All DTOs with `@Serializable`, unified types (`Boolean`, not `Int`)
-- No dependencies except `kotlinx-serialization`
-- Both projects include `implementation(project(":common"))`
-- Mapping `Int ↔ Boolean` remains in Android mappers (Room Entity uses Int, not Boolean)
+**Implemented:** `common/` module created with unified DTOs (`Boolean` type).
 
 ---
 
@@ -126,7 +107,14 @@ object RepositoryModule {
 - `server/route/SyncRoute.kt`
 - `server/route/HealthRoute.kt`
 
-**Remaining:**
+**Still needed:**
+- `server/controller/` — rename route → controller
+- `server/dao/` — extract from repository
+- `server/middleware/` — ErrorHandling, RequestLogging, RateLimiting
+- `server/model/dto/` — refactor to separate from model/entity
+- `server/Application.kt` — cleanup
+
+**Optional improvements:**
 ```
 server/src/main/kotlin/com/mobilemoney/server/
 ├── controller/          # rename route → controller
@@ -166,23 +154,23 @@ val ds = HikariDataSource(config)
 
 ## Section 6: Critical Bug Fixes (During Refactoring)
 
-| Bug | Fix |
-|-----|-----|
-| `fallbackToDestructiveMigration` | Replace with `fallbackToDestructiveMigration()` without `dropAllTables = true`, add migrations |
-| Split transactions without rollback | Wrap in Room `transaction { }` — if second `addTransaction` fails, first delete will be rolled back |
-| Empty catch block | Add `Result.failure(e)`, logging, user-facing toast "Ошибка сохранения" |
-| HashUtil — SHA-512 named as SHA-256 | Rename to `sha512()` or fix logic |
+| Bug | Status | Fix |
+|-----|--------|-----|
+| `fallbackToDestructiveMigration` | ❌ PENDING | Replace with `fallbackToDestructiveMigration()` without `dropAllTables = true`, add migrations |
+| Split transactions without rollback | ❌ PENDING | Wrap in Room `transaction { }` — if second `addTransaction` fails, first delete will be rolled back |
+| Empty catch block | ❌ PENDING | Add `Result.failure(e)`, logging, user-facing toast "Ошибка сохранения" |
+| HashUtil — SHA-512 | ✅ DONE | Renamed to `sha512()` |
 
 ---
 
 ## Section 7: Execution Order
 
 ```
-1. common/      → create module, move DTOs, link in both projects
-3. Android Hilt  → add dependencies, @HiltAndroidApp, @HiltViewModel, module
-4. Android code → split files, extract UI components
-5. Server layers → ✅ PARTIALLY DONE (service/repository/route created, need controller/dao/middleware)
-6. Bug fixes   → fix migrations, split transactions, catch blocks
+1. common/      → ✅ DONE
+2. Android Hilt  → ❌ PENDING
+3. Android code → ❌ PENDING (split large files)
+4. Server layers → ✅ Service/repository/route done, ❌ need controller/dao/middleware
+5. Bug fixes   → ❌ PENDING (migrations, split transactions, catch blocks)
 ```
 
 ---

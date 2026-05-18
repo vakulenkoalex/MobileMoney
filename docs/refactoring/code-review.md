@@ -352,12 +352,12 @@ class AccountFormViewModel @Inject constructor(
 
 | Приоритет | Задача | Время | Статус |
 |-----------|--------|-------|--------|
-| 1 | API Client рефакторинг | ~1 час | |
-| 1 | Upsert generalization | ~30 минут | |
-| 2 | Base ViewModel | ~1 час | |
-| 2 | UI компоненты (FormScaffold, IconPicker) | ~2 часа | |
-| 2 | Mapper utilities | ~30 минут | |
-| 3 | Hilt DI | ~2 часа | |
+| 1 | API Client рефакторинг | ~1 час | ❌ |
+| 1 | Upsert generalization | ~30 минут | ❌ |
+| 2 | Base ViewModel | ~1 час | ❌ |
+| 2 | UI компоненты (FormScaffold, IconPicker) | ~2 часа | ❌ |
+| 2 | Mapper utilities | ~30 минут | ❌ |
+| 3 | Hilt DI | ~2 часа | ❌ |
 
 **Итого:** ~7 часов для полного рефакторинга
 
