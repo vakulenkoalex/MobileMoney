@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.mobilemoney.ui.common.ErrorHandler
 import java.util.UUID
 
 enum class TransactionType {
@@ -172,33 +173,45 @@ class TransactionFormViewModel(
         val state = _uiState.value
 
         if (state.amount.isBlank() || state.amount.toDoubleOrNull() == null || state.amount.toDouble() <= 0) {
-            _uiState.value = state.copy(error = "Введите корректную сумму")
+            kotlinx.coroutines.GlobalScope.launch {
+                ErrorHandler.emitError("Введите корректную сумму")
+            }
             return false
         }
 
         if (state.selectedAccount == null) {
-            _uiState.value = state.copy(error = "Выберите счёт")
+            kotlinx.coroutines.GlobalScope.launch {
+                ErrorHandler.emitError("Выберите счёт")
+            }
             return false
         }
 
         if (state.type == TransactionType.TRANSFER && state.targetAccount == null) {
-            _uiState.value = state.copy(error = "Выберите целевой счёт")
+            kotlinx.coroutines.GlobalScope.launch {
+                ErrorHandler.emitError("Выберите целевой счёт")
+            }
             return false
         }
 
         if (state.type != TransactionType.TRANSFER && state.selectedCategory == null) {
-            _uiState.value = state.copy(error = "Выберите категорию")
+            kotlinx.coroutines.GlobalScope.launch {
+                ErrorHandler.emitError("Выберите категорию")
+            }
             return false
         }
 
         if (state.isSplitMode) {
             val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
             if (splitAmount <= 0) {
-                _uiState.value = state.copy(error = "Введите сумму для разделения")
+                kotlinx.coroutines.GlobalScope.launch {
+                    ErrorHandler.emitError("Введите сумму для разделения")
+                }
                 return false
             }
             if (state.splitCategory == null) {
-                _uiState.value = state.copy(error = "Выберите категорию для новой операции")
+                kotlinx.coroutines.GlobalScope.launch {
+                    ErrorHandler.emitError("Выберите категорию для новой операции")
+                }
                 return false
             }
         }
@@ -321,7 +334,9 @@ class TransactionFormViewModel(
 
                 val result = saveTransactionUseCase(transaction, state.isEditing)
                 if (result is SaveTransactionUseCase.Result.Error) {
-                    _uiState.value = _uiState.value.copy(error = result.message)
+                    kotlinx.coroutines.GlobalScope.launch {
+                        ErrorHandler.emitError(result.message)
+                    }
                     return@launch
                 }
             }

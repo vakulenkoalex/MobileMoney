@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.GlobalScope
+import com.mobilemoney.ui.common.ErrorHandler
 import java.util.UUID
 
 data class AccountFormState(
@@ -94,7 +96,9 @@ class AccountFormViewModel(
         val state = _uiState.value
 
         if (state.name.isBlank()) {
-            _uiState.value = state.copy(error = "Введите название счёта")
+            GlobalScope.launch {
+                ErrorHandler.emitError("Введите название счёта")
+            }
             return false
         }
 

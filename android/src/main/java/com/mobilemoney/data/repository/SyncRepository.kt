@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import android.util.Log
+import com.mobilemoney.ui.common.ErrorHandler
 
 class SyncRepository(context: Context) : DomainSyncRepository {
     private val masterKey = MasterKey.Builder(context)
@@ -116,6 +117,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                 isSyncing = false,
                 error = "Войдите в аккаунт"
             )
+            ErrorHandler.emitError("Войдите в аккаунт")
             return Result.failure(Exception("Войдите в аккаунт"))
         }
 
@@ -126,6 +128,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                 isSyncing = false,
                 error = errorMsg
             )
+            ErrorHandler.emitError(errorMsg)
             return Result.failure(pullResult.exceptionOrNull() ?: Exception("Pull failed"))
         }
 
@@ -138,11 +141,13 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                     isSyncing = false,
                     error = "Токен невалиден. Войдите снова."
                 )
+                ErrorHandler.emitError("Токен невалиден. Войдите снова.")
             } else {
                 _syncState.value = _syncState.value.copy(
                     isSyncing = false,
                     error = errorMsg
                 )
+                ErrorHandler.emitError(errorMsg)
             }
             return Result.failure(pushResult.exceptionOrNull() ?: Exception("Push failed"))
         }

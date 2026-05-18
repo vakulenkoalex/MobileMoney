@@ -586,15 +586,6 @@ fun TransactionFormScreen(
                 maxLines = 5
             )
 
-            // Ошибка
-            uiState.error?.let { error ->
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
             // Кнопки действий (только при редактировании)
             if (uiState.isEditing) {
                 Row(

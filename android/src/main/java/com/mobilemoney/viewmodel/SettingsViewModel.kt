@@ -89,9 +89,9 @@ class SettingsViewModel(
                 _uiState.update {
                     it.copy(isLoading = false, isSyncing = false, message = "Синхронизация завершена", isSuccess = true)
                 }
-            }.onFailure { error ->
+            }.onFailure {
                 _uiState.update {
-                    it.copy(isLoading = false, isSyncing = false, message = error.message, isSuccess = false)
+                    it.copy(isLoading = false, isSyncing = false, message = null, isSuccess = false)
                 }
             }
         }

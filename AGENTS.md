@@ -64,6 +64,32 @@
 
 ## Known Issues & Solutions
 
+### Error Handling (Toast)
+
+**Проблема:** Разрозненные inline ошибки в UI трудно поддерживать.
+
+**Решение:** Единый механизм `ErrorHandler` (ui/common/ErrorHandler.kt) через Toast.
+
+```kotlin
+// Показать Toast
+ErrorHandler.emitError("Сообщение об ошибке")
+```
+
+**Flow:**
+1. Ошибка отправляется через `ErrorHandler.emitError()`
+2. `MainActivity` слушает `ErrorHandler.errorFlow`
+3. Показывает Android Toast (временно, ~2 сек)
+
+**Использование:**
+- Синхронизация: `SyncRepository.sync()` → `ErrorHandler.emitError()`
+- Валидация: ViewModel.save() → `GlobalScope.launch { ErrorHandler.emitError() }`
+
+**Files:**
+- `ui/common/ErrorHandler.kt` — singleton object
+- `MainActivity.kt` — подписка на errorFlow
+- `SyncRepository.kt` — отправка sync errors
+- ViewModels — отправка validation errors
+
 ### NetworkOnMainThreadException
 
 **Проблема:** Сетевой запрос (HTTP) на главном потоке (UI thread) — запрещено в Android 3.0+.

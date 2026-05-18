@@ -109,18 +109,6 @@ fun SettingsScreen(
                     Text("Синхронизация")
                 }
             }
-
-            uiState.message?.let { message ->
-                Text(
-                    text = message,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (uiState.isSuccess) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.error
-                    }
-                )
-            }
         }
     }
 }

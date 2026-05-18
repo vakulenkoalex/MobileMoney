@@ -169,14 +169,6 @@ fun CategoryFormScreen(
                     }
                 }
             }
-
-            uiState.error?.let { error ->
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
         }
     }
 }

@@ -7,11 +7,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.mobilemoney.ui.common.ErrorHandler
 
 data class LoginUiState(
     val isLoading: Boolean = false,
     val isLoggedIn: Boolean = false,
-    val error: String? = null,
     val serverStatus: ServerStatus = ServerStatus.UNKNOWN
 )
 
@@ -28,7 +28,7 @@ class LoginViewModel : ViewModel() {
 
     fun login(login: String, password: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true)
 
             val syncRepository = DI.syncRepository
 
@@ -37,10 +37,9 @@ class LoginViewModel : ViewModel() {
             _uiState.value = if (result.isSuccess) {
                 _uiState.value.copy(isLoading = false, isLoggedIn = true)
             } else {
-                _uiState.value.copy(
-                    isLoading = false,
-                    error = result.exceptionOrNull()?.message ?: "Ошибка входа"
-                )
+                val errorMsg = result.exceptionOrNull()?.message ?: "Ошибка входа"
+                ErrorHandler.emitError(errorMsg)
+                _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -54,11 +53,12 @@ class LoginViewModel : ViewModel() {
             android.util.Log.d("LoginVM", "Server URL: ${syncRepository.serverUrl}")
             val result = syncRepository.ping()
 
-            _uiState.value = if (result.isSuccess) {
-                _uiState.value.copy(serverStatus = ServerStatus.AVAILABLE)
+            if (result.isSuccess) {
+                _uiState.value = _uiState.value.copy(serverStatus = ServerStatus.AVAILABLE)
             } else {
-                val error = result.exceptionOrNull()
-                _uiState.value.copy(serverStatus = ServerStatus.UNAVAILABLE, error = error?.message)
+                val errorMsg = result.exceptionOrNull()?.message ?: "Сервер недоступен"
+                ErrorHandler.emitError(errorMsg)
+                _uiState.value = _uiState.value.copy(serverStatus = ServerStatus.UNAVAILABLE)
             }
         }
     }

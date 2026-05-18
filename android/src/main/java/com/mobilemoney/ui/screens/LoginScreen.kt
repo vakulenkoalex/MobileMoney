@@ -82,14 +82,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        if (uiState.error != null) {
-            Text(
-                text = uiState.error!!,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-
         Button(
             onClick = { viewModel.login(login, password) },
             enabled = !uiState.isLoading && login.isNotEmpty() && password.isNotEmpty(),
@@ -135,8 +127,6 @@ fun LoginScreen(
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Сервер недоступен", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 }
                 ServerStatus.UNKNOWN -> {}
             }

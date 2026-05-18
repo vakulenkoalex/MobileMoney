@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.GlobalScope
+import com.mobilemoney.ui.common.ErrorHandler
 import java.util.UUID
 
 data class CategoryFormState(
@@ -73,7 +75,9 @@ class CategoryFormViewModel(
         val state = _uiState.value
 
         if (state.name.isBlank()) {
-            _uiState.value = state.copy(error = "Введите название категории")
+            GlobalScope.launch {
+                ErrorHandler.emitError("Введите название категории")
+            }
             return false
         }
 
