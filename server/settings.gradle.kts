@@ -4,6 +4,16 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "org.jetbrains.kotlin.jvm") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
+            }
+            if (requested.id.id == "org.jetbrains.kotlin.plugin.serialization") {
+                useModule("org.jetbrains.kotlin:kotlin-serialization:2.0.21")
+            }
+        }
+    }
 }
 
 dependencyResolutionManagement {
