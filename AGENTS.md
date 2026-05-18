@@ -4,7 +4,7 @@
 
 ### Android
 ```powershell
-.\build.bat assembleDebug
+.\android\build.bat assembleDebug
 ```
 - Output: `android/app/build/outputs/apk/debug/app-debug.apk`
 - **Windows**: use `;` or separate lines — do NOT use `&&`
