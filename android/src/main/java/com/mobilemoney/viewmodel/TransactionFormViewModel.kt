@@ -186,6 +186,11 @@ class TransactionFormViewModel(
             return false
         }
 
+        if (state.type != TransactionType.TRANSFER && state.selectedCategory == null) {
+            _uiState.value = state.copy(error = "Выберите категорию")
+            return false
+        }
+
         if (state.isSplitMode) {
             val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
             if (splitAmount <= 0) {
