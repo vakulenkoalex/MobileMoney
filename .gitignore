@@ -8,3 +8,4 @@ server/data/
 */.kotlin/errors/
 */.kotlin/sessions
 *.hprof
+.idea/
