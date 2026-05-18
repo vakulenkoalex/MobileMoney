@@ -1,5 +1,6 @@
 package com.mobilemoney.server.route
 
+import com.mobilemoney.dto.ErrorResponse
 import com.mobilemoney.dto.SyncChangesResponse
 import com.mobilemoney.dto.SyncPushRequest
 import com.mobilemoney.dto.SyncPushResponse
@@ -19,13 +20,13 @@ fun Routing.syncRoutes() {
     post("/api/v1/sync/push") {
         val auth = call.request.headers["Authorization"]
         if (auth == null) {
-            call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Missing token")), contentType = ContentType.Application.Json, status = HttpStatusCode.Unauthorized)
             return@post
         }
 
         val verifyResult = authService.verify(auth)
         if (verifyResult.isFailure) {
-            call.respondText("{\"error\":\"Invalid or expired token\",\"code\":\"AUTH_FAILED\"}", status = HttpStatusCode.Unauthorized)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Invalid or expired token", "AUTH_FAILED")), contentType = ContentType.Application.Json, status = HttpStatusCode.Unauthorized)
             return@post
         }
 
@@ -38,20 +39,20 @@ fun Routing.syncRoutes() {
         } catch (e: Exception) {
             println("ERROR in push: ${e.message}")
             e.printStackTrace()
-            call.respondText("{\"error\":\"Internal server error: ${e.message}\"}", status = HttpStatusCode.InternalServerError)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Internal server error: ${e.message}")), contentType = ContentType.Application.Json, status = HttpStatusCode.InternalServerError)
         }
     }
 
     get("/api/v1/sync/changes") {
         val auth = call.request.headers["Authorization"]
         if (auth == null) {
-            call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Missing token")), contentType = ContentType.Application.Json, status = HttpStatusCode.Unauthorized)
             return@get
         }
 
         val verifyResult = authService.verify(auth)
         if (verifyResult.isFailure) {
-            call.respondText("{\"error\":\"Invalid or expired token\",\"code\":\"AUTH_FAILED\"}", status = HttpStatusCode.Unauthorized)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Invalid or expired token", "AUTH_FAILED")), contentType = ContentType.Application.Json, status = HttpStatusCode.Unauthorized)
             return@get
         }
 
@@ -63,20 +64,20 @@ fun Routing.syncRoutes() {
         } catch (e: Exception) {
             println("ERROR in getChanges: ${e.message}")
             e.printStackTrace()
-            call.respondText("{\"error\":\"Internal server error: ${e.message}\"}", status = HttpStatusCode.InternalServerError)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Internal server error: ${e.message}")), contentType = ContentType.Application.Json, status = HttpStatusCode.InternalServerError)
         }
     }
 
     get("/api/v1/sync/pull") {
         val auth = call.request.headers["Authorization"]
         if (auth == null) {
-            call.respondText("{\"error\":\"Missing token\"}", status = HttpStatusCode.Unauthorized)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Missing token")), contentType = ContentType.Application.Json, status = HttpStatusCode.Unauthorized)
             return@get
         }
 
         val verifyResult = authService.verify(auth)
         if (verifyResult.isFailure) {
-            call.respondText("{\"error\":\"Invalid or expired token\",\"code\":\"AUTH_FAILED\"}", status = HttpStatusCode.Unauthorized)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Invalid or expired token", "AUTH_FAILED")), contentType = ContentType.Application.Json, status = HttpStatusCode.Unauthorized)
             return@get
         }
 
@@ -87,7 +88,7 @@ fun Routing.syncRoutes() {
         } catch (e: Exception) {
             println("ERROR in pull: ${e.message}")
             e.printStackTrace()
-            call.respondText("{\"error\":\"Internal server error: ${e.message}\"}", status = HttpStatusCode.InternalServerError)
+            call.respondText(Json.encodeToString(ErrorResponse.serializer(), ErrorResponse("Internal server error: ${e.message}")), contentType = ContentType.Application.Json, status = HttpStatusCode.InternalServerError)
         }
     }
 }
