@@ -1,6 +1,5 @@
 .gradle/
 build/
-*/.idea/
 local.properties
 build.bat
 */gradle/gradle-daemon-jvm.properties
