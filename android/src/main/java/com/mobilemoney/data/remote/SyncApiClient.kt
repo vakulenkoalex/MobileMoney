@@ -50,19 +50,17 @@ class SyncApiClient(private val context: Context) {
                 val body = json.encodeToString(LoginRequest(login, password, deviceId, deviceName))
                 conn.outputStream.use { it.write(body.toByteArray()) }
 
-                val responseCode = conn.responseCode
-                val inputStream = if (responseCode in 200..299) conn.inputStream else conn.errorStream
-                val response = BufferedReader(InputStreamReader(inputStream)).use { it.readText() }
-
-                if (responseCode == 200) {
+                if (conn.responseCode == 200) {
+                    val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
                     val loginResponse = json.decodeFromString<LoginResponse>(response)
                     deviceToken = loginResponse.token
                     Result.success(loginResponse.token)
                 } else {
+                    val errorResponse = BufferedReader(InputStreamReader(conn.errorStream)).use { it.readText() }
                     val error = try {
-                        json.decodeFromString<ErrorResponse>(response).error
+                        json.decodeFromString<ErrorResponse>(errorResponse).error
                     } catch (e: Exception) {
-                        "Login failed: $responseCode"
+                        "Login failed: ${conn.responseCode}"
                     }
                     Result.failure(Exception(error))
                 }
@@ -83,14 +81,7 @@ class SyncApiClient(private val context: Context) {
                 conn.connectTimeout = 30000
                 conn.readTimeout = 30000
 
-                val responseCode = conn.responseCode
-                val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-
-                if (responseCode == 200) {
-                    Result.success(json.decodeFromString<SyncChangesResponse>(response))
-                } else {
-                    Result.failure(Exception("$responseCode: Failed to get changes"))
-                }
+                parseResponse<SyncChangesResponse>(conn, "Failed to get changes")
             } catch (e: Exception) {
                 Result.failure(Exception("500: ${e.message}"))
             }
@@ -115,16 +106,7 @@ class SyncApiClient(private val context: Context) {
                 val body = json.encodeToString(SyncPushRequest.serializer(), request)
                 conn.outputStream.use { it.write(body.toByteArray()) }
 
-                val responseCode = conn.responseCode
-                Log.d("SyncApiClient", "pushChanges responseCode: $responseCode")
-                val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-                Log.d("SyncApiClient", "pushChanges response: $response")
-
-                if (responseCode == 200) {
-                    Result.success(json.decodeFromString<SyncPushResponse>(response))
-                } else {
-                    Result.failure(Exception("$responseCode: Failed to push changes"))
-                }
+                parseResponse<SyncPushResponse>(conn, "Failed to push changes")
             } catch (e: Exception) {
                 Log.e("SyncApiClient", "pushChanges exception: ${e.message}", e)
                 Result.failure(Exception("500: ${e.message}"))
@@ -143,14 +125,7 @@ class SyncApiClient(private val context: Context) {
                 conn.connectTimeout = 30000
                 conn.readTimeout = 30000
 
-                val responseCode = conn.responseCode
-                val response = BufferedReader(InputStreamReader(conn.inputStream)).use { it.readText() }
-
-                if (responseCode == 200) {
-                    Result.success(json.decodeFromString<SyncPullResponse>(response))
-                } else {
-                    Result.failure(Exception("$responseCode: Failed to pull"))
-                }
+                parseResponse<SyncPullResponse>(conn, "Failed to pull")
             } catch (e: Exception) {
                 Result.failure(Exception("500: ${e.message}"))
             }
@@ -162,6 +137,26 @@ class SyncApiClient(private val context: Context) {
     }
 
     fun getToken(): String? = deviceToken
+
+    private suspend inline fun <reified T> parseResponse(
+        conn: HttpURLConnection,
+        defaultError: String
+    ): Result<T> {
+        val responseCode = conn.responseCode
+        val inputStream = if (responseCode in 200..299) conn.inputStream else conn.errorStream
+        val response = BufferedReader(InputStreamReader(inputStream)).use { it.readText() }
+
+        return if (responseCode == 200) {
+            Result.success(json.decodeFromString<T>(response))
+        } else {
+            val error = try {
+                json.decodeFromString<ErrorResponse>(response).error
+            } catch (e: Exception) {
+                defaultError
+            }
+            Result.failure(Exception("$responseCode: $error"))
+        }
+    }
 
     suspend fun ping(): Result<Unit> {
         return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
