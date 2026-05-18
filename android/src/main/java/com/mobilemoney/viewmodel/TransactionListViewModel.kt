@@ -3,7 +3,6 @@ package com.mobilemoney.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobilemoney.domain.model.Transaction
-import com.mobilemoney.domain.repository.SyncRepository
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +17,7 @@ data class TransactionListUiState(
 )
 
 class TransactionListViewModel(
-    private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val syncRepository: SyncRepository
+    private val getTransactionsUseCase: GetTransactionsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionListUiState())
@@ -49,13 +47,4 @@ class TransactionListViewModel(
         }
     }
 
-    fun refreshTransactions() {
-        loadTransactions()
-    }
-
-    fun deleteTransaction(id: java.util.UUID) {
-        viewModelScope.launch {
-            // TODO: inject delete use case
-        }
-    }
 }

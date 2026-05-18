@@ -346,10 +346,6 @@ class TransactionFormViewModel(
         return true
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
     fun getFilteredCategories(): List<Category> {
         val isIncome = _uiState.value.type == TransactionType.INCOME
         return _uiState.value.categories.filter { it.isIncome == isIncome }

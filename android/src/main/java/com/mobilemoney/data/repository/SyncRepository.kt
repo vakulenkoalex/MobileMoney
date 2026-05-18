@@ -8,16 +8,11 @@ import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.TransactionDao
-import com.mobilemoney.dto.LoginResponse
-import com.mobilemoney.dto.ErrorResponse
 import com.mobilemoney.data.remote.SyncApiClient
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto
 import com.mobilemoney.dto.TransactionDto
 import com.mobilemoney.dto.SyncPushRequest
-import com.mobilemoney.dto.SyncChangesResponse
-import com.mobilemoney.dto.SyncPullResponse
-import com.mobilemoney.dto.SyncPushResponse
 import com.mobilemoney.domain.repository.SyncRepository as DomainSyncRepository
 import com.mobilemoney.domain.repository.SyncState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,12 +64,6 @@ class SyncRepository(context: Context) : DomainSyncRepository {
     var lastSyncTimestamp: Long
         get() = prefs.getLong("last_sync_timestamp", 0L)
         set(value) = prefs.edit().putLong("last_sync_timestamp", value).apply()
-
-    var deviceId: String
-        get() = prefs.getString("device_id", null) ?: apiClient.getDeviceId().also {
-            prefs.edit().putString("device_id", it).apply()
-        }
-        set(value) = prefs.edit().putString("device_id", value).apply()
 
     var userLogin: String?
         get() = prefs.getString("user_login", null)

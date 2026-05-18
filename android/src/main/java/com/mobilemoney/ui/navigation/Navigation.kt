@@ -94,7 +94,7 @@ fun MobileMoneyNavigation() {
         return
     }
 
-    var loginState by remember { mutableStateOf<Boolean>(DI.syncRepository.isLoggedIn()) }
+    var loginState by remember { mutableStateOf(DI.syncRepository.isLoggedIn()) }
 
     if (!loginState) {
         LoginScreen(

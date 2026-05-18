@@ -165,38 +165,4 @@ fun TransactionItem(
     }
 }
 
-@Composable
-fun BottomNavigationBar(
-    onAccountsClick: () -> Unit = {},
-    onCategoriesClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
-) {
-    NavigationBar {
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("Главная") },
-            selected = false,
-            onClick = { }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.CreditCard, contentDescription = null) },
-            label = { Text("Счета") },
-            selected = false,
-            onClick = onAccountsClick
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Category, contentDescription = null) },
-            label = { Text("Категории") },
-            selected = false,
-            onClick = onCategoriesClick
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("Настройки") },
-            selected = false,
-            onClick = onSettingsClick
-        )
-    }
-}
-
 

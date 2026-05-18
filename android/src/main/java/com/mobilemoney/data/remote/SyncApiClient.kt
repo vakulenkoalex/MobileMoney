@@ -7,7 +7,6 @@ import com.mobilemoney.BuildConfig
 import com.mobilemoney.dto.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -136,9 +135,7 @@ class SyncApiClient(private val context: Context) {
         deviceToken = token
     }
 
-    fun getToken(): String? = deviceToken
-
-    private suspend inline fun <reified T> parseResponse(
+    private inline fun <reified T> parseResponse(
         conn: HttpURLConnection,
         defaultError: String
     ): Result<T> {
@@ -159,9 +156,9 @@ class SyncApiClient(private val context: Context) {
     }
 
     suspend fun ping(): Result<Unit> {
-        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        return withContext(Dispatchers.IO) {
             try {
-                android.util.Log.d("SyncApiClient", "Ping to: $baseUrl/")
+                Log.d("SyncApiClient", "Ping to: $baseUrl/")
                 val url = URL("$baseUrl/")
                 val conn = url.openConnection() as HttpURLConnection
                 conn.requestMethod = "GET"
@@ -169,14 +166,14 @@ class SyncApiClient(private val context: Context) {
                 conn.readTimeout = 10000
 
                 val responseCode = conn.responseCode
-                android.util.Log.d("SyncApiClient", "Response code: $responseCode")
+                Log.d("SyncApiClient", "Response code: $responseCode")
                 if (responseCode == 200) {
                     Result.success(Unit)
                 } else {
                     Result.failure(Exception("$responseCode: Server unreachable"))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("SyncApiClient", "Ping exception: ${e.message}", e)
+                Log.e("SyncApiClient", "Ping exception: ${e.message}", e)
                 Result.failure(Exception("500: ${e.message}"))
             }
         }

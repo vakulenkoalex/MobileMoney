@@ -1,7 +1,6 @@
 package com.mobilemoney
 
 import android.app.Application
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -60,8 +59,5 @@ class MobileMoneyApp : Application() {
         lateinit var instance: MobileMoneyApp
             private set
 
-        fun isAppInitialized(context: Context): Boolean {
-            return (context.applicationContext as? MobileMoneyApp)?.isInitialized ?: false
-        }
     }
 }

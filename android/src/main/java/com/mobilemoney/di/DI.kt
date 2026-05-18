@@ -13,7 +13,6 @@ import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import com.mobilemoney.viewmodel.*
-import com.mobilemoney.ui.common.ErrorHandler
 
 object DI {
     val context: Context
@@ -78,7 +77,7 @@ object DI {
     }
 
     val transactionListViewModel: TransactionListViewModel by lazy {
-        TransactionListViewModel(getTransactionsUseCase, syncRepository)
+        TransactionListViewModel(getTransactionsUseCase)
     }
 
     val transactionFormViewModel: TransactionFormViewModel by lazy {
@@ -93,9 +92,6 @@ object DI {
     val categoryFormViewModel: CategoryFormViewModel by lazy {
         CategoryFormViewModel(categoryRepository)
     }
-
-    val errorHandler: ErrorHandler
-        get() = ErrorHandler
 
     val settingsViewModel: SettingsViewModel by lazy {
         SettingsViewModel(syncRepository, BackupRepository(context))

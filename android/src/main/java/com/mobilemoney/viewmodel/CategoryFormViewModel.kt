@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobilemoney.data.config.CategoryIconOption
 import com.mobilemoney.data.config.CategoryIcons
-import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.di.DI
 import com.mobilemoney.domain.model.Category
 import com.mobilemoney.domain.repository.CategoryRepository
@@ -100,7 +99,4 @@ class CategoryFormViewModel(
         return true
     }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
 }
