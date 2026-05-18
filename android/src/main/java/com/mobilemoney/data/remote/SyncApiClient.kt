@@ -4,6 +4,7 @@ import android.content.Context
 import android.provider.Settings
 import android.util.Log
 import com.mobilemoney.BuildConfig
+import com.mobilemoney.dto.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.*
@@ -198,85 +199,4 @@ data class ErrorResponse(
     val error: String
 )
 
-@Serializable
-data class SyncChangesResponse(
-    val timestamp: Long,
-    val accounts: List<AccountDto> = emptyList(),
-    val categories: List<CategoryDto> = emptyList(),
-    val transactions: List<TransactionDto> = emptyList()
-)
-
-@Serializable
-data class SyncPullResponse(
-    val timestamp: Long,
-    val accounts: List<AccountDto> = emptyList(),
-    val categories: List<CategoryDto> = emptyList(),
-    val transactions: List<TransactionDto> = emptyList()
-)
-
-@Serializable
-data class SyncPushRequest(
-    val accounts: List<AccountDto> = emptyList(),
-    val categories: List<CategoryDto> = emptyList(),
-    val transactions: List<TransactionDto> = emptyList()
-)
-
-@Serializable
-data class SyncPushResponse(
-    val success: Boolean,
-    val timestamp: Long,
-    val synced: Int
-)
-
-@Serializable
-data class AccountDto(
-    val id: String,
-    val name: String,
-    val typeId: String,
-    val currencyCode: String,
-    val icon: String,
-    val isDefault: Boolean,
-    val archived: Boolean,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long?,
-    val syncedAt: Long?,
-    val serverReceivedAt: Long?
-) {
-    fun isDefaultAccount(): Boolean = isDefault
-}
-
-@Serializable
-data class CategoryDto(
-    val id: String,
-    val name: String,
-    val isIncome: Boolean,
-    val icon: String,
-    val parentId: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long?,
-    val syncedAt: Long?,
-    val serverReceivedAt: Long?
-) {
-    fun isIncomeCategory(): Boolean = isIncome
-}
-
-@Serializable
-data class TransactionDto(
-    val id: String,
-    val accountId: String,
-    val categoryId: String,
-    val amount: Double,
-    val date: Long,
-    val comment: String,
-    val source: String,
-    val sourceData: String?,
-    val creatorId: String?,
-    val relatedTransactionId: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long?,
-    val syncedAt: Long?,
-    val serverReceivedAt: Long?
-)
+typealias SyncPullResponse = SyncChangesResponse

@@ -1,6 +1,6 @@
 package com.mobilemoney.server.repository
 
-import com.mobilemoney.server.model.dto.AccountDto
+import com.mobilemoney.dto.AccountDto
 
 class AccountRepository {
 

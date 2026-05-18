@@ -1,9 +1,9 @@
 package com.mobilemoney.server.route
 
+import com.mobilemoney.dto.SyncChangesResponse
+import com.mobilemoney.dto.SyncPushRequest
+import com.mobilemoney.dto.SyncPushResponse
 import com.mobilemoney.server.DI
-import com.mobilemoney.server.model.dto.SyncChangesResponse
-import com.mobilemoney.server.model.dto.SyncPushRequestDto
-import com.mobilemoney.server.model.dto.SyncResponse
 import com.mobilemoney.server.service.AuthService
 import com.mobilemoney.server.service.SyncService
 import io.ktor.http.*
@@ -31,9 +31,9 @@ fun Routing.syncRoutes() {
 
         val body = call.receiveText()
         try {
-            val request = Json.decodeFromString<SyncPushRequestDto>(body)
+            val request = Json.decodeFromString<SyncPushRequest>(body)
             val response = syncService.push(request)
-            val json = Json.encodeToString(SyncResponse.serializer(), response)
+            val json = Json.encodeToString(SyncPushResponse.serializer(), response)
             call.respondText(json, contentType = ContentType.Application.Json)
         } catch (e: Exception) {
             println("ERROR in push: ${e.message}")

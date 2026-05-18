@@ -1,8 +1,8 @@
 package com.mobilemoney.server.service
 
-import com.mobilemoney.server.model.dto.SyncChangesResponse
-import com.mobilemoney.server.model.dto.SyncPushRequestDto
-import com.mobilemoney.server.model.dto.SyncResponse
+import com.mobilemoney.dto.SyncChangesResponse
+import com.mobilemoney.dto.SyncPushRequest
+import com.mobilemoney.dto.SyncPushResponse
 import com.mobilemoney.server.repository.AccountRepository
 import com.mobilemoney.server.repository.CategoryRepository
 import com.mobilemoney.server.repository.TransactionRepository
@@ -13,7 +13,7 @@ class SyncService(
     private val transactionRepository: TransactionRepository
 ) {
 
-    fun push(data: SyncPushRequestDto): SyncResponse {
+    fun push(data: SyncPushRequest): SyncPushResponse {
         var syncedCount = 0
 
         data.accounts.forEach {
@@ -32,7 +32,7 @@ class SyncService(
         }
 
         println("Push: $syncedCount items")
-        return SyncResponse(success = true, timestamp = System.currentTimeMillis(), synced = syncedCount)
+        return SyncPushResponse(success = true, timestamp = System.currentTimeMillis(), synced = syncedCount)
     }
 
     fun getChanges(since: Long): SyncChangesResponse {

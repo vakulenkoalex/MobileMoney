@@ -4,9 +4,9 @@ import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.CategoryEntity
 import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.local.TransactionSource
-import com.mobilemoney.data.remote.AccountDto
-import com.mobilemoney.data.remote.CategoryDto
-import com.mobilemoney.data.remote.TransactionDto
+import com.mobilemoney.dto.AccountDto
+import com.mobilemoney.dto.CategoryDto
+import com.mobilemoney.dto.TransactionDto
 
 fun AccountEntity.toSyncDto(): AccountDto {
     return AccountDto(

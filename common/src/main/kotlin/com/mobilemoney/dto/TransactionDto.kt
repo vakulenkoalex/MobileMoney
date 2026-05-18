@@ -1,4 +1,4 @@
-package com.mobilemoney.server.model.dto
+package com.mobilemoney.dto
 
 import kotlinx.serialization.Serializable
 

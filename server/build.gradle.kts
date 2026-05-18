@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.3.21"
-    kotlin("plugin.serialization") version "2.3.21"
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.plugin.serialization")
     id("application")
 }
 
@@ -38,6 +38,8 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:3.45.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+
+    implementation(project(":common"))
 
     testImplementation(kotlin("test"))
 }
