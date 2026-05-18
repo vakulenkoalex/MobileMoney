@@ -1,6 +1,8 @@
 @echo off
+cd /d %~dp0
+cd ..
 if "%1"=="run" (
-    .\gradlew.bat run --no-daemon
+    gradlew.bat :server:run --no-daemon
 ) else (
-    .\gradlew.bat %*
+    gradlew.bat :server:%*
 )
