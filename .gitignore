@@ -7,3 +7,4 @@ build.bat
 server/data/
 */.kotlin/errors/
 */.kotlin/sessions
+*.hprof
