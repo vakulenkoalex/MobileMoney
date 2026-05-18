@@ -3,7 +3,7 @@ package com.mobilemoney.server.repository
 import java.sql.Connection
 
 object Database {
-    private var conn: java.sql.Connection? = null
+    private var conn: Connection? = null
     private var initialized = false
     private var jdbcUrl: String = ""
 

@@ -26,14 +26,4 @@ class UserRepository {
         return null
     }
 
-    fun createUser(login: String, passwordHash: String, salt: String) {
-        Database.getConnection().use { conn ->
-            conn.prepareStatement("INSERT INTO users (login, passwordHash, salt) VALUES (?, ?, ?)").use { stmt ->
-                stmt.setString(1, login)
-                stmt.setString(2, passwordHash)
-                stmt.setString(3, salt)
-                stmt.executeUpdate()
-            }
-        }
-    }
 }

@@ -43,9 +43,5 @@ class AuthService(
         return Result.success(device)
     }
 
-    fun revoke(token: String): Result<Unit> {
-        deviceRepository.revoke(token)
-        return Result.success(Unit)
-    }
 }
 
