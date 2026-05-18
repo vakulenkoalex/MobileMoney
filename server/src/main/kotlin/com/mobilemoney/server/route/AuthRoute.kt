@@ -1,7 +1,7 @@
 package com.mobilemoney.server.route
 
 import com.mobilemoney.server.DI
-import com.mobilemoney.server.model.dto.LoginRequest
+import com.mobilemoney.dto.LoginRequest
 import com.mobilemoney.server.service.AuthService
 import io.ktor.http.*
 import io.ktor.server.request.*

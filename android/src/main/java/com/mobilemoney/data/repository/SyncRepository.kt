@@ -8,8 +8,8 @@ import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.TransactionDao
-import com.mobilemoney.data.remote.LoginResponse
-import com.mobilemoney.data.remote.ErrorResponse
+import com.mobilemoney.dto.LoginResponse
+import com.mobilemoney.dto.ErrorResponse
 import com.mobilemoney.data.remote.SyncApiClient
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto

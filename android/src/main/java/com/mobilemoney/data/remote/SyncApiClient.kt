@@ -47,7 +47,7 @@ class SyncApiClient(private val context: Context) {
                 conn.connectTimeout = 30000
                 conn.readTimeout = 30000
 
-                val body = """{"login":"$login","password":"$password","deviceId":"$deviceId","deviceName":"$deviceName"}"""
+                val body = json.encodeToString(LoginRequest(login, password, deviceId, deviceName))
                 conn.outputStream.use { it.write(body.toByteArray()) }
 
                 val responseCode = conn.responseCode
@@ -187,16 +187,5 @@ class SyncApiClient(private val context: Context) {
         }
     }
 }
-
-@Serializable
-data class LoginResponse(
-    val token: String,
-    val login: String
-)
-
-@Serializable
-data class ErrorResponse(
-    val error: String
-)
 
 typealias SyncPullResponse = SyncChangesResponse
