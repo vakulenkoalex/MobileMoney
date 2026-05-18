@@ -17,7 +17,8 @@
 
 ## Architecture
 
-- **Monorepo** with two independent Gradle projects: `android/` and `server/`
+- **Monorepo** with three Gradle projects: `android/`, `server/`, `common/`
+- **Common**: DTOs shared between Android and Server (`common/src/main/kotlin/com/mobilemoney/dto/`)
 - **Android**: Kotlin/Jetpack Compose, Clean Architecture (presentation/domain/data), MVVM, minSDK 34
 - **Server**: Kotlin/JVM + Ktor, SQLite (`data/sync.db`)
 

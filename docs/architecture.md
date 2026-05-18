@@ -1,5 +1,23 @@
 # Архитектура приложения "Учет личных денег"
 
+## 1. Common модуль
+
+Общие DTO, используемые на Android и Server:
+
+```
+common/src/main/kotlin/com/mobilemoney/dto/
+├── ErrorResponse.kt
+├── LoginRequest.kt
+├── LoginResponse.kt
+├── SyncPushRequest.kt
+├── SyncPushResponse.kt
+├── SyncPullResponse.kt
+├── SyncChangesResponse.kt
+├── AccountDto.kt
+├── CategoryDto.kt
+└── TransactionDto.kt
+```
+
 ## 2. Domain слой (Бизнес-логика)
 
 ### 2.1 Типы источников операций
