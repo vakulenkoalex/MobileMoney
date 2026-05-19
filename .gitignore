@@ -4,7 +4,7 @@ local.properties
 build.bat
 */gradle/gradle-daemon-jvm.properties
 server/data/
-*/.kotlin/errors/
-*/.kotlin/sessions
+*/.kotlin/
 *.hprof
 .idea/
+.kotlin/
