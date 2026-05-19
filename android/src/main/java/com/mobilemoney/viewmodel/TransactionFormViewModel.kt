@@ -7,6 +7,7 @@ import com.mobilemoney.domain.model.Category
 import com.mobilemoney.domain.model.Transaction
 import com.mobilemoney.domain.usecase.account.GetAccountsUseCase
 import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
+import com.mobilemoney.domain.usecase.transaction.DeleteTransactionUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +48,8 @@ class TransactionFormViewModel(
     private val getAccountsUseCase: GetAccountsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val saveTransactionUseCase: SaveTransactionUseCase
+    private val saveTransactionUseCase: SaveTransactionUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionFormState())
@@ -365,7 +367,7 @@ class TransactionFormViewModel(
         val id = _uiState.value.transactionId
         if (id != null) {
             viewModelScope.launch {
-                // TODO: inject delete use case
+                deleteTransactionUseCase(id.toString())
                 _uiState.value = _uiState.value.copy(isDeleted = true)
             }
         }

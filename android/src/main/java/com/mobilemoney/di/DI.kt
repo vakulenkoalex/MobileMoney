@@ -10,6 +10,7 @@ import com.mobilemoney.domain.repository.TransactionRepository
 import com.mobilemoney.domain.usecase.account.CreateAccountUseCase
 import com.mobilemoney.domain.usecase.account.GetAccountsUseCase
 import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
+import com.mobilemoney.domain.usecase.transaction.DeleteTransactionUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import com.mobilemoney.viewmodel.*
@@ -64,6 +65,10 @@ object DI {
         SaveTransactionUseCase(transactionRepository)
     }
 
+    val deleteTransactionUseCase: DeleteTransactionUseCase by lazy {
+        DeleteTransactionUseCase(transactionRepository)
+    }
+
     val accountListViewModel: AccountListViewModel by lazy {
         AccountListViewModel(getAccountsUseCase)
     }
@@ -85,7 +90,8 @@ object DI {
             getAccountsUseCase,
             getCategoriesUseCase,
             getTransactionsUseCase,
-            saveTransactionUseCase
+            saveTransactionUseCase,
+            deleteTransactionUseCase
         )
     }
 
