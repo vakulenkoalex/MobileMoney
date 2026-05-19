@@ -66,7 +66,6 @@ sealed class Screen(val route: String) {
 val bottomNavItems = listOf(
     Screen.TransactionList,
     Screen.Accounts,
-    Screen.Categories,
     Screen.Settings
 )
 
@@ -123,7 +122,6 @@ fun MobileMoneyNavigation() {
                                 imageVector = when (screen) {
                                     Screen.TransactionList -> Icons.Default.Home
                                     Screen.Accounts -> Icons.Default.CreditCard
-                                    Screen.Categories -> Icons.Default.Category
                                     Screen.Settings -> Icons.Default.Settings
                                     else -> Icons.Default.Home
                                 },
@@ -133,9 +131,8 @@ fun MobileMoneyNavigation() {
                         label = {
                             Text(
                                 when (screen) {
-                                    Screen.TransactionList -> "Главная"
+                                    Screen.TransactionList -> "Операции"
                                     Screen.Accounts -> "Счета"
-                                    Screen.Categories -> "Категории"
                                     Screen.Settings -> "Настройки"
                                     else -> ""
                                 }
@@ -260,7 +257,8 @@ fun MobileMoneyNavigation() {
                         },
                         onCategoryClick = { categoryId ->
                             navController.navigate(Screen.EditCategory.createRoute(categoryId))
-                        }
+                        },
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
 
@@ -291,7 +289,11 @@ fun MobileMoneyNavigation() {
                 }
 
                 composable(Screen.Settings.route) {
-                    SettingsScreen()
+                    SettingsScreen(
+                        onNavigateToCategories = {
+                            navController.navigate(Screen.Categories.route)
+                        }
+                    )
                 }
             }
         }

@@ -26,6 +26,7 @@ import com.mobilemoney.viewmodel.SettingsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onNavigateToCategories: () -> Unit,
     viewModel: SettingsViewModel = DI.settingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -45,12 +46,11 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Настройки") },
+                title = { Text("Настройки", style = MaterialTheme.typography.titleSmall) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                )
             )
         }
     ) { paddingValues ->
@@ -61,6 +61,13 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Button(
+                onClick = onNavigateToCategories,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Категории")
+            }
+
             Button(
                 onClick = { exportLauncher.launch(viewModel.getDefaultFileName()) },
                 modifier = Modifier.fillMaxWidth(),

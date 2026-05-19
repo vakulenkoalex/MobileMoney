@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import java.util.UUID
 fun CategoryListScreen(
     onAddClick: () -> Unit,
     onCategoryClick: (UUID) -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: CategoryListViewModel = DI.categoryListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -36,6 +38,17 @@ fun CategoryListScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Категории", style = MaterialTheme.typography.titleSmall) },
+                navigationIcon = {
+                    if (onNavigateBack != null) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Назад",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -43,7 +56,7 @@ fun CategoryListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            SmallFloatingActionButton(
                 onClick = onAddClick,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
@@ -82,13 +95,13 @@ fun CategoryListScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 item {
                     Text(
                         text = "Расходы",
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -104,7 +117,7 @@ fun CategoryListScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Доходы",
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
@@ -133,12 +146,12 @@ fun CategoryItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
@@ -146,16 +159,17 @@ fun CategoryItem(
                 Icon(
                     imageVector = AppIcons.getTransactionIcon(category.icon),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = category.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -163,7 +177,8 @@ fun CategoryItem(
             Icon(
                 imageVector = if (category.isIncome) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                 contentDescription = null,
-                tint = if (category.isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                tint = if (category.isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(18.dp)
             )
         }
     }
