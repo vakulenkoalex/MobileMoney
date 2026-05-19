@@ -35,6 +35,18 @@ class TransactionRepositoryImpl(
     override suspend fun deleteTransaction(id: String) {
         databaseRepository.deleteTransaction(id)
     }
+
+    override suspend fun splitTransaction(
+        originalId: String,
+        mainAmount: Double,
+        newTransaction: Transaction
+    ) {
+        databaseRepository.splitTransaction(
+            originalId = originalId,
+            mainAmount = mainAmount,
+            newTransaction = newTransaction.toUiModel()
+        )
+    }
 }
 
 private fun TransactionUi.toDomain(): Transaction {

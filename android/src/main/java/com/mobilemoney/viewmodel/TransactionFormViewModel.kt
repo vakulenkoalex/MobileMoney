@@ -10,6 +10,7 @@ import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
 import com.mobilemoney.domain.usecase.transaction.DeleteTransactionUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
+import com.mobilemoney.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +50,8 @@ class TransactionFormViewModel(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val getTransactionsUseCase: GetTransactionsUseCase,
     private val saveTransactionUseCase: SaveTransactionUseCase,
-    private val deleteTransactionUseCase: DeleteTransactionUseCase
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val transactionRepository: com.mobilemoney.domain.repository.TransactionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionFormState())
@@ -289,21 +291,6 @@ class TransactionFormViewModel(
                 val remainingAmount = state.amount.toDoubleOrNull()!! - splitAmount
 
                 val splitIcon = state.splitCategory?.icon ?: "category"
-                val mainTransaction = Transaction(
-                    id = UUID.randomUUID(),
-                    title = state.selectedCategory?.name ?: "Без категории",
-                    subtitle = state.selectedAccount.name,
-                    comment = state.comment,
-                    amount = remainingAmount,
-                    currency = state.selectedAccount.currency,
-                    icon = state.selectedCategory?.icon ?: "shopping_cart",
-                    color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
-                    isIncome = isIncome,
-                    date = state.date,
-                    accountId = state.selectedAccount.id,
-                    categoryId = state.selectedCategory?.id
-                )
-
                 val newTransaction = Transaction(
                     id = UUID.randomUUID(),
                     title = state.splitCategory?.name ?: "Без категории",
@@ -319,11 +306,30 @@ class TransactionFormViewModel(
                     categoryId = state.splitCategory?.id
                 )
 
-                if (state.isEditing) {
-                    saveTransactionUseCase(mainTransaction.copy(id = state.transactionId!!), true)
+                if (state.isEditing && state.transactionId != null) {
+                    transactionRepository.splitTransaction(
+                        originalId = state.transactionId.toString(),
+                        mainAmount = remainingAmount,
+                        newTransaction = newTransaction
+                    )
+                } else {
+                    val mainTransaction = Transaction(
+                        id = UUID.randomUUID(),
+                        title = state.selectedCategory?.name ?: "Без категории",
+                        subtitle = state.selectedAccount.name,
+                        comment = state.comment,
+                        amount = remainingAmount,
+                        currency = state.selectedAccount.currency,
+                        icon = state.selectedCategory?.icon ?: "shopping_cart",
+                        color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
+                        isIncome = isIncome,
+                        date = state.date,
+                        accountId = state.selectedAccount.id,
+                        categoryId = state.selectedCategory?.id
+                    )
+                    transactionRepository.addTransaction(mainTransaction)
+                    transactionRepository.addTransaction(newTransaction)
                 }
-                saveTransactionUseCase(mainTransaction, false)
-                saveTransactionUseCase(newTransaction, false)
             } else {
                 val transaction = Transaction(
                     id = state.transactionId ?: UUID.randomUUID(),

@@ -10,4 +10,9 @@ interface TransactionRepository {
     suspend fun addTransaction(transaction: Transaction)
     suspend fun updateTransaction(transaction: Transaction)
     suspend fun deleteTransaction(id: String)
+    suspend fun splitTransaction(
+        originalId: String,
+        mainAmount: Double,
+        newTransaction: Transaction
+    )
 }

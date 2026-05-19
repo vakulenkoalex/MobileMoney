@@ -91,7 +91,8 @@ object DI {
             getCategoriesUseCase,
             getTransactionsUseCase,
             saveTransactionUseCase,
-            deleteTransactionUseCase
+            deleteTransactionUseCase,
+            transactionRepository
         )
     }
 

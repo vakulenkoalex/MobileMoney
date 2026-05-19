@@ -1,5 +1,6 @@
 package com.mobilemoney.data.repository
 
+import androidx.room.Transaction
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.TransactionDao
@@ -109,6 +110,19 @@ class DatabaseRepository(
 
     suspend fun deleteTransaction(id: String) {
         transactionDao.softDelete(id, System.currentTimeMillis())
+    }
+
+    @Transaction
+    suspend fun splitTransaction(
+        originalId: String,
+        mainAmount: Double,
+        newTransaction: TransactionUi
+    ) {
+        val entity = transactionDao.getTransactionById(originalId)
+        if (entity != null) {
+            transactionDao.update(entity.copy(amount = mainAmount))
+        }
+        transactionDao.insert(newTransaction.toEntity())
     }
 
     suspend fun addAccount(account: AccountUi) {
