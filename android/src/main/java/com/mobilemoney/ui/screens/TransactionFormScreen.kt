@@ -52,6 +52,8 @@ fun TransactionFormScreen(
     LaunchedEffect(transactionId) {
         if (transactionId != null) {
             viewModel.loadTransaction(transactionId)
+        } else {
+            viewModel.resetForNewTransaction()
         }
     }
 

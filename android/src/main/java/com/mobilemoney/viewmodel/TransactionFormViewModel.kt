@@ -78,6 +78,16 @@ class TransactionFormViewModel(
         }
     }
 
+    fun resetForNewTransaction() {
+        val defaultAccount = _uiState.value.accounts.find { it.isDefault } ?: _uiState.value.accounts.firstOrNull()
+        _uiState.value = TransactionFormState(
+            accounts = _uiState.value.accounts,
+            categories = _uiState.value.categories,
+            selectedAccount = defaultAccount,
+            date = System.currentTimeMillis()
+        )
+    }
+
     fun loadTransaction(transactionId: UUID) {
         viewModelScope.launch {
             val transaction = getTransactionsUseCase().first().find { it.id == transactionId }

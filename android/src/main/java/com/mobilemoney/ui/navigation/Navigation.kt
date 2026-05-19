@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,7 +44,9 @@ import java.util.UUID
 sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object TransactionList : Screen("transactions")
-    data object CreateTransaction : Screen("create")
+    data object CreateTransaction : Screen("create_transaction/{uuid}") {
+        fun createRoute() = "create_transaction/${UUID.randomUUID()}"
+    }
     data object EditTransaction : Screen("edit/{transactionId}") {
         fun createRoute(transactionId: UUID) = "edit/$transactionId"
     }
@@ -173,7 +176,8 @@ fun MobileMoneyNavigation() {
                 composable(Screen.TransactionList.route) {
                     TransactionListScreen(
                         onAddClick = {
-                            navController.navigate(Screen.CreateTransaction.route)
+                            DI.transactionFormViewModel.resetForNewTransaction()
+                            navController.navigate(Screen.CreateTransaction.createRoute())
                         },
                         onTransactionClick = { transactionId ->
                             navController.navigate(Screen.EditTransaction.createRoute(transactionId))
@@ -181,7 +185,12 @@ fun MobileMoneyNavigation() {
                     )
                 }
 
-                composable(Screen.CreateTransaction.route) {
+                composable(
+                    route = "create_transaction/{uuid}",
+                    arguments = listOf(
+                        navArgument("uuid") { type = NavType.StringType }
+                    )
+                ) {
                     TransactionFormScreen(
                         transactionId = null,
                         onNavigateBack = {
