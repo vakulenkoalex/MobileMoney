@@ -60,12 +60,14 @@ fun TransactionFormScreen(
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             onNavigateBack()
+            viewModel.resetSavedState()
         }
     }
 
     LaunchedEffect(uiState.isDeleted) {
         if (uiState.isDeleted) {
             onNavigateBack()
+            viewModel.resetSavedState()
         }
     }
 

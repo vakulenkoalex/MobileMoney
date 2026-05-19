@@ -92,6 +92,10 @@ class TransactionFormViewModel(
         )
     }
 
+    fun resetSavedState() {
+        _uiState.value = _uiState.value.copy(isSaved = false, isDeleted = false)
+    }
+
     fun loadTransaction(transactionId: UUID) {
         viewModelScope.launch {
             val transaction = getTransactionsUseCase().first().find { it.id == transactionId }
