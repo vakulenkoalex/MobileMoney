@@ -85,25 +85,54 @@ fun AccountFormScreen(
                     .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            OutlinedTextField(
-                value = uiState.name,
-                onValueChange = { viewModel.updateName(it) },
-                label = { Text("Название счёта") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = uiState.name,
+                    onValueChange = { viewModel.updateName(it) },
+                    label = { Text("Название счёта") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { showIconSheet = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = AppIcons.getAccountIcon(uiState.icon),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
 
-            ListItem(
-                headlineContent = { Text("Тип счёта") },
-                supportingContent = {
-                    Text(uiState.type.displayName)
-                },
-                leadingContent = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null) },
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                     .clickable { showTypeSheet = true }
-            )
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.AccountBalanceWallet,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = uiState.type.displayName,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
 
             if (showTypeSheet) {
                 ModalBottomSheet(
@@ -138,20 +167,27 @@ fun AccountFormScreen(
                 }
             }
 
-            ListItem(
-                headlineContent = { Text("Валюта") },
-                supportingContent = {
-                    Text(
-                        uiState.currencies.find { it.code == uiState.currencyCode }?.name
-                            ?: uiState.currencyCode
-                    )
-                },
-                leadingContent = { Icon(Icons.Default.AttachMoney, contentDescription = null) },
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                     .clickable { showCurrencySheet = true }
-            )
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.AttachMoney,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = uiState.currencies.find { it.code == uiState.currencyCode }?.name
+                        ?: uiState.currencyCode,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
 
             if (showCurrencySheet) {
                 ModalBottomSheet(
@@ -187,31 +223,7 @@ fun AccountFormScreen(
                 }
             }
 
-            ListItem(
-                headlineContent = { Text("Иконка") },
-                supportingContent = {
-                    Text("")
-                },
-                leadingContent = {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.getAccountIcon(uiState.icon),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                    .clickable { showIconSheet = true }
-            )
+
 
             if (showIconSheet) {
                 ModalBottomSheet(
@@ -247,35 +259,43 @@ fun AccountFormScreen(
                 }
             }
 
-            ListItem(
-                headlineContent = { Text("По умолчанию") },
-                supportingContent = { Text("Использовать для новых операций") },
-                leadingContent = {
-                    Checkbox(
-                        checked = uiState.isDefault,
-                        onCheckedChange = { viewModel.updateIsDefault(it) }
-                    )
-                },
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-            )
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = uiState.isDefault,
+                    onCheckedChange = { viewModel.updateIsDefault(it) }
+                )
+                Text(
+                    text = "Использовать для новых операций",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             HorizontalDivider()
 
-            ListItem(
-                headlineContent = { Text("Авто-создание из буфера обмена") },
-                supportingContent = { Text("Создавать операции из скопированного текста") },
-                leadingContent = {
-                    Checkbox(
-                        checked = uiState.autoCreateEnabled,
-                        onCheckedChange = { viewModel.updateAutoCreateEnabled(it) }
-                    )
-                },
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-            )
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = uiState.autoCreateEnabled,
+                    onCheckedChange = { viewModel.updateAutoCreateEnabled(it) }
+                )
+                Text(
+                    text = "Создавать операции из скопированного текста",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             if (uiState.autoCreateEnabled) {
                 OutlinedTextField(

@@ -118,9 +118,9 @@ fun TransactionFormScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(12.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Тип операции
             Row(
@@ -147,22 +147,53 @@ fun TransactionFormScreen(
                 )
             }
 
-            // Сумма
-            OutlinedTextField(
-                value = uiState.amount,
-                onValueChange = { viewModel.updateAmount(it) },
-                label = { Text("Сумма") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(amountFocusRequester),
-                leadingIcon = {
+            // Сумма + Дата/Время
+            val dateFormat = SimpleDateFormat("dd.MM.yy")
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = uiState.amount,
+                    onValueChange = { viewModel.updateAmount(it) },
+                    label = { Text("Сумма") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(amountFocusRequester),
+                    leadingIcon = {
+                        Text(
+                            text = uiState.selectedAccount?.currency ?: "₽",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                )
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = uiState.selectedAccount?.currency ?: "₽",
-                        style = MaterialTheme.typography.titleMedium
+                        text = dateFormat.format(Date(uiState.date)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showDatePicker = true }
+                            .padding(12.dp)
+                    )
+                    Text(
+                        text = timeFormat.format(Date(uiState.date)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { showTimePicker = true }
+                            .padding(12.dp)
                     )
                 }
-            )
+            }
 
             // Кнопка Разделить (только при редактировании и не в режиме TRANSFER)
             if (uiState.isEditing && uiState.type != TransactionType.TRANSFER && !uiState.isSplitMode) {
@@ -272,63 +303,83 @@ fun TransactionFormScreen(
             }
 
             // Счёт
-            ListItem(
-                headlineContent = { Text("Счёт") },
-                supportingContent = { Text(uiState.selectedAccount?.name ?: "Выберите счёт") },
-                leadingContent = {
-                    if (uiState.selectedAccount != null) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = AppIcons.getAccountIcon(uiState.selectedAccount!!.icon),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    } else {
-                        Icon(Icons.Default.AccountBalanceWallet, contentDescription = null)
-                    }
-                },
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                     .clickable { showAccountSheet = true }
-            )
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (uiState.selectedAccount != null)
+                                MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (uiState.selectedAccount != null)
+                            AppIcons.getAccountIcon(uiState.selectedAccount!!.icon)
+                        else Icons.Default.AccountBalanceWallet,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (uiState.selectedAccount != null)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = uiState.selectedAccount?.name ?: "Выберите счёт",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
 
             // Категория (только для расхода и прихода)
             if (uiState.type != TransactionType.TRANSFER) {
-                ListItem(
-                    headlineContent = { Text("Категория") },
-                    supportingContent = { Text(uiState.selectedCategory?.name ?: "Выберите категорию") },
-                    leadingContent = {
-                        if (uiState.selectedCategory != null) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = AppIcons.getTransactionIcon(uiState.selectedCategory!!.icon),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        } else {
-                            Icon(Icons.Default.Category, contentDescription = null)
-                        }
-                    },
+                Row(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
                         .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
                         .clickable { showCategorySheet = true }
-                )
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (uiState.selectedCategory != null)
+                                    MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (uiState.selectedCategory != null)
+                                AppIcons.getTransactionIcon(uiState.selectedCategory!!.icon)
+                            else Icons.Default.Category,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = if (uiState.selectedCategory != null)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = uiState.selectedCategory?.name ?: "Выберите категорию",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
 
                 if (showCategorySheet) {
                     ModalBottomSheet(
@@ -476,46 +527,7 @@ fun TransactionFormScreen(
                 }
             }
 
-            // Дата и время
-            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { showDatePicker = true }
-                        .padding(16.dp)
-                ) {
-                    Icon(Icons.Default.CalendarMonth, contentDescription = null)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text("Дата", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(dateFormat.format(Date(uiState.date)))
-                    }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { showTimePicker = true }
-                        .padding(16.dp)
-                ) {
-                    Icon(Icons.Default.Schedule, contentDescription = null)
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text("Время", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(timeFormat.format(Date(uiState.date)))
-                    }
-                }
-            }
+
 
             if (showDatePicker) {
                 val datePickerState = rememberDatePickerState(
