@@ -17,13 +17,16 @@
 - revokedAt (INTEGER) — время отзыва токена
 
 ### Счета (accounts)
-- id — TEXT NOT NULL, UUID
+- id (PK) — TEXT NOT NULL, UUID
 - name (TEXT)
 - typeId (TEXT NOT NULL) — тип счёта: cash, card, account
 - currencyCode (TEXT NOT NULL) — код валюты: RUB, USD, EUR
 - icon (TEXT NOT NULL)
 - isDefault (INTEGER NOT NULL)
 - archived (INTEGER NOT NULL)
+- autoCreateEnabled (INTEGER NOT NULL DEFAULT 0) — автосоздание транзакций по SMS
+- cardMask (TEXT) — маска карты (****1234)
+- regexForText (TEXT) — regex для парсинга SMS
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)
@@ -45,7 +48,7 @@
 ### Операции (transactions)
 - id (PK) — TEXT NOT NULL, UUID
 - accountId (TEXT NOT NULL) — FK -> accounts.id
-- categoryId (TEXT) — FK -> categories.id
+- categoryId (TEXT NOT NULL) — FK -> categories.id
 - amount (REAL NOT NULL)
 - date (INTEGER NOT NULL)
 - comment (TEXT)
@@ -53,6 +56,7 @@
 - sourceData (TEXT)
 - creatorId (TEXT)
 - relatedTransactionId (TEXT) — UUID для связывания переводов
+- shop (TEXT) — магазин/мерчант из SMS
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)

@@ -63,13 +63,16 @@ object Database {
                 """.trimIndent())
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS accounts (
-                        id TEXT NOT NULL,
+                        id TEXT PRIMARY KEY NOT NULL,
                         name TEXT NOT NULL,
                         typeId TEXT NOT NULL,
                         currencyCode TEXT NOT NULL,
                         icon TEXT NOT NULL,
                         isDefault INTEGER NOT NULL DEFAULT 0,
                         archived INTEGER NOT NULL DEFAULT 0,
+                        autoCreateEnabled INTEGER NOT NULL DEFAULT 0,
+                        cardMask TEXT,
+                        regexForText TEXT,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -95,7 +98,7 @@ object Database {
                     CREATE TABLE IF NOT EXISTS transactions (
                         id TEXT PRIMARY KEY NOT NULL,
                         accountId TEXT NOT NULL,
-                        categoryId TEXT,
+                        categoryId TEXT NOT NULL,
                         amount REAL NOT NULL,
                         date INTEGER NOT NULL,
                         comment TEXT,
@@ -103,6 +106,7 @@ object Database {
                         sourceData TEXT,
                         creatorId TEXT,
                         relatedTransactionId TEXT,
+                        shop TEXT,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -186,8 +190,8 @@ object Database {
 
         val accountId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, createdAt, updatedAt, deletedAt, serverReceivedAt)
-            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, ?, ?, NULL, ?)
+            INSERT INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, autoCreateEnabled, cardMask, regexForText, createdAt, updatedAt, deletedAt, serverReceivedAt)
+            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, 0, NULL, NULL, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, accountId)
             stmt.setLong(2, now)

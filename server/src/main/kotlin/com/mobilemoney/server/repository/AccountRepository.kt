@@ -8,8 +8,8 @@ class AccountRepository {
         val serverReceivedAt = System.currentTimeMillis()
         Database.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT OR REPLACE INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, autoCreateEnabled, cardMask, regexForText, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """).use { stmt ->
                 stmt.setString(1, data.id)
                 stmt.setString(2, data.name)
@@ -18,11 +18,14 @@ class AccountRepository {
                 stmt.setString(5, data.icon)
                 stmt.setInt(6, if (data.isDefault) 1 else 0)
                 stmt.setInt(7, if (data.archived) 1 else 0)
-                stmt.setLong(8, data.createdAt)
-                stmt.setLong(9, data.updatedAt)
-                stmt.setString(10, data.deletedAt?.toString())
-                stmt.setString(11, data.syncedAt?.toString())
-                stmt.setLong(12, serverReceivedAt)
+                stmt.setInt(8, if (data.autoCreateEnabled) 1 else 0)
+                stmt.setString(9, data.cardMask)
+                stmt.setString(10, data.regexForText)
+                stmt.setLong(11, data.createdAt)
+                stmt.setLong(12, data.updatedAt)
+                stmt.setString(13, data.deletedAt?.toString())
+                stmt.setString(14, data.syncedAt?.toString())
+                stmt.setLong(15, serverReceivedAt)
                 stmt.executeUpdate()
             }
         }
@@ -66,6 +69,9 @@ class AccountRepository {
             icon = rs.getString("icon") ?: "",
             isDefault = rs.getInt("isDefault") == 1,
             archived = rs.getInt("archived") == 1,
+            autoCreateEnabled = rs.getInt("autoCreateEnabled") == 1,
+            cardMask = rs.getString("cardMask"),
+            regexForText = rs.getString("regexForText"),
             createdAt = rs.getLong("createdAt"),
             updatedAt = rs.getLong("updatedAt"),
             deletedAt = rs.getString("deletedAt")?.toLongOrNull(),

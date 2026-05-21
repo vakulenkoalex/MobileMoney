@@ -8,8 +8,8 @@ class TransactionRepository {
         val serverReceivedAt = System.currentTimeMillis()
         Database.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT OR REPLACE INTO transactions (id, accountId, categoryId, amount, date, comment, source, sourceData, creatorId, relatedTransactionId, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO transactions (id, accountId, categoryId, amount, date, comment, source, sourceData, creatorId, relatedTransactionId, shop, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """).use { stmt ->
                 stmt.setString(1, data.id)
                 stmt.setString(2, data.accountId)
@@ -21,11 +21,12 @@ class TransactionRepository {
                 stmt.setString(8, data.sourceData)
                 stmt.setString(9, data.creatorId)
                 stmt.setString(10, data.relatedTransactionId)
-                stmt.setLong(11, data.createdAt)
-                stmt.setLong(12, data.updatedAt)
-                stmt.setString(13, data.deletedAt?.toString())
-                stmt.setString(14, data.syncedAt?.toString())
-                stmt.setLong(15, serverReceivedAt)
+                stmt.setString(11, data.shop)
+                stmt.setLong(12, data.createdAt)
+                stmt.setLong(13, data.updatedAt)
+                stmt.setString(14, data.deletedAt?.toString())
+                stmt.setString(15, data.syncedAt?.toString())
+                stmt.setLong(16, serverReceivedAt)
                 stmt.executeUpdate()
             }
         }
@@ -67,11 +68,12 @@ class TransactionRepository {
             categoryId = rs.getString("categoryId"),
             amount = rs.getDouble("amount"),
             date = rs.getLong("date"),
-            comment = rs.getString("comment") ?: "",
+            comment = rs.getString("comment"),
             source = rs.getString("source") ?: "manual",
             sourceData = rs.getString("sourceData")?.takeIf { it.isNotEmpty() },
             creatorId = rs.getString("creatorId")?.takeIf { it.isNotEmpty() },
             relatedTransactionId = rs.getString("relatedTransactionId")?.takeIf { it.isNotEmpty() },
+            shop = rs.getString("shop"),
             createdAt = rs.getLong("createdAt"),
             updatedAt = rs.getLong("updatedAt"),
             deletedAt = rs.getString("deletedAt")?.toLongOrNull(),
