@@ -1,6 +1,8 @@
 package com.mobilemoney.data.repository
 
 import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.mobilemoney.BuildConfig
@@ -18,26 +20,50 @@ import com.mobilemoney.domain.repository.SyncState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import android.util.Log
 import com.mobilemoney.ui.common.ErrorHandler
 
 class SyncRepository(context: Context) : DomainSyncRepository {
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
-
-    private val prefs = EncryptedSharedPreferences.create(
-        context,
-        "sync_prefs",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
-    private val database = AppDatabase.getDatabase(context)
+    private val appContext = context.applicationContext
+    private val prefs: SharedPreferences = createEncryptedSharedPreferences(appContext)
+    private val database = AppDatabase.getDatabase(appContext)
     private val accountDao: AccountDao = database.accountDao()
     private val categoryDao: CategoryDao = database.categoryDao()
     private val transactionDao: TransactionDao = database.transactionDao()
-    private val apiClient = SyncApiClient(context)
+    private val apiClient = SyncApiClient(appContext)
+
+    private fun createEncryptedSharedPreferences(context: Context): SharedPreferences {
+        return try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            EncryptedSharedPreferences.create(
+                context,
+                "sync_prefs",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.e("SyncRepository", "Failed to create EncryptedSharedPreferences, clearing data", e)
+            try {
+                context.deleteSharedPreferences("sync_prefs")
+            } catch (clearException: Exception) {
+                Log.e("SyncRepository", "Failed to clear preferences", clearException)
+            }
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            EncryptedSharedPreferences.create(
+                context,
+                "sync_prefs",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }
+    }
 
     private val _syncState = MutableStateFlow(SyncState())
     override val syncState: StateFlow<SyncState> = _syncState

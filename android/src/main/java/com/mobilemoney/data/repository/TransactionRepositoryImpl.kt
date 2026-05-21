@@ -1,5 +1,8 @@
 package com.mobilemoney.data.repository
 
+import com.mobilemoney.data.local.TransactionSource
+import com.mobilemoney.data.local.toEntity
+import com.mobilemoney.data.local.toUiModel
 import com.mobilemoney.data.model.TransactionUi
 import com.mobilemoney.domain.model.Transaction
 import com.mobilemoney.domain.repository.TransactionRepository
@@ -47,9 +50,19 @@ class TransactionRepositoryImpl(
             newTransaction = newTransaction.toUiModel()
         )
     }
+
+    override suspend fun getLastTransactionByShop(shop: String): Transaction? {
+        return databaseRepository.getLastTransactionByShop(shop)?.toDomain()
+    }
 }
 
 private fun TransactionUi.toDomain(): Transaction {
+    val origin = when (source) {
+        com.mobilemoney.data.local.TransactionSource.CLIPBOARD -> com.mobilemoney.domain.model.TransactionOrigin.CLIPBOARD
+        com.mobilemoney.data.local.TransactionSource.MANUAL,
+        com.mobilemoney.data.local.TransactionSource.SMS,
+        com.mobilemoney.data.local.TransactionSource.PUSH -> com.mobilemoney.domain.model.TransactionOrigin.MANUAL
+    }
     return Transaction(
         id = id,
         title = title,
@@ -63,11 +76,18 @@ private fun TransactionUi.toDomain(): Transaction {
         date = date,
         accountId = accountId,
         categoryId = categoryId,
-        relatedTransactionId = relatedTransactionId
+        relatedTransactionId = relatedTransactionId,
+        shop = shop,
+        origin = origin,
+        sourceData = sourceData
     )
 }
 
 private fun Transaction.toUiModel(): TransactionUi {
+    val source = when (origin) {
+        com.mobilemoney.domain.model.TransactionOrigin.CLIPBOARD -> TransactionSource.CLIPBOARD
+        com.mobilemoney.domain.model.TransactionOrigin.MANUAL -> TransactionSource.MANUAL
+    }
     return TransactionUi(
         id = id,
         title = title,
@@ -81,6 +101,9 @@ private fun Transaction.toUiModel(): TransactionUi {
         date = date,
         accountId = accountId,
         categoryId = categoryId,
-        relatedTransactionId = relatedTransactionId
+        relatedTransactionId = relatedTransactionId,
+        shop = shop,
+        source = source,
+        sourceData = sourceData
     )
 }

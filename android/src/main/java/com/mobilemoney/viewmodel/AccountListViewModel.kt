@@ -39,7 +39,7 @@ class AccountListViewModel(
                 }
                 .collect { accounts ->
                     _uiState.value = _uiState.value.copy(
-                        accounts = accounts,
+                        accounts = accounts.sortedBy { it.name },
                         isLoading = false
                     )
                 }

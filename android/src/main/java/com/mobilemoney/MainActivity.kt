@@ -8,12 +8,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.mobilemoney.di.DI
 import com.mobilemoney.ui.common.ErrorHandler
 import com.mobilemoney.ui.navigation.MobileMoneyNavigation
 import com.mobilemoney.ui.theme.MobileMoneyTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

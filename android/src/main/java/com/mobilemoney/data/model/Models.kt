@@ -1,5 +1,6 @@
 package com.mobilemoney.data.model
 
+import com.mobilemoney.data.local.TransactionSource
 import java.util.UUID
 
 enum class AccountType(val id: String, val displayName: String) {
@@ -15,7 +16,10 @@ data class AccountUi(
     val currency: String = "₽",
     val icon: String = "wallet",
     val isDefault: Boolean = false,
-    val balance: Double = 0.0
+    val balance: Double = 0.0,
+    val autoCreateEnabled: Boolean = false,
+    val cardMask: String? = null,
+    val regexForText: String? = null
 )
 
 data class CategoryUi(
@@ -38,5 +42,8 @@ data class TransactionUi(
     val date: Long = System.currentTimeMillis(),
     val accountId: UUID? = null,
     val categoryId: UUID? = null,
-    val relatedTransactionId: UUID? = null
+    val relatedTransactionId: UUID? = null,
+    val shop: String? = null,
+    val source: TransactionSource = TransactionSource.MANUAL,
+    val sourceData: String? = null
 )

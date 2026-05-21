@@ -8,7 +8,8 @@ import androidx.room.PrimaryKey
 enum class TransactionSource {
     MANUAL,
     SMS,
-    PUSH
+    PUSH,
+    CLIPBOARD
 }
 
 @Entity(
@@ -27,7 +28,10 @@ data class AccountEntity(
     val updatedAt: Long,
     val deletedAt: Long? = null,
     val syncedAt: Long? = null,
-    val serverReceivedAt: Long? = null
+    val serverReceivedAt: Long? = null,
+    val autoCreateEnabled: Boolean = false,
+    val cardMask: String? = null,
+    val regexForText: String? = null
 )
 
 @Entity(
@@ -74,6 +78,7 @@ data class TransactionEntity(
     val sourceData: String?,
     val creatorId: String?,
     val relatedTransactionId: String?,
+    val shop: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

@@ -101,11 +101,11 @@ class DatabaseRepository(
     }
 
     suspend fun addTransaction(transaction: TransactionUi) {
-        transactionDao.insert(transaction.toEntity())
+        transactionDao.insert(transaction.toEntity(source = transaction.source, sourceData = transaction.sourceData))
     }
 
     suspend fun updateTransaction(transaction: TransactionUi) {
-        transactionDao.update(transaction.toEntity())
+        transactionDao.update(transaction.toEntity(source = transaction.source, sourceData = transaction.sourceData))
     }
 
     suspend fun deleteTransaction(id: String) {
@@ -122,7 +122,7 @@ class DatabaseRepository(
         if (entity != null) {
             transactionDao.update(entity.copy(amount = mainAmount))
         }
-        transactionDao.insert(newTransaction.toEntity())
+        transactionDao.insert(newTransaction.toEntity(source = newTransaction.source, sourceData = newTransaction.sourceData))
     }
 
     suspend fun addAccount(account: AccountUi) {
@@ -157,5 +157,12 @@ class DatabaseRepository(
         transactionDao.permanentDeleteAll()
         accountDao.permanentDeleteAll()
         categoryDao.permanentDeleteAll()
+    }
+
+    suspend fun getLastTransactionByShop(shop: String): TransactionUi? {
+        val entity = transactionDao.getLastTransactionByShop(shop) ?: return null
+        val account = accountDao.getAccountById(entity.accountId)
+        val category = entity.categoryId?.let { categoryDao.getCategoryById(it) }
+        return entity.toUiModel(account, category)
     }
 }

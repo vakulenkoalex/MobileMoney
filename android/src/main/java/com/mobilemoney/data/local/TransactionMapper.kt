@@ -1,6 +1,8 @@
 package com.mobilemoney.data.local
 
 import com.mobilemoney.data.model.TransactionUi
+import com.mobilemoney.domain.model.Transaction
+import com.mobilemoney.domain.model.TransactionOrigin
 import java.util.UUID
 
 fun TransactionEntity.toUiModel(account: AccountEntity?, category: CategoryEntity?): TransactionUi {
@@ -17,11 +19,18 @@ fun TransactionEntity.toUiModel(account: AccountEntity?, category: CategoryEntit
         date = date,
         accountId = accountId.takeIf { it.isNotEmpty() }?.let { UUID.fromString(it) },
         categoryId = categoryId?.let { UUID.fromString(it) },
-        relatedTransactionId = relatedTransactionId?.let { UUID.fromString(it) }
+        relatedTransactionId = relatedTransactionId?.let { UUID.fromString(it) },
+        shop = shop,
+        source = source,
+        sourceData = sourceData
     )
 }
 
-fun TransactionUi.toEntity(): TransactionEntity {
+fun Transaction.toEntity(): TransactionEntity {
+    val transactionSource = when (origin) {
+        TransactionOrigin.CLIPBOARD -> TransactionSource.CLIPBOARD
+        TransactionOrigin.MANUAL -> TransactionSource.MANUAL
+    }
     return TransactionEntity(
         id = id.toString(),
         accountId = accountId.toString(),
@@ -29,10 +38,32 @@ fun TransactionUi.toEntity(): TransactionEntity {
         amount = amount,
         date = date,
         comment = comment,
-        source = TransactionSource.MANUAL,
-        sourceData = null,
+        source = transactionSource,
+        sourceData = sourceData,
         creatorId = null,
         relatedTransactionId = relatedTransactionId?.toString(),
+        shop = shop,
+        createdAt = System.currentTimeMillis(),
+        updatedAt = System.currentTimeMillis()
+    )
+}
+
+fun TransactionUi.toEntity(
+    source: TransactionSource = TransactionSource.MANUAL,
+    sourceData: String? = null
+): TransactionEntity {
+    return TransactionEntity(
+        id = id.toString(),
+        accountId = accountId.toString(),
+        categoryId = categoryId.toString(),
+        amount = amount,
+        date = date,
+        comment = comment,
+        source = source,
+        sourceData = sourceData,
+        creatorId = null,
+        relatedTransactionId = relatedTransactionId?.toString(),
+        shop = shop,
         createdAt = System.currentTimeMillis(),
         updatedAt = System.currentTimeMillis()
     )

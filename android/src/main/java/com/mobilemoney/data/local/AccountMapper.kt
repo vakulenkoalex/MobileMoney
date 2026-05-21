@@ -12,7 +12,10 @@ fun AccountEntity.toUiModel(balance: Double = 0.0): AccountUi {
         currency = currencyCode,
         icon = icon,
         isDefault = isDefault,
-        balance = balance
+        balance = balance,
+        autoCreateEnabled = autoCreateEnabled,
+        cardMask = cardMask,
+        regexForText = regexForText
     )
 }
 
@@ -26,6 +29,9 @@ fun AccountUi.toEntity(): AccountEntity {
         isDefault = isDefault,
         archived = false,
         createdAt = System.currentTimeMillis(),
-        updatedAt = System.currentTimeMillis()
+        updatedAt = System.currentTimeMillis(),
+        autoCreateEnabled = autoCreateEnabled,
+        cardMask = cardMask,
+        regexForText = regexForText
     )
 }

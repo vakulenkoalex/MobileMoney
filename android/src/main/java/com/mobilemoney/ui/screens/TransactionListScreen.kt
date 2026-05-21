@@ -1,5 +1,7 @@
 package com.mobilemoney.ui.screens
 
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,30 +22,212 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mobilemoney.data.config.AppIcons
+import com.mobilemoney.data.local.AppDatabase
+import com.mobilemoney.data.parser.ClipboardParser
+import com.mobilemoney.data.repository.AccountBalanceCalculator
+import com.mobilemoney.data.repository.ClipboardPreferences
+import com.mobilemoney.data.repository.DatabaseRepository
 import com.mobilemoney.di.DI
 import com.mobilemoney.domain.model.Transaction
+import com.mobilemoney.ui.common.ErrorHandler
 import com.mobilemoney.ui.utils.FormatUtils
+import com.mobilemoney.viewmodel.TransactionFormViewModel.ClipboardPrefillData
 import com.mobilemoney.viewmodel.TransactionListViewModel
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListScreen(
     onTransactionClick: (UUID) -> Unit,
     onAddClick: () -> Unit,
+    onClipboardPrefill: (ClipboardPrefillData) -> Unit,
     viewModel: TransactionListViewModel = DI.transactionListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val clipboardPrefs = remember { ClipboardPreferences(context) }
+
+    var showClipboardDialog by remember { mutableStateOf(false) }
+    var showDebugDialog by remember { mutableStateOf(false) }
+    var clipboardText by remember { mutableStateOf("") }
+    var debugResult by remember { mutableStateOf<DebugClipboardResult?>(null) }
+    var clipboardPrefillData by remember { mutableStateOf<ClipboardPrefillData?>(null) }
+    var readTrigger by remember { mutableStateOf(0) }
+
+    LaunchedEffect(readTrigger) {
+        if (readTrigger == 0) return@LaunchedEffect
+        if (!clipboardPrefs.clipboardParsingEnabled) return@LaunchedEffect
+
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = clipboard.primaryClip
+        if (clip == null || clip.itemCount == 0) return@LaunchedEffect
+
+        val text = clip.getItemAt(0).coerceToText(context).toString()
+        if (text.isBlank()) return@LaunchedEffect
+
+        val debugMode = clipboardPrefs.debugModeEnabled
+
+        val accounts = AppDatabase.getDatabase(context)
+            .accountDao().getAllAccountsIncludingArchived().first()
+
+        val enabledAccounts = accounts.filter {
+            it.autoCreateEnabled && !it.regexForText.isNullOrBlank()
+        }
+
+        if (enabledAccounts.isEmpty()) {
+            if (debugMode) {
+                debugResult = DebugClipboardResult(
+                    clipboardText = text,
+                    matched = false,
+                    accountName = "(нет счетов с авто-созданием)"
+                )
+                showDebugDialog = true
+            }
+            return@LaunchedEffect
+        }
+
+        for (account in enabledAccounts) {
+            val regex = account.regexForText!!
+            val parsed = ClipboardParser.parse(text, regex)
+
+            if (debugMode) {
+                val cardMaskMatch = parsed?.cardMask == account.cardMask
+                debugResult = DebugClipboardResult(
+                    clipboardText = text,
+                    matched = parsed != null && cardMaskMatch,
+                    accountName = account.name,
+                    amount = parsed?.amount,
+                    shop = parsed?.shop,
+                    cardMaskParsed = parsed?.cardMask,
+                    cardMaskAccount = account.cardMask,
+                    cardMaskMatches = cardMaskMatch,
+                    balance = parsed?.balance
+                )
+                showDebugDialog = true
+                if (parsed != null && cardMaskMatch) {
+                    val db = AppDatabase.getDatabase(context)
+                    val balanceCalc = AccountBalanceCalculator(db.transactionDao())
+                    val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
+
+                    val currentBalance = balanceCalc.getAccountBalance(account.id)
+                    val expectedBalance = balanceCalc.calculateExpectedBalance(parsed.balance, parsed.amount)
+                    var comment = ""
+                    if (expectedBalance != null) {
+                        val discrepancy = balanceCalc.getBalanceDiscrepancy(currentBalance, expectedBalance)
+                        if (discrepancy != null) {
+                            comment = balanceCalc.formatDiscrepancyComment(discrepancy, expectedBalance, currentBalance)
+                        }
+                    }
+
+                    var categoryId: UUID? = null
+                    if (parsed.shop.isNotBlank()) {
+                        val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
+                        categoryId = lastTx?.categoryId
+                    }
+
+                    clipboardPrefillData = ClipboardPrefillData(
+                        amount = parsed.amount,
+                        accountId = java.util.UUID.fromString(account.id),
+                        comment = comment,
+                        shop = parsed.shop,
+                        categoryId = categoryId,
+                        clipboardText = text
+                    )
+                }
+                return@LaunchedEffect
+            }
+
+            if (parsed != null && parsed.cardMask == account.cardMask) {
+                clipboardText = text
+
+                val db = AppDatabase.getDatabase(context)
+                val balanceCalc = AccountBalanceCalculator(db.transactionDao())
+                val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
+
+                val currentBalance = balanceCalc.getAccountBalance(account.id)
+                val expectedBalance = balanceCalc.calculateExpectedBalance(parsed.balance, parsed.amount)
+                var comment = ""
+                if (expectedBalance != null) {
+                    val discrepancy = balanceCalc.getBalanceDiscrepancy(currentBalance, expectedBalance)
+                    if (discrepancy != null) {
+                        comment = balanceCalc.formatDiscrepancyComment(discrepancy, expectedBalance, currentBalance)
+                    }
+                }
+
+                var categoryId: UUID? = null
+                if (parsed.shop.isNotBlank()) {
+                    val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
+                    categoryId = lastTx?.categoryId
+                }
+
+                clipboardPrefillData = ClipboardPrefillData(
+                    amount = parsed.amount,
+                    accountId = java.util.UUID.fromString(account.id),
+                    comment = comment,
+                    shop = parsed.shop,
+                    categoryId = categoryId,
+                    clipboardText = text
+                )
+                showClipboardDialog = true
+                return@LaunchedEffect
+            }
+        }
+
+        if (!debugMode) {
+            ErrorHandler.emitError("Текст не распознан")
+        }
+    }
+
+    fun readClipboard() {
+        readTrigger++
+    }
+
+    if (showClipboardDialog) {
+        ClipboardDialog(
+            clipboardText = clipboardText,
+            onConfirm = {
+                showClipboardDialog = false
+                clipboardPrefillData?.let { onClipboardPrefill(it) }
+            },
+            onDismiss = {
+                showClipboardDialog = false
+            }
+        )
+    }
+
+    if (showDebugDialog && debugResult != null) {
+        DebugClipboardDialog(
+            result = debugResult!!,
+            onDismiss = {
+                showDebugDialog = false
+                if (debugResult!!.matched && clipboardPrefillData != null) {
+                    showClipboardDialog = true
+                }
+                debugResult = null
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Операции", style = MaterialTheme.typography.titleSmall) },
+                actions = {
+                    if (clipboardPrefs.clipboardParsingEnabled) {
+                        IconButton(onClick = { readClipboard() }) {
+                            Icon(Icons.Default.ContentPaste, contentDescription = "Вставить из буфера")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         },

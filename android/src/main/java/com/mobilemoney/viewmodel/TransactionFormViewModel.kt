@@ -11,11 +11,14 @@ import com.mobilemoney.domain.usecase.transaction.DeleteTransactionUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import com.mobilemoney.domain.repository.TransactionRepository
+import com.mobilemoney.domain.model.TransactionOrigin
+import com.mobilemoney.data.local.TransactionSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.mobilemoney.ui.common.ErrorHandler
 import java.util.UUID
@@ -42,7 +45,13 @@ data class TransactionFormState(
     val isDeleted: Boolean = false,
     val isSplitMode: Boolean = false,
     val splitAmount: String = "",
-    val splitCategory: Category? = null
+    val splitCategory: Category? = null,
+    val clipboardText: String? = null,
+    val source: TransactionSource = TransactionSource.MANUAL,
+    val sourceData: String = "",
+    val shop: String = "",
+    val pendingAccountId: UUID? = null,
+    val pendingCategoryId: UUID? = null
 )
 
 class TransactionFormViewModel(
@@ -68,7 +77,12 @@ class TransactionFormViewModel(
                 .collect { accounts ->
                     _uiState.value = _uiState.value.copy(accounts = accounts)
                     if (!uiState.value.isEditing) {
-                        val defaultAccount = accounts.find { it.isDefault } ?: accounts.firstOrNull()
+                        val pendingAccount = uiState.value.pendingAccountId?.let { id ->
+                            accounts.find { it.id == id }
+                        }
+                        val defaultAccount = pendingAccount
+                            ?: accounts.find { it.isDefault }
+                            ?: accounts.firstOrNull()
                         _uiState.value = _uiState.value.copy(selectedAccount = defaultAccount)
                     }
                 }
@@ -78,6 +92,12 @@ class TransactionFormViewModel(
                 .catch { }
                 .collect { categories ->
                     _uiState.value = _uiState.value.copy(categories = categories)
+                    val pendingCategory = uiState.value.pendingCategoryId?.let { id ->
+                        categories.find { it.id == id }
+                    }
+                    if (pendingCategory != null) {
+                        _uiState.value = _uiState.value.copy(selectedCategory = pendingCategory, pendingCategoryId = null)
+                    }
                 }
         }
     }
@@ -88,12 +108,45 @@ class TransactionFormViewModel(
             accounts = _uiState.value.accounts,
             categories = _uiState.value.categories,
             selectedAccount = defaultAccount,
-            date = System.currentTimeMillis()
+            date = System.currentTimeMillis(),
+            pendingAccountId = null,
+            pendingCategoryId = null
         )
     }
 
     fun resetSavedState() {
-        _uiState.value = _uiState.value.copy(isSaved = false, isDeleted = false)
+        _uiState.value = _uiState.value.copy(isSaved = false, isDeleted = false, isEditing = false, transactionId = null)
+    }
+
+    data class ClipboardPrefillData(
+        val amount: String,
+        val accountId: UUID,
+        val comment: String,
+        val shop: String?,
+        val categoryId: UUID?,
+        val clipboardText: String
+    )
+
+    fun prefillFromClipboard(data: ClipboardPrefillData) {
+        val account = _uiState.value.accounts.find { it.id == data.accountId }
+        val category = _uiState.value.categories.find { it.id == data.categoryId }
+        _uiState.value = _uiState.value.copy(
+            amount = data.amount,
+            selectedAccount = account,
+            pendingAccountId = if (account == null) data.accountId else null,
+            selectedCategory = category,
+            pendingCategoryId = if (category == null) data.categoryId else null,
+            comment = data.comment,
+            type = TransactionType.EXPENSE,
+            date = System.currentTimeMillis(),
+            isEditing = false,
+            transactionId = null,
+            isSaved = false,
+            clipboardText = data.clipboardText,
+            source = TransactionSource.CLIPBOARD,
+            sourceData = data.clipboardText,
+            shop = data.shop ?: ""
+        )
     }
 
     fun loadTransaction(transactionId: UUID) {
@@ -109,6 +162,11 @@ class TransactionFormViewModel(
                     relatedTx?.accountId?.let { tid -> accounts.find { it.id == tid } }
                 } else null
 
+                val txSource = when (transaction.origin) {
+                    TransactionOrigin.CLIPBOARD -> TransactionSource.CLIPBOARD
+                    TransactionOrigin.MANUAL -> TransactionSource.MANUAL
+                }
+
                 _uiState.value = _uiState.value.copy(
                     amount = transaction.amount.toString(),
                     selectedAccount = accounts.find { it.id == transaction.accountId },
@@ -122,7 +180,10 @@ class TransactionFormViewModel(
                         else -> TransactionType.EXPENSE
                     },
                     isEditing = true,
-                    transactionId = transactionId
+                    transactionId = transactionId,
+                    source = txSource,
+                    sourceData = transaction.sourceData ?: "",
+                    shop = transaction.shop ?: ""
                 )
             }
         }
@@ -146,6 +207,18 @@ class TransactionFormViewModel(
 
     fun updateComment(comment: String) {
         _uiState.value = _uiState.value.copy(comment = comment)
+    }
+
+    fun updateSource(source: TransactionSource) {
+        _uiState.value = _uiState.value.copy(source = source)
+    }
+
+    fun updateSourceData(value: String) {
+        _uiState.value = _uiState.value.copy(sourceData = value)
+    }
+
+    fun updateShop(value: String) {
+        _uiState.value = _uiState.value.copy(shop = value)
     }
 
     fun updateType(type: TransactionType) {
@@ -252,119 +325,135 @@ class TransactionFormViewModel(
         }
 
         viewModelScope.launch {
-            if (state.type == TransactionType.TRANSFER) {
-                val transferId = UUID.randomUUID()
-                val amount = state.amount.toDouble()
+            try {
+                if (state.type == TransactionType.TRANSFER) {
+                    val transferId = UUID.randomUUID()
+                    val amount = state.amount.toDouble()
 
-                val expenseTransaction = Transaction(
-                    id = UUID.randomUUID(),
-                    title = title,
-                    subtitle = subtitle,
-                    comment = state.comment,
-                    amount = amount,
-                    currency = state.selectedAccount.currency,
-                    icon = icon,
-                    color = 0xFF9C27B0,
-                    isIncome = false,
-                    date = state.date,
-                    accountId = state.selectedAccount.id,
-                    categoryId = null,
-                    relatedTransactionId = transferId
-                )
-
-                val incomeTransaction = Transaction(
-                    id = UUID.randomUUID(),
-                    title = title,
-                    subtitle = subtitle,
-                    comment = state.comment,
-                    amount = amount,
-                    currency = state.targetAccount?.currency ?: state.selectedAccount.currency,
-                    icon = icon,
-                    color = 0xFF9C27B0,
-                    isIncome = true,
-                    date = state.date,
-                    accountId = state.targetAccount?.id,
-                    categoryId = null,
-                    relatedTransactionId = transferId
-                )
-
-                saveTransactionUseCase(expenseTransaction, false)
-                saveTransactionUseCase(incomeTransaction, false)
-            } else if (state.isSplitMode) {
-                val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
-                val remainingAmount = state.amount.toDoubleOrNull()!! - splitAmount
-
-                val splitIcon = state.splitCategory?.icon ?: "category"
-                val newTransaction = Transaction(
-                    id = UUID.randomUUID(),
-                    title = state.splitCategory?.name ?: "Без категории",
-                    subtitle = state.selectedAccount.name,
-                    comment = state.comment,
-                    amount = splitAmount,
-                    currency = state.selectedAccount.currency,
-                    icon = splitIcon,
-                    color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
-                    isIncome = isIncome,
-                    date = state.date,
-                    accountId = state.selectedAccount.id,
-                    categoryId = state.splitCategory?.id
-                )
-
-                if (state.isEditing && state.transactionId != null) {
-                    transactionRepository.splitTransaction(
-                        originalId = state.transactionId.toString(),
-                        mainAmount = remainingAmount,
-                        newTransaction = newTransaction
-                    )
-                } else {
-                    val mainTransaction = Transaction(
+                    val expenseTransaction = Transaction(
                         id = UUID.randomUUID(),
-                        title = state.selectedCategory?.name ?: "Без категории",
+                        title = title,
+                        subtitle = subtitle,
+                        comment = state.comment,
+                        amount = amount,
+                        currency = state.selectedAccount.currency,
+                        icon = icon,
+                        color = 0xFF9C27B0,
+                        isIncome = false,
+                        date = state.date,
+                        accountId = state.selectedAccount.id,
+                        categoryId = null,
+                        relatedTransactionId = transferId
+                    )
+
+                    val incomeTransaction = Transaction(
+                        id = UUID.randomUUID(),
+                        title = title,
+                        subtitle = subtitle,
+                        comment = state.comment,
+                        amount = amount,
+                        currency = state.targetAccount?.currency ?: state.selectedAccount.currency,
+                        icon = icon,
+                        color = 0xFF9C27B0,
+                        isIncome = true,
+                        date = state.date,
+                        accountId = state.targetAccount?.id,
+                        categoryId = null,
+                        relatedTransactionId = transferId
+                    )
+
+                    saveTransactionUseCase(expenseTransaction, false)
+                    saveTransactionUseCase(incomeTransaction, false)
+                    _uiState.update { it.copy(isSaved = true) }
+                } else if (state.isSplitMode) {
+                    val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
+                    val remainingAmount = state.amount.toDoubleOrNull()!! - splitAmount
+
+                    val splitIcon = state.splitCategory?.icon ?: "category"
+                    val newTransaction = Transaction(
+                        id = UUID.randomUUID(),
+                        title = state.splitCategory?.name ?: "Без категории",
                         subtitle = state.selectedAccount.name,
                         comment = state.comment,
-                        amount = remainingAmount,
+                        amount = splitAmount,
                         currency = state.selectedAccount.currency,
-                        icon = state.selectedCategory?.icon ?: "shopping_cart",
+                        icon = splitIcon,
                         color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
                         isIncome = isIncome,
                         date = state.date,
                         accountId = state.selectedAccount.id,
-                        categoryId = state.selectedCategory?.id
+                        categoryId = state.splitCategory?.id
                     )
-                    transactionRepository.addTransaction(mainTransaction)
-                    transactionRepository.addTransaction(newTransaction)
-                }
-            } else {
-                val transaction = Transaction(
-                    id = state.transactionId ?: UUID.randomUUID(),
-                    title = title,
-                    subtitle = subtitle,
-                    comment = state.comment,
-                    amount = state.amount.toDouble(),
-                    currency = state.selectedAccount.currency,
-                    icon = icon,
-                    color = when (state.type) {
-                        TransactionType.TRANSFER -> 0xFF9C27B0
-                        TransactionType.INCOME -> 0xFF2E7D32
-                        TransactionType.EXPENSE -> 0xFFD32F2F
-                    },
-                    isIncome = isIncome,
-                    date = state.date,
-                    accountId = state.selectedAccount.id,
-                    categoryId = state.selectedCategory?.id
-                )
 
-                val result = saveTransactionUseCase(transaction, state.isEditing)
-                if (result is SaveTransactionUseCase.Result.Error) {
-                    kotlinx.coroutines.GlobalScope.launch {
-                        ErrorHandler.emitError(result.message)
+                    if (state.isEditing && state.transactionId != null) {
+                        transactionRepository.splitTransaction(
+                            originalId = state.transactionId.toString(),
+                            mainAmount = remainingAmount,
+                            newTransaction = newTransaction
+                        )
+                    } else {
+                        val mainTransaction = Transaction(
+                            id = UUID.randomUUID(),
+                            title = state.selectedCategory?.name ?: "Без категории",
+                            subtitle = state.selectedAccount.name,
+                            comment = state.comment,
+                            amount = remainingAmount,
+                            currency = state.selectedAccount.currency,
+                            icon = state.selectedCategory?.icon ?: "shopping_cart",
+                            color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
+                            isIncome = isIncome,
+                            date = state.date,
+                            accountId = state.selectedAccount.id,
+                            categoryId = state.selectedCategory?.id
+                        )
+                        transactionRepository.addTransaction(mainTransaction)
+                        transactionRepository.addTransaction(newTransaction)
                     }
-                    return@launch
+                    _uiState.update { it.copy(isSaved = true) }
+                } else {
+                    val transactionOrigin = when (state.source) {
+                        TransactionSource.CLIPBOARD -> TransactionOrigin.CLIPBOARD
+                        TransactionSource.MANUAL, TransactionSource.SMS, TransactionSource.PUSH -> TransactionOrigin.MANUAL
+                    }
+                    val transactionTitle = if (state.clipboardText != null && state.selectedCategory == null) state.comment.ifBlank { "Без категории" } else title
+
+                    val transaction = Transaction(
+                        id = state.transactionId ?: UUID.randomUUID(),
+                        title = transactionTitle,
+                        subtitle = subtitle,
+                        comment = state.comment,
+                        amount = state.amount.toDouble(),
+                        currency = state.selectedAccount.currency,
+                        icon = icon,
+                        color = when (state.type) {
+                            TransactionType.TRANSFER -> 0xFF9C27B0
+                            TransactionType.INCOME -> 0xFF2E7D32
+                            TransactionType.EXPENSE -> 0xFFD32F2F
+                        },
+                        isIncome = isIncome,
+                        date = state.date,
+                        accountId = state.selectedAccount.id,
+                        categoryId = state.selectedCategory?.id,
+                        shop = state.shop.takeIf { it.isNotBlank() },
+                        origin = transactionOrigin,
+                        sourceData = state.sourceData.takeIf { it.isNotBlank() }
+                    )
+
+                    val result = saveTransactionUseCase(transaction, state.isEditing)
+                    if (result is SaveTransactionUseCase.Result.Error) {
+                        kotlinx.coroutines.GlobalScope.launch {
+                            ErrorHandler.emitError(result.message)
+                        }
+                        return@launch
+                    }
+                    _uiState.update { it.copy(isSaved = true) }
+                }
+            } catch (e: Exception) {
+                kotlinx.coroutines.GlobalScope.launch {
+                    ErrorHandler.emitError(e.message ?: "Ошибка сохранения")
                 }
             }
         }
-
-        _uiState.value = state.copy(isSaved = true)
         return true
     }
 

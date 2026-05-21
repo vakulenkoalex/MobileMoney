@@ -108,6 +108,7 @@ fun MobileMoneyNavigation() {
     }
 
     val navController = rememberNavController()
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -178,6 +179,10 @@ fun MobileMoneyNavigation() {
                         },
                         onTransactionClick = { transactionId ->
                             navController.navigate(Screen.EditTransaction.createRoute(transactionId))
+                        },
+                        onClipboardPrefill = { prefillData ->
+                            DI.transactionFormViewModel.prefillFromClipboard(prefillData)
+                            navController.navigate(Screen.CreateTransaction.createRoute())
                         }
                     )
                 }

@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -23,6 +25,8 @@ import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.config.IconOption
 import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.AccountFormViewModel
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,15 +41,16 @@ fun AccountFormScreen(
     var showTypeSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(accountId) {
+        viewModel.resetState()
         if (accountId != null) {
             viewModel.loadAccount(accountId)
         }
     }
 
-    LaunchedEffect(uiState.isSaved) {
-        if (uiState.isSaved) {
-            onNavigateBack()
-        }
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState.isSaved }
+            .drop(1)
+            .collect { if (it) onNavigateBack() }
     }
 
     Scaffold(
@@ -72,12 +77,13 @@ fun AccountFormScreen(
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(8.dp)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
                 value = uiState.name,
@@ -254,6 +260,53 @@ fun AccountFormScreen(
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
             )
+
+            HorizontalDivider()
+
+            ListItem(
+                headlineContent = { Text("Авто-создание из буфера обмена") },
+                supportingContent = { Text("Создавать операции из скопированного текста") },
+                leadingContent = {
+                    Checkbox(
+                        checked = uiState.autoCreateEnabled,
+                        onCheckedChange = { viewModel.updateAutoCreateEnabled(it) }
+                    )
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+            )
+
+            if (uiState.autoCreateEnabled) {
+                OutlinedTextField(
+                    value = uiState.cardMask,
+                    onValueChange = { viewModel.updateCardMask(it) },
+                    label = { Text("Маска карты (последние 4 цифры)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = uiState.cardMaskError != null,
+                    supportingText = {
+                        if (uiState.cardMaskError != null) {
+                            Text(uiState.cardMaskError!!, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                )
+
+                OutlinedTextField(
+                    value = uiState.regexForText,
+                    onValueChange = { viewModel.updateRegexForText(it) },
+                    label = { Text("Regex для парсинга текста") },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = uiState.regexError != null,
+                    supportingText = {
+                        if (uiState.regexError != null) {
+                            Text(uiState.regexError!!, color = MaterialTheme.colorScheme.error)
+                        } else {
+                            Text("Именованные группы: amount, shop, cardMask, balance")
+                        }
+                    }
+                )
+            }
         }
     }
 }

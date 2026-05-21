@@ -45,6 +45,10 @@ object DI {
         SyncRepository.getInstance(context)
     }
 
+    val clipboardPreferences: ClipboardPreferences by lazy {
+        ClipboardPreferences(context)
+    }
+
     val getAccountsUseCase: GetAccountsUseCase by lazy {
         GetAccountsUseCase(accountRepository)
     }

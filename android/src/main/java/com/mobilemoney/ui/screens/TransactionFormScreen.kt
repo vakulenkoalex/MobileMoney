@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.mobilemoney.data.config.AppIcons
+import com.mobilemoney.data.local.TransactionSource
 import com.mobilemoney.di.DI
 import com.mobilemoney.domain.model.Category
 import com.mobilemoney.viewmodel.TransactionFormViewModel
@@ -52,7 +53,7 @@ fun TransactionFormScreen(
     LaunchedEffect(transactionId) {
         if (transactionId != null) {
             viewModel.loadTransaction(transactionId)
-        } else {
+        } else if (viewModel.uiState.value.clipboardText == null) {
             viewModel.resetForNewTransaction()
         }
     }
@@ -580,6 +581,14 @@ fun TransactionFormScreen(
                 )
             }
 
+            // Магазин
+            OutlinedTextField(
+                value = uiState.shop,
+                onValueChange = { viewModel.updateShop(it) },
+                label = { Text("Магазин") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             // Комментарий
             OutlinedTextField(
                 value = uiState.comment,
@@ -588,6 +597,47 @@ fun TransactionFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
+            )
+
+            // Источник
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = uiState.source == TransactionSource.MANUAL,
+                    onClick = { viewModel.updateSource(TransactionSource.MANUAL) },
+                    label = { Text("Ручной") },
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = uiState.source == TransactionSource.SMS,
+                    onClick = { viewModel.updateSource(TransactionSource.SMS) },
+                    label = { Text("SMS") },
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = uiState.source == TransactionSource.PUSH,
+                    onClick = { viewModel.updateSource(TransactionSource.PUSH) },
+                    label = { Text("Push") },
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = uiState.source == TransactionSource.CLIPBOARD,
+                    onClick = { viewModel.updateSource(TransactionSource.CLIPBOARD) },
+                    label = { Text("Буфер") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Данные источника
+            OutlinedTextField(
+                value = uiState.sourceData,
+                onValueChange = { viewModel.updateSourceData(it) },
+                label = { Text("Данные источника") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                maxLines = 4
             )
 
             // Кнопки действий (только при редактировании)

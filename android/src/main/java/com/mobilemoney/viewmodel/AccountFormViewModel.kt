@@ -31,7 +31,12 @@ data class AccountFormState(
     val accountTypes: List<AccountType> = AccountType.entries,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isSaved: Boolean = false
+    val isSaved: Boolean = false,
+    val autoCreateEnabled: Boolean = false,
+    val cardMask: String = "",
+    val regexForText: String = "",
+    val cardMaskError: String? = null,
+    val regexError: String? = null
 )
 
 class AccountFormViewModel(
@@ -41,6 +46,10 @@ class AccountFormViewModel(
 
     private val _uiState = MutableStateFlow(AccountFormState())
     val uiState: StateFlow<AccountFormState> = _uiState.asStateFlow()
+
+    fun resetState() {
+        _uiState.value = AccountFormState()
+    }
 
     fun loadAccount(accountId: UUID) {
         viewModelScope.launch {
@@ -57,6 +66,9 @@ class AccountFormViewModel(
                     isDefault = account.isDefault,
                     isEditing = true,
                     accountId = accountId,
+                    autoCreateEnabled = account.autoCreateEnabled,
+                    cardMask = account.cardMask ?: "",
+                    regexForText = account.regexForText ?: "",
                     isLoading = false
                 )
             } else {
@@ -92,6 +104,50 @@ class AccountFormViewModel(
         _uiState.value = _uiState.value.copy(type = type)
     }
 
+    fun updateAutoCreateEnabled(enabled: Boolean) {
+        _uiState.value = _uiState.value.copy(autoCreateEnabled = enabled)
+    }
+
+    fun updateCardMask(mask: String) {
+        _uiState.value = _uiState.value.copy(cardMask = mask, cardMaskError = null)
+    }
+
+    fun updateRegexForText(regex: String) {
+        _uiState.value = _uiState.value.copy(regexForText = regex, regexError = null)
+    }
+
+    fun validateCardMask(): Boolean {
+        val mask = _uiState.value.cardMask
+        if (mask.isBlank()) return true
+        return if (mask.length == 4 && mask.all { it.isDigit() }) {
+            true
+        } else {
+            _uiState.value = _uiState.value.copy(cardMaskError = "Маска должна содержать ровно 4 цифры")
+            false
+        }
+    }
+
+    fun validateRegex(): Boolean {
+        val regex = _uiState.value.regexForText
+        if (regex.isBlank()) return true
+        return try {
+            val r = Regex(regex)
+            val testText = "*1234 оплата 100.00 р. TEST. Баланс 500.00"
+            val match = r.find(testText)
+            val requiredGroups = listOf("amount", "shop", "cardMask", "balance")
+            val allPresent = requiredGroups.all { match?.groups[it]?.value != null }
+            if (!allPresent) {
+                _uiState.value = _uiState.value.copy(regexError = "Regex должен содержать именованные группы: amount, shop, cardMask, balance")
+                false
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(regexError = "Неверный regex: ${e.message}")
+            false
+        }
+    }
+
     fun save(): Boolean {
         val state = _uiState.value
 
@@ -102,13 +158,31 @@ class AccountFormViewModel(
             return false
         }
 
+        if (state.autoCreateEnabled) {
+            var hasError = false
+            if (state.cardMask.isBlank()) {
+                _uiState.value = _uiState.value.copy(cardMaskError = "Заполните маску")
+                hasError = true
+            }
+            if (state.regexForText.isBlank()) {
+                _uiState.value = _uiState.value.copy(regexError = "Заполните regex")
+                hasError = true
+            }
+            if (hasError) return false
+            if (!validateCardMask()) return false
+            if (!validateRegex()) return false
+        }
+
         val account = Account(
             id = state.accountId ?: UUID.randomUUID(),
             name = state.name,
             type = state.type,
             currency = state.currencyCode,
             icon = state.icon,
-            isDefault = state.isDefault
+            isDefault = state.isDefault,
+            autoCreateEnabled = state.autoCreateEnabled,
+            cardMask = state.cardMask.takeIf { it.isNotBlank() },
+            regexForText = state.regexForText.takeIf { it.isNotBlank() }
         )
 
         viewModelScope.launch {
