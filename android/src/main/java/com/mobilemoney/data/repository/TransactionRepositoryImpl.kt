@@ -1,8 +1,6 @@
 package com.mobilemoney.data.repository
 
 import com.mobilemoney.data.local.TransactionSource
-import com.mobilemoney.data.local.toEntity
-import com.mobilemoney.data.local.toUiModel
 import com.mobilemoney.data.model.TransactionUi
 import com.mobilemoney.domain.model.Transaction
 import com.mobilemoney.domain.repository.TransactionRepository
@@ -58,10 +56,10 @@ class TransactionRepositoryImpl(
 
 private fun TransactionUi.toDomain(): Transaction {
     val origin = when (source) {
-        com.mobilemoney.data.local.TransactionSource.CLIPBOARD -> com.mobilemoney.domain.model.TransactionOrigin.CLIPBOARD
-        com.mobilemoney.data.local.TransactionSource.MANUAL,
-        com.mobilemoney.data.local.TransactionSource.SMS,
-        com.mobilemoney.data.local.TransactionSource.PUSH -> com.mobilemoney.domain.model.TransactionOrigin.MANUAL
+        TransactionSource.CLIPBOARD -> com.mobilemoney.domain.model.TransactionOrigin.CLIPBOARD
+        TransactionSource.MANUAL,
+        TransactionSource.SMS,
+        TransactionSource.PUSH -> com.mobilemoney.domain.model.TransactionOrigin.MANUAL
     }
     return Transaction(
         id = id,

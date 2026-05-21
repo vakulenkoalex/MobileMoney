@@ -60,7 +60,7 @@ class TransactionFormViewModel(
     private val getTransactionsUseCase: GetTransactionsUseCase,
     private val saveTransactionUseCase: SaveTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
-    private val transactionRepository: com.mobilemoney.domain.repository.TransactionRepository
+    private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TransactionFormState())

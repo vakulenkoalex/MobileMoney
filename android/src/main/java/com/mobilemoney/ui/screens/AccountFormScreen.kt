@@ -26,7 +26,6 @@ import com.mobilemoney.data.config.IconOption
 import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.AccountFormViewModel
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.collect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
