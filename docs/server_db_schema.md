@@ -52,7 +52,7 @@
 - amount (REAL NOT NULL)
 - date (INTEGER NOT NULL)
 - comment (TEXT)
-- source (TEXT NOT NULL) — источник: MANUAL, SMS, PUSH
+- source (TEXT NOT NULL) — источник: MANUAL, SMS, PUSH, CLIPBOARD
 - sourceData (TEXT)
 - creatorId (TEXT)
 - relatedTransactionId (TEXT) — UUID для связывания переводов

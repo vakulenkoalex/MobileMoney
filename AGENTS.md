@@ -36,9 +36,9 @@
 | Compose Compiler | 2.3.21 |
 | AGP | 9.2.0 |
 | Min/Target SDK | 34 |
-| DI | Hilt |
+| DI | Manual (DI.kt) |
 | DB | Room + KSP |
-| Network | Ktor client |
+| Network | HttpURLConnection |
 | Serialization | Kotlin Serialization |
 | Async | Coroutines + Flow |
 | Background | WorkManager |
@@ -50,7 +50,7 @@
 
 | | |
 |---|---|
-| Language | Kotlin 2.0.21 |
+| Language | Kotlin 2.3.21 |
 | Framework | Ktor 3.0.2 |
 | Server | Netty |
 | DB | SQLite |

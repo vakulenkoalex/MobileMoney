@@ -23,10 +23,10 @@ common/src/main/kotlin/com/mobilemoney/dto/
 ### 2.1 Типы источников операций
 
 ```kotlin
-enum class TransactionSource { MANUAL, SMS, PUSH }
+enum class TransactionSource { MANUAL, SMS, PUSH, CLIPBOARD }
 ```
 
-> **Реализация:** В текущей версии используется только `MANUAL`. `SMS` и `PUSH` зарезервированы для будущей реализации автоматического импорта из SMS/уведомлений.
+> **Реализация:** `MANUAL` — ручной ввод, `CLIPBOARD` — импорт из буфера обмена. `SMS` и `PUSH` зарезервированы для будущей реализации автоматического импорта.
 
 ## 3. Data слой
 
@@ -42,15 +42,16 @@ enum class TransactionSource { MANUAL, SMS, PUSH }
 ### 4.1 Структура проекта (Clean Architecture)
 
 ```
-android/app/src/main/java/com/mobilemoney/
+android/src/main/java/com/mobilemoney/
 ├── MainActivity.kt
 ├── MobileMoneyApp.kt
 ├── data/
-│   ├── config/                # CategoryIcons, AccountIcons, Currencies
-│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers
+│   ├── config/                # CategoryIcons, AccountIcons, Currencies, Icons
+│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers, Currency
 │   ├── model/                 # Domain models (DTO)
+│   ├── parser/                # ClipboardParser
 │   ├── remote/                # SyncApiClient
-│   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository
+│   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository, SyncMapper, AccountBalanceCalculator, ClipboardPreferences
 ├── domain/                    # Domain layer
 │   ├── model/                 # Transaction, Category, Account (domain models)
 │   ├── repository/            # Repository interfaces
@@ -65,12 +66,14 @@ android/app/src/main/java/com/mobilemoney/
 │       ├── category/
 │       │   └── GetCategoriesUseCase.kt
 │       └── transaction/
+│           ├── DeleteTransactionUseCase.kt
 │           ├── GetTransactionsUseCase.kt
 │           └── SaveTransactionUseCase.kt
 ├── di/                        # DI.kt (ручной DI)
 ├── ui/
+│   ├── common/                # ErrorHandler
 │   ├── navigation/            # Navigation.kt
-│   ├── screens/               # Compose UI screens
+│   ├── screens/               # Compose UI screens (+ ClipboardDialog, DebugClipboardDialog)
 │   ├── theme/                 # Theme.kt, Typography.kt
 │   └── utils/                 # FormatUtils
 ├── viewmodel/                 # ViewModels
@@ -125,8 +128,8 @@ ui/screens/
 | Networking | HttpURLConnection (ручной) | - |
 | Serialization | Kotlin Serialization | 1.11.0 |
 | Local DB | Room | 2.8.4 |
-| Async | Kotlin Coroutines + Flow | 1.9.0 |
-| Background | WorkManager | 2.11.1 |
+| Async | Kotlin Coroutines + Flow | 1.11.0 |
+| Background | WorkManager | 2.11.2 |
 | Security | EncryptedSharedPreferences | |
 
 ---
