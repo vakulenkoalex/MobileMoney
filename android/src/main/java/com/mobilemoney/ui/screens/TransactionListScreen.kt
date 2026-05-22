@@ -27,7 +27,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.local.AppDatabase
+import com.mobilemoney.data.local.MessageRegexEntity
 import com.mobilemoney.data.parser.ClipboardParser
+import com.mobilemoney.data.parser.ParsedClipboardData
 import com.mobilemoney.data.repository.AccountBalanceCalculator
 import com.mobilemoney.data.repository.ClipboardPreferences
 import com.mobilemoney.data.repository.DatabaseRepository
@@ -74,112 +76,133 @@ fun TransactionListScreen(
         val accounts = AppDatabase.getDatabase(context)
             .accountDao().getAllAccountsIncludingArchived().first()
 
-        val enabledAccounts = accounts.filter {
-            it.autoCreateEnabled && !it.regexForText.isNullOrBlank()
-        }
+        val enabledAccounts = accounts.filter { it.autoCreateEnabled }
 
-        if (enabledAccounts.isEmpty()) {
-            if (debugMode) {
-                debugResult = DebugClipboardResult(
-                    clipboardText = text,
-                    matched = false,
-                    accountName = "(нет счетов с авто-созданием)"
-                )
-                showDebugDialog = true
-            }
-            return@LaunchedEffect
-        }
+        val regexDao = AppDatabase.getDatabase(context).messageRegexDao()
+        val regexList = regexDao.getAll().first()
 
-        for (account in enabledAccounts) {
-            val regex = account.regexForText!!
-            val parsed = ClipboardParser.parse(text, regex)
+        if (debugMode) {
+            var bestResult: ParsedClipboardData? = null
+            var bestRegex: MessageRegexEntity? = null
+            var bestCount = -1
 
-            if (debugMode) {
-                val cardMaskMatch = parsed?.cardMask == account.cardMask
-                debugResult = DebugClipboardResult(
-                    clipboardText = text,
-                    matched = parsed != null && cardMaskMatch,
-                    accountName = account.name,
-                    amount = parsed?.amount,
-                    shop = parsed?.shop,
-                    cardMaskParsed = parsed?.cardMask,
-                    cardMaskAccount = account.cardMask,
-                    cardMaskMatches = cardMaskMatch,
-                    balance = parsed?.balance
-                )
-                showDebugDialog = true
-                if (parsed != null && cardMaskMatch) {
-                    val db = AppDatabase.getDatabase(context)
-                    val balanceCalc = AccountBalanceCalculator(db.transactionDao())
-                    val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
-
-                    val currentBalance = balanceCalc.getAccountBalance(account.id)
-                    val expectedBalance = balanceCalc.calculateExpectedBalance(parsed.balance, parsed.amount)
-                    var comment = ""
-                    if (expectedBalance != null) {
-                        val discrepancy = balanceCalc.getBalanceDiscrepancy(currentBalance, expectedBalance)
-                        if (discrepancy != null) {
-                            comment = balanceCalc.formatDiscrepancyComment(discrepancy, expectedBalance, currentBalance)
-                        }
-                    }
-
-                    var categoryId: UUID? = null
-                    if (parsed.shop.isNotBlank()) {
-                        val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
-                        categoryId = lastTx?.categoryId
-                    }
-
-                    clipboardPrefillData = ClipboardPrefillData(
-                        amount = parsed.amount,
-                        accountId = java.util.UUID.fromString(account.id),
-                        comment = comment,
-                        shop = parsed.shop,
-                        categoryId = categoryId,
-                        clipboardText = text
-                    )
+            for (re in regexList) {
+                val parsed = ClipboardParser.parse(text, re.pattern) ?: continue
+                val filled = listOfNotNull(
+                    parsed.amount.takeIf { it.isNotBlank() },
+                    parsed.shop.takeIf { it.isNotBlank() },
+                    parsed.cardMask.takeIf { it.isNotBlank() },
+                    parsed.balance?.takeIf { it.isNotBlank() }
+                ).size
+                if (filled > bestCount) {
+                    bestCount = filled
+                    bestResult = parsed
+                    bestRegex = re
                 }
-                return@LaunchedEffect
             }
 
-            if (parsed != null && parsed.cardMask == account.cardMask) {
+            val matchedAccount = bestResult?.cardMask?.let { cm ->
+                enabledAccounts.find { it.cardMask == cm }
+            }
+
+            if (matchedAccount != null && bestResult != null) {
                 clipboardText = text
 
                 val db = AppDatabase.getDatabase(context)
                 val balanceCalc = AccountBalanceCalculator(db.transactionDao())
                 val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
 
-                val currentBalance = balanceCalc.getAccountBalance(account.id)
-                val expectedBalance = balanceCalc.calculateExpectedBalance(parsed.balance, parsed.amount)
-                var comment = ""
-                if (expectedBalance != null) {
-                    val discrepancy = balanceCalc.getBalanceDiscrepancy(currentBalance, expectedBalance)
-                    if (discrepancy != null) {
-                        comment = balanceCalc.formatDiscrepancyComment(discrepancy, expectedBalance, currentBalance)
-                    }
-                }
+                val comment = if (!bestRegex!!.skipBalanceCheck && bestResult.balance != null) {
+                    val currentBalance = balanceCalc.getAccountBalance(matchedAccount.id)
+                    val expectedBalance = balanceCalc.calculateExpectedBalance(bestResult.balance, bestResult.amount)
+                    if (expectedBalance != null) {
+                        val discrepancy = balanceCalc.getBalanceDiscrepancy(currentBalance, expectedBalance)
+                        if (discrepancy != null) {
+                            balanceCalc.formatDiscrepancyComment(discrepancy, expectedBalance, currentBalance)
+                        } else ""
+                    } else ""
+                } else ""
 
                 var categoryId: UUID? = null
-                if (parsed.shop.isNotBlank()) {
-                    val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
+                if (bestResult.shop.isNotBlank()) {
+                    val lastTx = dbRepo.getLastTransactionByShop(bestResult.shop)
                     categoryId = lastTx?.categoryId
                 }
 
                 clipboardPrefillData = ClipboardPrefillData(
-                    amount = parsed.amount,
-                    accountId = java.util.UUID.fromString(account.id),
+                    amount = bestResult.amount,
+                    accountId = java.util.UUID.fromString(matchedAccount.id),
                     comment = comment,
-                    shop = parsed.shop,
+                    shop = bestResult.shop,
                     categoryId = categoryId,
                     clipboardText = text
                 )
-                showClipboardDialog = true
-                return@LaunchedEffect
             }
+
+            debugResult = DebugClipboardResult(
+                clipboardText = text,
+                matched = bestResult != null,
+                accountName = matchedAccount?.name
+                    ?: if (bestResult != null) "Счёт не найден" else null,
+                amount = bestResult?.amount,
+                shop = bestResult?.shop,
+                cardMaskParsed = bestResult?.cardMask,
+                cardMaskAccount = matchedAccount?.cardMask,
+                cardMaskMatches = matchedAccount != null,
+                balance = bestResult?.balance
+            )
+            showDebugDialog = true
+            return@LaunchedEffect
         }
 
-        if (!debugMode) {
-            ErrorHandler.emitError("Текст не распознан")
+        if (enabledAccounts.isEmpty() || regexList.isEmpty()) {
+            ErrorHandler.emitError("Нет счетов с авто-созданием или регулярных выражений")
+            return@LaunchedEffect
         }
+
+        clipboardText = text
+        for (re in regexList) {
+            val parsed = ClipboardParser.parse(text, re.pattern) ?: continue
+
+            val matchingAccount = enabledAccounts.find { it.cardMask == parsed.cardMask }
+            if (matchingAccount == null) continue
+
+            val account = matchingAccount
+
+            val db = AppDatabase.getDatabase(context)
+            val balanceCalc = AccountBalanceCalculator(db.transactionDao())
+            val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
+
+            val comment = if (!re.skipBalanceCheck && parsed.balance != null) {
+                val currentBalance = balanceCalc.getAccountBalance(account.id)
+                val expectedBalance = balanceCalc.calculateExpectedBalance(parsed.balance, parsed.amount)
+                if (expectedBalance != null) {
+                    val discrepancy = balanceCalc.getBalanceDiscrepancy(currentBalance, expectedBalance)
+                    if (discrepancy != null) {
+                        balanceCalc.formatDiscrepancyComment(discrepancy, expectedBalance, currentBalance)
+                    } else ""
+                } else ""
+            } else ""
+
+            var categoryId: UUID? = null
+            if (parsed.shop.isNotBlank()) {
+                val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
+                categoryId = lastTx?.categoryId
+            }
+
+            clipboardPrefillData = ClipboardPrefillData(
+                amount = parsed.amount,
+                accountId = java.util.UUID.fromString(account.id),
+                comment = comment,
+                shop = parsed.shop,
+                categoryId = categoryId,
+                clipboardText = text
+            )
+            showClipboardDialog = true
+            return@LaunchedEffect
+        }
+
+        ErrorHandler.emitError("Текст не распознан")
     }
 
     fun readClipboard() {

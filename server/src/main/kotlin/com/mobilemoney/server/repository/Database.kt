@@ -72,7 +72,6 @@ object Database {
                         archived INTEGER NOT NULL DEFAULT 0,
                         autoCreateEnabled INTEGER NOT NULL DEFAULT 0,
                         cardMask TEXT,
-                        regexForText TEXT,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -87,6 +86,18 @@ object Database {
                         isIncome INTEGER NOT NULL,
                         icon TEXT NOT NULL,
                         parentId TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        deletedAt INTEGER,
+                        syncedAt INTEGER,
+                        serverReceivedAt INTEGER
+                    )
+                """.trimIndent())
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS message_regexes (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        pattern TEXT NOT NULL,
+                        skipBalanceCheck INTEGER NOT NULL DEFAULT 0,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -190,8 +201,8 @@ object Database {
 
         val accountId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, autoCreateEnabled, cardMask, regexForText, createdAt, updatedAt, deletedAt, serverReceivedAt)
-            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, 0, NULL, NULL, ?, ?, NULL, ?)
+            INSERT INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, autoCreateEnabled, cardMask, createdAt, updatedAt, deletedAt, serverReceivedAt)
+            VALUES (?, 'Наличные', 'cash', 'RUB', 'wallet', 1, 0, 0, NULL, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, accountId)
             stmt.setLong(2, now)

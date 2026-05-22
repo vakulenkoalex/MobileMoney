@@ -35,6 +35,8 @@ import com.mobilemoney.di.DI
 import com.mobilemoney.ui.screens.AccountFormScreen
 import com.mobilemoney.ui.screens.CategoryFormScreen
 import com.mobilemoney.ui.screens.LoginScreen
+import com.mobilemoney.ui.screens.MessageRegexFormScreen
+import com.mobilemoney.ui.screens.MessageRegexListScreen
 import com.mobilemoney.ui.screens.SettingsScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
@@ -60,6 +62,11 @@ sealed class Screen(val route: String) {
         fun createRoute(categoryId: UUID) = "category/edit/$categoryId"
     }
     data object Settings : Screen("settings")
+    data object RegexList : Screen("regexes")
+    data object CreateRegex : Screen("regex/create")
+    data object EditRegex : Screen("regex/edit/{regexId}") {
+        fun createRoute(regexId: UUID) = "regex/edit/$regexId"
+    }
 }
 
 val bottomNavItems = listOf(
@@ -296,7 +303,44 @@ fun MobileMoneyNavigation() {
                     SettingsScreen(
                         onNavigateToCategories = {
                             navController.navigate(Screen.Categories.route)
+                        },
+                        onNavigateToRegexes = {
+                            navController.navigate(Screen.RegexList.route)
                         }
+                    )
+                }
+
+                composable(Screen.RegexList.route) {
+                    MessageRegexListScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onAddClick = {
+                            navController.navigate(Screen.CreateRegex.route)
+                        },
+                        onRegexClick = { regexId ->
+                            navController.navigate(Screen.EditRegex.createRoute(regexId))
+                        }
+                    )
+                }
+
+                composable(Screen.CreateRegex.route) {
+                    MessageRegexFormScreen(
+                        regexId = null,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = Screen.EditRegex.route,
+                    arguments = listOf(
+                        navArgument("regexId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val regexId = backStackEntry.arguments?.getString("regexId")?.let {
+                        UUID.fromString(it)
+                    }
+                    MessageRegexFormScreen(
+                        regexId = regexId,
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
             }

@@ -8,8 +8,8 @@ class AccountRepository {
         val serverReceivedAt = System.currentTimeMillis()
         Database.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT OR REPLACE INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, autoCreateEnabled, cardMask, regexForText, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO accounts (id, name, typeId, currencyCode, icon, isDefault, archived, autoCreateEnabled, cardMask, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """).use { stmt ->
                 stmt.setString(1, data.id)
                 stmt.setString(2, data.name)
@@ -20,12 +20,11 @@ class AccountRepository {
                 stmt.setInt(7, if (data.archived) 1 else 0)
                 stmt.setInt(8, if (data.autoCreateEnabled) 1 else 0)
                 stmt.setString(9, data.cardMask)
-                stmt.setString(10, data.regexForText)
-                stmt.setLong(11, data.createdAt)
-                stmt.setLong(12, data.updatedAt)
-                stmt.setString(13, data.deletedAt?.toString())
-                stmt.setString(14, data.syncedAt?.toString())
-                stmt.setLong(15, serverReceivedAt)
+                stmt.setLong(10, data.createdAt)
+                stmt.setLong(11, data.updatedAt)
+                stmt.setString(12, data.deletedAt?.toString())
+                stmt.setString(13, data.syncedAt?.toString())
+                stmt.setLong(14, serverReceivedAt)
                 stmt.executeUpdate()
             }
         }
@@ -71,7 +70,6 @@ class AccountRepository {
             archived = rs.getInt("archived") == 1,
             autoCreateEnabled = rs.getInt("autoCreateEnabled") == 1,
             cardMask = rs.getString("cardMask"),
-            regexForText = rs.getString("regexForText"),
             createdAt = rs.getLong("createdAt"),
             updatedAt = rs.getLong("updatedAt"),
             deletedAt = rs.getString("deletedAt")?.toLongOrNull(),

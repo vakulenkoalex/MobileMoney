@@ -18,8 +18,13 @@ data class AccountUi(
     val isDefault: Boolean = false,
     val balance: Double = 0.0,
     val autoCreateEnabled: Boolean = false,
-    val cardMask: String? = null,
-    val regexForText: String? = null
+    val cardMask: String? = null
+)
+
+data class MessageRegexUi(
+    val id: UUID = UUID.randomUUID(),
+    val pattern: String,
+    val skipBalanceCheck: Boolean = false
 )
 
 data class CategoryUi(

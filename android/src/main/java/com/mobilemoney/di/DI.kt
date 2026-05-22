@@ -7,12 +7,16 @@ import com.mobilemoney.data.repository.*
 import com.mobilemoney.domain.repository.AccountRepository
 import com.mobilemoney.domain.repository.CategoryRepository
 import com.mobilemoney.domain.repository.TransactionRepository
+import com.mobilemoney.domain.repository.MessageRegexRepository
 import com.mobilemoney.domain.usecase.account.CreateAccountUseCase
 import com.mobilemoney.domain.usecase.account.GetAccountsUseCase
 import com.mobilemoney.domain.usecase.category.GetCategoriesUseCase
 import com.mobilemoney.domain.usecase.transaction.DeleteTransactionUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
+import com.mobilemoney.domain.usecase.clipboard.DeleteMessageRegexUseCase
+import com.mobilemoney.domain.usecase.clipboard.GetMessageRegexesUseCase
+import com.mobilemoney.domain.usecase.clipboard.SaveMessageRegexUseCase
 import com.mobilemoney.viewmodel.*
 
 object DI {
@@ -24,6 +28,7 @@ object DI {
     private val accountDao by lazy { database.accountDao() }
     private val categoryDao by lazy { database.categoryDao() }
     private val transactionDao by lazy { database.transactionDao() }
+    private val messageRegexDao by lazy { database.messageRegexDao() }
 
     val databaseRepository: DatabaseRepository by lazy {
         DatabaseRepository(accountDao, categoryDao, transactionDao)
@@ -49,6 +54,10 @@ object DI {
         ClipboardPreferences(context)
     }
 
+    val messageRegexRepository: MessageRegexRepository by lazy {
+        MessageRegexRepositoryImpl(messageRegexDao)
+    }
+
     val getAccountsUseCase: GetAccountsUseCase by lazy {
         GetAccountsUseCase(accountRepository)
     }
@@ -71,6 +80,18 @@ object DI {
 
     val deleteTransactionUseCase: DeleteTransactionUseCase by lazy {
         DeleteTransactionUseCase(transactionRepository)
+    }
+
+    val getMessageRegexesUseCase: GetMessageRegexesUseCase by lazy {
+        GetMessageRegexesUseCase(messageRegexRepository)
+    }
+
+    val saveMessageRegexUseCase: SaveMessageRegexUseCase by lazy {
+        SaveMessageRegexUseCase(messageRegexRepository)
+    }
+
+    val deleteMessageRegexUseCase: DeleteMessageRegexUseCase by lazy {
+        DeleteMessageRegexUseCase(messageRegexRepository)
     }
 
     val accountListViewModel: AccountListViewModel by lazy {
@@ -106,5 +127,13 @@ object DI {
 
     val settingsViewModel: SettingsViewModel by lazy {
         SettingsViewModel(syncRepository, BackupRepository(context))
+    }
+
+    val messageRegexListViewModel: MessageRegexListViewModel by lazy {
+        MessageRegexListViewModel(getMessageRegexesUseCase, deleteMessageRegexUseCase)
+    }
+
+    val messageRegexFormViewModel: MessageRegexFormViewModel by lazy {
+        MessageRegexFormViewModel(getMessageRegexesUseCase, saveMessageRegexUseCase)
     }
 }

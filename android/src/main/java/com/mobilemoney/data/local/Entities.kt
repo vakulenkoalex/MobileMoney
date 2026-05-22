@@ -13,6 +13,20 @@ enum class TransactionSource {
 }
 
 @Entity(
+    tableName = "message_regexes"
+)
+data class MessageRegexEntity(
+    @PrimaryKey val id: String,
+    val pattern: String,
+    val skipBalanceCheck: Boolean = false,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
+)
+
+@Entity(
     tableName = "accounts",
     indices = [Index("currencyCode")]
 )
@@ -30,8 +44,7 @@ data class AccountEntity(
     val syncedAt: Long? = null,
     val serverReceivedAt: Long? = null,
     val autoCreateEnabled: Boolean = false,
-    val cardMask: String? = null,
-    val regexForText: String? = null
+    val cardMask: String? = null
 )
 
 @Entity(

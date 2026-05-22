@@ -59,8 +59,7 @@ private fun AccountUi.toDomain(): Account {
         isDefault = isDefault,
         balance = balance,
         autoCreateEnabled = autoCreateEnabled,
-        cardMask = cardMask,
-        regexForText = regexForText
+        cardMask = cardMask
     )
 }
 
@@ -78,7 +77,6 @@ private fun Account.toUiModel(): AccountUi {
         icon = icon,
         isDefault = isDefault,
         autoCreateEnabled = autoCreateEnabled,
-        cardMask = cardMask,
-        regexForText = regexForText
+        cardMask = cardMask
     )
 }

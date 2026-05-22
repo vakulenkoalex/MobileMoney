@@ -9,10 +9,12 @@ import com.mobilemoney.BuildConfig
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
+import com.mobilemoney.data.local.MessageRegexDao
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.remote.SyncApiClient
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto
+import com.mobilemoney.dto.MessageRegexDto
 import com.mobilemoney.dto.TransactionDto
 import com.mobilemoney.dto.SyncPushRequest
 import com.mobilemoney.domain.repository.SyncRepository as DomainSyncRepository
@@ -29,6 +31,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
     private val accountDao: AccountDao = database.accountDao()
     private val categoryDao: CategoryDao = database.categoryDao()
     private val transactionDao: TransactionDao = database.transactionDao()
+    private val messageRegexDao: MessageRegexDao = database.messageRegexDao()
     private val apiClient = SyncApiClient(appContext)
 
     private fun createEncryptedSharedPreferences(context: Context): SharedPreferences {
@@ -117,6 +120,10 @@ class SyncRepository(context: Context) : DomainSyncRepository {
         return transactionDao.getUnsyncedTransactions().map { it.toSyncDto() }
     }
 
+    suspend fun getUnsyncedRegexes(): List<MessageRegexDto> {
+        return messageRegexDao.getUnsynced().map { it.toSyncDto() }
+    }
+
     override suspend fun sync(): Result<Unit> {
         Log.d("SyncRepository", "=== sync() START ===")
         Log.d("SyncRepository", "deviceToken: ${deviceToken?.take(10)}...")
@@ -179,16 +186,19 @@ class SyncRepository(context: Context) : DomainSyncRepository {
         val accountDtos = getUnsyncedAccounts()
         val categoryDtos = getUnsyncedCategories()
         val transactionDtos = getUnsyncedTransactions()
+        val regexDtos = getUnsyncedRegexes()
 
-        Log.d("SyncRepository", "pushChanges: accounts=${accountDtos.size}, categories=${categoryDtos.size}, transactions=${transactionDtos.size}")
+        Log.d("SyncRepository", "pushChanges: accounts=${accountDtos.size}, categories=${categoryDtos.size}, transactions=${transactionDtos.size}, regexes=${regexDtos.size}")
 
         val request = SyncPushRequest(
             accounts = accountDtos,
             categories = categoryDtos,
-            transactions = transactionDtos
+            transactions = transactionDtos,
+            messageRegexes = regexDtos
         )
 
-        return if (request.accounts.isEmpty() && request.categories.isEmpty() && request.transactions.isEmpty()) {
+        val empty = request.accounts.isEmpty() && request.categories.isEmpty() && request.transactions.isEmpty() && request.messageRegexes.isEmpty()
+        return if (empty) {
             Result.success(0)
         } else {
             apiClient.pushChanges(request).map { response ->
@@ -196,6 +206,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                 accountDtos.forEach { markAccountSynced(it.id, syncedAt) }
                 categoryDtos.forEach { markCategorySynced(it.id, syncedAt) }
                 transactionDtos.forEach { markTransactionSynced(it.id, syncedAt) }
+                regexDtos.forEach { markRegexSynced(it.id, syncedAt) }
                 response.synced
             }
         }
@@ -217,10 +228,11 @@ class SyncRepository(context: Context) : DomainSyncRepository {
             result.onFailure { e -> Log.e("SyncRepository", "pullAll error: ${e.message}") }
             return result.map { response ->
                 val syncedAt = response.timestamp
-                Log.d("SyncRepository", "pullChanges: accounts=${response.accounts.size}, categories=${response.categories.size}, syncedAt=$syncedAt")
+                Log.d("SyncRepository", "pullChanges: accounts=${response.accounts.size}, categories=${response.categories.size}, regexes=${response.messageRegexes.size}, syncedAt=$syncedAt")
                 response.accounts.forEach { dto -> upsertAccount(dto, syncedAt) }
                 response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
                 response.transactions.forEach { dto -> upsertTransaction(dto, syncedAt) }
+                response.messageRegexes.forEach { dto -> upsertRegex(dto, syncedAt) }
             }
         } else {
             val result = apiClient.getChanges(since)
@@ -229,10 +241,11 @@ class SyncRepository(context: Context) : DomainSyncRepository {
             return result.map { response ->
                 val syncedAt = response.timestamp
                 lastSyncTimestamp = syncedAt
-                Log.d("SyncRepository", "pullChanges: accounts=${response.accounts.size}, categories=${response.categories.size}, syncedAt=$syncedAt")
+                Log.d("SyncRepository", "pullChanges: accounts=${response.accounts.size}, categories=${response.categories.size}, regexes=${response.messageRegexes.size}, syncedAt=$syncedAt")
                 response.accounts.forEach { dto -> upsertAccount(dto, syncedAt) }
                 response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
                 response.transactions.forEach { dto -> upsertTransaction(dto, syncedAt) }
+                response.messageRegexes.forEach { dto -> upsertRegex(dto, syncedAt) }
             }
         }
     }
@@ -248,6 +261,13 @@ class SyncRepository(context: Context) : DomainSyncRepository {
         val existing = categoryDao.getCategoryById(dto.id)
         if (existing == null || existing.syncedAt != null) {
             categoryDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
+        }
+    }
+
+    private suspend fun upsertRegex(dto: MessageRegexDto, syncedAt: Long) {
+        val existing = messageRegexDao.getById(dto.id)
+        if (existing == null || existing.syncedAt != null) {
+            messageRegexDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
         }
     }
 
@@ -268,6 +288,10 @@ class SyncRepository(context: Context) : DomainSyncRepository {
 
     suspend fun markTransactionSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
         transactionDao.markSynced(id, syncedAt)
+    }
+
+    suspend fun markRegexSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
+        messageRegexDao.markSynced(id, syncedAt)
     }
 
     override fun logout() {

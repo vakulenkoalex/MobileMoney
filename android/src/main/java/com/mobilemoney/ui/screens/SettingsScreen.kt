@@ -32,6 +32,7 @@ import com.mobilemoney.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(
     onNavigateToCategories: () -> Unit,
+    onNavigateToRegexes: () -> Unit,
     viewModel: SettingsViewModel = DI.settingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -107,6 +108,13 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Категории")
+            }
+
+            Button(
+                onClick = onNavigateToRegexes,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Управление регулярками")
             }
 
             Button(

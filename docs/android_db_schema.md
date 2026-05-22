@@ -2,7 +2,7 @@
 
 **Иконки** — название иконки из Material Design Icons (https://fonts.google.com/icons), например `food`, `car`, `account-balance-wallet`
 
-База данных: `mobile_money_database`, версия 6 (Room, миграции — `fallbackToDestructiveMigration`).
+База данных: `mobile_money_database`, версия 7 (Room, миграции — `fallbackToDestructiveMigration`).
 
 ---
 
@@ -21,7 +21,6 @@
 | `archived` | `INTEGER` (boolean) | NO | `0` | Скрыть старый счёт |
 | `autoCreateEnabled` | `INTEGER` (boolean) | NO | `0` | Автосоздание операции для этого счёта |
 | `cardMask` | `TEXT` | YES | — | Маска карты (последние 4 цифры) |
-| `regexForText` | `TEXT` | YES | — | Регулярка для парсинга текста |
 | `createdAt` | `INTEGER` | NO | — | Unix timestamp (ms) |
 | `updatedAt` | `INTEGER` | NO | — | |
 | `deletedAt` | `INTEGER` | YES | — | Soft delete |
@@ -29,6 +28,23 @@
 | `serverReceivedAt` | `INTEGER` | YES | — | Время получения сервером |
 
 **Индексы:** `currencyCode`
+
+**Foreign keys:** нет
+
+---
+
+### Регулярки для буфера обмена (`message_regexes`)
+
+| Колонка | Тип | Nullable | По умолчанию | Описание |
+|---------|-----|----------|-------------|----------|
+| `id` | `TEXT` (PK) | NO | — | UUID |
+| `pattern` | `TEXT` | NO | — | Regex с named groups: amount, shop, cardMask (balance опционально) |
+| `skipBalanceCheck` | `INTEGER` (boolean) | NO | `0` | Не проверять баланс при создании операции |
+| `createdAt` | `INTEGER` | NO | — | Unix timestamp (ms) |
+| `updatedAt` | `INTEGER` | NO | — | |
+| `deletedAt` | `INTEGER` | YES | — | Soft delete |
+| `syncedAt` | `INTEGER` | YES | — | Время последней синхронизации |
+| `serverReceivedAt` | `INTEGER` | YES | — | Время получения сервером |
 
 **Foreign keys:** нет
 
@@ -110,6 +126,7 @@ enum class TransactionSource { MANUAL, SMS, PUSH, CLIPBOARD }
 
 - Счёт привязан к валюте (по `currencyCode`, не FK)
 - Тип счёта (`typeId`) — строка: `cash`, `card`, `account`
+- Регулярки для буфера обмена (`message_regexes`) — независимая таблица, не привязана к счетам
 - Категории образуют иерархию через `parentId`
 - Операция привязана к счёту (`accountId`) и категории (`categoryId`) — без FK, с индексами
 - Перевод между счетами — две операции (расход и доход) с общим UUID в `relatedTransactionId`

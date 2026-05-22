@@ -44,11 +44,13 @@ fun DebugClipboardDialog(
                 HorizontalDivider()
                 Spacer(Modifier.height(8.dp))
 
-                Text("Счёт: ${result.accountName ?: "—"}")
-                Spacer(Modifier.height(4.dp))
                 Text("amount: ${result.amount ?: "—"}")
                 Text("shop: ${result.shop ?: "—"}")
-                Text("cardMask: ${result.cardMaskParsed ?: "—"} vs ${result.cardMaskAccount ?: "—"} ${if (result.cardMaskMatches) "✅" else "❌"}")
+                Text("cardMask: ${result.cardMaskParsed ?: "—"}")
+                if (result.amount != null) {
+                    val accountFound = if (result.cardMaskMatches) "✅ ${result.accountName ?: ""}" else "❌ Счёт не найден"
+                    Text("Счёт: $accountFound")
+                }
                 Text("balance: ${result.balance ?: "—"}")
             }
         },

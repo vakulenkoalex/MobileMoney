@@ -17,6 +17,5 @@ data class Account(
     val isDefault: Boolean = false,
     val balance: Double = 0.0,
     val autoCreateEnabled: Boolean = false,
-    val cardMask: String? = null,
-    val regexForText: String? = null
+    val cardMask: String? = null
 )

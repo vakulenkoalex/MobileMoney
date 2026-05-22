@@ -2,10 +2,12 @@ package com.mobilemoney.data.repository
 
 import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.CategoryEntity
+import com.mobilemoney.data.local.MessageRegexEntity
 import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.local.TransactionSource
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto
+import com.mobilemoney.dto.MessageRegexDto
 import com.mobilemoney.dto.TransactionDto
 
 fun AccountEntity.toSyncDto(): AccountDto {
@@ -19,7 +21,6 @@ fun AccountEntity.toSyncDto(): AccountDto {
         archived = archived,
         autoCreateEnabled = autoCreateEnabled,
         cardMask = cardMask,
-        regexForText = regexForText,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt,
@@ -75,7 +76,6 @@ fun AccountDto.toEntity(): AccountEntity {
         archived = archived,
         autoCreateEnabled = autoCreateEnabled,
         cardMask = cardMask,
-        regexForText = regexForText,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt,
@@ -91,6 +91,32 @@ fun CategoryDto.toEntity(): CategoryEntity {
         isIncome = isIncome,
         icon = icon,
         parentId = parentId,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
+    )
+}
+
+fun MessageRegexEntity.toSyncDto(): MessageRegexDto {
+    return MessageRegexDto(
+        id = id,
+        pattern = pattern,
+        skipBalanceCheck = skipBalanceCheck,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
+    )
+}
+
+fun MessageRegexDto.toEntity(): MessageRegexEntity {
+    return MessageRegexEntity(
+        id = id,
+        pattern = pattern,
+        skipBalanceCheck = skipBalanceCheck,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt,

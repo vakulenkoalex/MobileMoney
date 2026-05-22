@@ -34,9 +34,7 @@ data class AccountFormState(
     val isSaved: Boolean = false,
     val autoCreateEnabled: Boolean = false,
     val cardMask: String = "",
-    val regexForText: String = "",
-    val cardMaskError: String? = null,
-    val regexError: String? = null
+    val cardMaskError: String? = null
 )
 
 class AccountFormViewModel(
@@ -68,7 +66,6 @@ class AccountFormViewModel(
                     accountId = accountId,
                     autoCreateEnabled = account.autoCreateEnabled,
                     cardMask = account.cardMask ?: "",
-                    regexForText = account.regexForText ?: "",
                     isLoading = false
                 )
             } else {
@@ -112,10 +109,6 @@ class AccountFormViewModel(
         _uiState.value = _uiState.value.copy(cardMask = mask, cardMaskError = null)
     }
 
-    fun updateRegexForText(regex: String) {
-        _uiState.value = _uiState.value.copy(regexForText = regex, regexError = null)
-    }
-
     fun validateCardMask(): Boolean {
         val mask = _uiState.value.cardMask
         if (mask.isBlank()) return true
@@ -123,27 +116,6 @@ class AccountFormViewModel(
             true
         } else {
             _uiState.value = _uiState.value.copy(cardMaskError = "Маска должна содержать ровно 4 цифры")
-            false
-        }
-    }
-
-    fun validateRegex(): Boolean {
-        val regex = _uiState.value.regexForText
-        if (regex.isBlank()) return true
-        return try {
-            val r = Regex(regex)
-            val testText = "*1234 оплата 100.00 р. TEST. Баланс 500.00"
-            val match = r.find(testText)
-            val requiredGroups = listOf("amount", "shop", "cardMask", "balance")
-            val allPresent = requiredGroups.all { match?.groups[it]?.value != null }
-            if (!allPresent) {
-                _uiState.value = _uiState.value.copy(regexError = "Regex должен содержать именованные группы: amount, shop, cardMask, balance")
-                false
-            } else {
-                true
-            }
-        } catch (e: Exception) {
-            _uiState.value = _uiState.value.copy(regexError = "Неверный regex: ${e.message}")
             false
         }
     }
@@ -159,18 +131,11 @@ class AccountFormViewModel(
         }
 
         if (state.autoCreateEnabled) {
-            var hasError = false
             if (state.cardMask.isBlank()) {
                 _uiState.value = _uiState.value.copy(cardMaskError = "Заполните маску")
-                hasError = true
+                return false
             }
-            if (state.regexForText.isBlank()) {
-                _uiState.value = _uiState.value.copy(regexError = "Заполните regex")
-                hasError = true
-            }
-            if (hasError) return false
             if (!validateCardMask()) return false
-            if (!validateRegex()) return false
         }
 
         val account = Account(
@@ -181,8 +146,7 @@ class AccountFormViewModel(
             icon = state.icon,
             isDefault = state.isDefault,
             autoCreateEnabled = state.autoCreateEnabled,
-            cardMask = state.cardMask.takeIf { it.isNotBlank() },
-            regexForText = state.regexForText.takeIf { it.isNotBlank() }
+            cardMask = state.cardMask.takeIf { it.isNotBlank() }
         )
 
         viewModelScope.launch {

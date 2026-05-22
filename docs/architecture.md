@@ -14,6 +14,7 @@ common/src/main/kotlin/com/mobilemoney/dto/
 ├── SyncPullResponse.kt
 ├── SyncChangesResponse.kt
 ├── AccountDto.kt
+├── MessageRegexDto.kt
 ├── CategoryDto.kt
 └── TransactionDto.kt
 ```
@@ -47,13 +48,12 @@ android/src/main/java/com/mobilemoney/
 ├── MobileMoneyApp.kt
 ├── data/
 │   ├── config/                # CategoryIcons, AccountIcons, Currencies, Icons
-│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers, Currency
-│   ├── model/                 # Domain models (DTO)
+│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers, Currency (AccountMapper, MessageRegexMapper)
 │   ├── parser/                # ClipboardParser
 │   ├── remote/                # SyncApiClient
 │   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository, SyncMapper, AccountBalanceCalculator, ClipboardPreferences
 ├── domain/                    # Domain layer
-│   ├── model/                 # Transaction, Category, Account (domain models)
+│   ├── model/                 # Transaction, Category, Account, MessageRegex (domain models)
 │   ├── repository/            # Repository interfaces
 │   │   ├── AccountRepository.kt
 │   │   ├── CategoryRepository.kt
@@ -63,6 +63,10 @@ android/src/main/java/com/mobilemoney/
 │       ├── account/
 │       │   ├── CreateAccountUseCase.kt
 │       │   └── GetAccountsUseCase.kt
+│       ├── clipboard/
+│       │   ├── GetMessageRegexesUseCase.kt
+│       │   ├── SaveMessageRegexUseCase.kt
+│       │   └── DeleteMessageRegexUseCase.kt
 │       ├── category/
 │       │   └── GetCategoriesUseCase.kt
 │       └── transaction/
@@ -80,6 +84,8 @@ android/src/main/java/com/mobilemoney/
 │   ├── LoginViewModel.kt
 │   ├── AccountListViewModel.kt
 │   ├── AccountFormViewModel.kt
+│   ├── MessageRegexListViewModel.kt
+│   ├── MessageRegexFormViewModel.kt
 │   ├── CategoryListViewModel.kt
 │   ├── CategoryFormViewModel.kt
 │   ├── TransactionListViewModel.kt
@@ -95,10 +101,14 @@ ui/screens/
 ├── LoginScreen.kt
 ├── AccountListScreen.kt
 ├── AccountFormScreen.kt       # Add/Edit account
+├── MessageRegexListScreen.kt # List of clipboard regexes
+├── MessageRegexFormScreen.kt # Add/Edit clipboard regex
 ├── CategoryListScreen.kt
 ├── CategoryFormScreen.kt      # Add/Edit category
 ├── TransactionListScreen.kt
 ├── TransactionFormScreen.kt   # Add/Edit transaction, split mode
+├── ClipboardDialog.kt         # Clipboard confirm dialog
+├── DebugClipboardDialog.kt    # Clipboard debug dialog
 └── SettingsScreen.kt
 ```
 

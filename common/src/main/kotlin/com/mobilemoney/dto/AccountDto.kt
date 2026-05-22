@@ -13,7 +13,6 @@ data class AccountDto(
     val archived: Boolean,
     val autoCreateEnabled: Boolean = false,
     val cardMask: String? = null,
-    val regexForText: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

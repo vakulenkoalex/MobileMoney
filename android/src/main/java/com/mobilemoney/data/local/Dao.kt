@@ -157,3 +157,33 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE shop = :shop AND deletedAt IS NULL ORDER BY date DESC LIMIT 1")
     suspend fun getLastTransactionByShop(shop: String): TransactionEntity?
 }
+
+@Dao
+interface MessageRegexDao {
+    @Query("SELECT * FROM message_regexes WHERE deletedAt IS NULL")
+    fun getAll(): Flow<List<MessageRegexEntity>>
+
+    @Query("SELECT * FROM message_regexes WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getById(id: String): MessageRegexEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(regex: MessageRegexEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(regexes: List<MessageRegexEntity>)
+
+    @Update
+    suspend fun update(regex: MessageRegexEntity)
+
+    @Query("UPDATE message_regexes SET deletedAt = :deletedAt WHERE id = :id")
+    suspend fun softDelete(id: String, deletedAt: Long)
+
+    @Query("DELETE FROM message_regexes WHERE deletedAt IS NOT NULL")
+    suspend fun permanentDeleteAll()
+
+    @Query("SELECT * FROM message_regexes WHERE syncedAt IS NULL")
+    suspend fun getUnsynced(): List<MessageRegexEntity>
+
+    @Query("UPDATE message_regexes SET syncedAt = :syncedAt WHERE id = :id")
+    suspend fun markSynced(id: String, syncedAt: Long)
+}

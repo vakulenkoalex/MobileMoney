@@ -24,9 +24,18 @@
 - icon (TEXT NOT NULL)
 - isDefault (INTEGER NOT NULL)
 - archived (INTEGER NOT NULL)
-- autoCreateEnabled (INTEGER NOT NULL DEFAULT 0) — автосоздание транзакций по SMS
-- cardMask (TEXT) — маска карты (****1234)
-- regexForText (TEXT) — regex для парсинга SMS
+- autoCreateEnabled (INTEGER NOT NULL DEFAULT 0) — автосоздание транзакций
+- cardMask (TEXT) — маска карты (последние 4 цифры, например "1026")
+- createdAt (INTEGER NOT NULL)
+- updatedAt (INTEGER NOT NULL)
+- deletedAt (INTEGER)
+- syncedAt (INTEGER)
+- serverReceivedAt (INTEGER) — время получения записи сервером
+
+### Регулярки для буфера обмена (message_regexes)
+- id (PK) — TEXT NOT NULL, UUID
+- pattern (TEXT NOT NULL) — regex с named groups: amount, shop, cardMask (balance опционально)
+- skipBalanceCheck (INTEGER NOT NULL DEFAULT 0) — не проверять баланс при создании операции
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)
@@ -81,6 +90,7 @@ object Currencies {
 
 - devices принадлежит users (по login)
 - accounts принадлежит одной валюте (по currencyCode)
+- message_regexes — независимая таблица, не привязана к счетам
 - categories образуют иерархию через parent_id
 - transactions привязаны к account, category
 - Перевод между счетами — две связанные операции с общим UUID в related_transaction_id

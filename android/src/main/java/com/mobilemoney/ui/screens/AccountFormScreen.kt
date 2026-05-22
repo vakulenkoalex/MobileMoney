@@ -310,21 +310,6 @@ fun AccountFormScreen(
                         }
                     }
                 )
-
-                OutlinedTextField(
-                    value = uiState.regexForText,
-                    onValueChange = { viewModel.updateRegexForText(it) },
-                    label = { Text("Regex для парсинга текста") },
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = uiState.regexError != null,
-                    supportingText = {
-                        if (uiState.regexError != null) {
-                            Text(uiState.regexError!!, color = MaterialTheme.colorScheme.error)
-                        } else {
-                            Text("Именованные группы: amount, shop, cardMask, balance")
-                        }
-                    }
-                )
             }
         }
     }
