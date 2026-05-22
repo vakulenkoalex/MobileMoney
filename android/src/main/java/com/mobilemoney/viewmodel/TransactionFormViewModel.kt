@@ -255,11 +255,6 @@ class TransactionFormViewModel(
         return total - split
     }
 
-    fun getSplitFilteredCategories(): List<Category> {
-        val isIncome = _uiState.value.type == TransactionType.INCOME
-        return _uiState.value.categories.filter { it.isIncome == isIncome }
-    }
-
     fun save(): Boolean {
         val state = _uiState.value
 
@@ -459,7 +454,7 @@ class TransactionFormViewModel(
 
     fun getFilteredCategories(): List<Category> {
         val isIncome = _uiState.value.type == TransactionType.INCOME
-        return _uiState.value.categories.filter { it.isIncome == isIncome }
+        return _uiState.value.categories.filter { it.isIncome == isIncome }.sortedBy { it.name }
     }
 
     fun delete() {
