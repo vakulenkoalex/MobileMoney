@@ -147,7 +147,7 @@ fun TransactionFormScreen(
                 )
             }
 
-            // Сумма + Дата/Время
+            // Сумма + Дата + Время
             val dateFormat = SimpleDateFormat("dd.MM.yy")
             val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             Row(
@@ -169,136 +169,43 @@ fun TransactionFormScreen(
                         )
                     }
                 )
-                Row(
+                Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
-                    verticalAlignment = Alignment.CenterVertically
+                        .weight(0.7f)
+                        .clickable { showDatePicker = true }
                 ) {
-                    Text(
-                        text = dateFormat.format(Date(uiState.date)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { showDatePicker = true }
-                            .padding(12.dp)
-                    )
-                    Text(
-                        text = timeFormat.format(Date(uiState.date)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { showTimePicker = true }
-                            .padding(12.dp)
+                    OutlinedTextField(
+                        value = dateFormat.format(Date(uiState.date)),
+                        onValueChange = {},
+                        enabled = false,
+                        label = { Text("Дата") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledContainerColor = Color.Transparent
+                        )
                     )
                 }
-            }
-
-            // Кнопка Разделить (только при редактировании и не в режиме TRANSFER)
-            if (uiState.isEditing && uiState.type != TransactionType.TRANSFER && !uiState.isSplitMode) {
-                OutlinedButton(
-                    onClick = { viewModel.enableSplitMode() },
-                    modifier = Modifier.fillMaxWidth()
+                Box(
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .clickable { showTimePicker = true }
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.CallSplit, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Разделить операцию")
-                }
-            }
-
-            // Режим разделения
-            if (uiState.isSplitMode) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    OutlinedTextField(
+                        value = timeFormat.format(Date(uiState.date)),
+                        onValueChange = {},
+                        enabled = false,
+                        label = { Text("Время") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledContainerColor = Color.Transparent
+                        )
                     )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Разделение операции",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            IconButton(onClick = { viewModel.disableSplitMode() }) {
-                                Icon(Icons.Default.Close, contentDescription = "Закрыть")
-                            }
-                        }
-
-                        // Итоговая сумма
-                        Text(
-                            text = "Итого: ${uiState.amount} ${uiState.selectedAccount?.currency ?: "₽"}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-
-                        // Оставшаяся сумма (основная категория)
-                        val remainingAmount = viewModel.getRemainingAmount()
-                        OutlinedTextField(
-                            value = uiState.amount.toDoubleOrNull()?.let { String.format("%.2f", it - (uiState.splitAmount.toDoubleOrNull() ?: 0.0)).replace(",", ".") } ?: "",
-                            onValueChange = { },
-                            label = { Text(uiState.selectedCategory?.name ?: "Основная категория") },
-                            readOnly = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Text(
-                                    text = uiState.selectedAccount?.currency ?: "₽",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        )
-
-                        // Сумма для новой категории
-                        OutlinedTextField(
-                            value = uiState.splitAmount,
-                            onValueChange = { viewModel.updateSplitAmount(it) },
-                            label = { Text("Новая категория") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Text(
-                                    text = uiState.selectedAccount?.currency ?: "₽",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        )
-
-                        // Выбор категории для новой операции
-                        ListItem(
-                            headlineContent = { Text("Категория") },
-                            supportingContent = { Text(uiState.splitCategory?.name ?: "Выберите категорию") },
-                            leadingContent = {
-                                if (uiState.splitCategory != null) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = AppIcons.getTransactionIcon(uiState.splitCategory!!.icon),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-                                } else {
-                                    Icon(Icons.Default.Category, contentDescription = null)
-                                }
-                            },
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                                .clickable { showSplitCategorySheet = true }
-                        )
-                    }
                 }
             }
 
@@ -459,7 +366,7 @@ fun TransactionFormScreen(
 
             // Bottom sheet для выбора категории разделения
             if (showSplitCategorySheet) {
-                val splitFilteredCategories = viewModel.getSplitFilteredCategories()
+                val splitFilteredCategories = viewModel.getFilteredCategories()
                 ModalBottomSheet(
                     onDismissRequest = { showSplitCategorySheet = false }
                 ) {
@@ -651,6 +558,113 @@ fun TransactionFormScreen(
                 minLines = 2,
                 maxLines = 4
             )
+
+            // Кнопка Разделить (только при редактировании и не в режиме TRANSFER)
+            if (uiState.isEditing && uiState.type != TransactionType.TRANSFER && !uiState.isSplitMode) {
+                OutlinedButton(
+                    onClick = { viewModel.enableSplitMode() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.CallSplit, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Разделить операцию")
+                }
+            }
+
+            // Режим разделения
+            if (uiState.isSplitMode) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Разделение операции",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            IconButton(onClick = { viewModel.disableSplitMode() }) {
+                                Icon(Icons.Default.Close, contentDescription = "Закрыть")
+                            }
+                        }
+
+                        // Итоговая сумма
+                        Text(
+                            text = "Итого: ${uiState.amount} ${uiState.selectedAccount?.currency ?: "₽"}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+
+                        // Оставшаяся сумма (основная категория)
+                        val remainingAmount = viewModel.getRemainingAmount()
+                        OutlinedTextField(
+                            value = uiState.amount.toDoubleOrNull()?.let { String.format("%.2f", it - (uiState.splitAmount.toDoubleOrNull() ?: 0.0)).replace(",", ".") } ?: "",
+                            onValueChange = { },
+                            label = { Text(uiState.selectedCategory?.name ?: "Основная категория") },
+                            readOnly = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Text(
+                                    text = uiState.selectedAccount?.currency ?: "₽",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        )
+
+                        // Сумма для новой категории
+                        OutlinedTextField(
+                            value = uiState.splitAmount,
+                            onValueChange = { viewModel.updateSplitAmount(it) },
+                            label = { Text("Новая категория") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = {
+                                Text(
+                                    text = uiState.selectedAccount?.currency ?: "₽",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        )
+
+                        // Выбор категории для новой операции
+                        ListItem(
+                            headlineContent = { Text("Категория") },
+                            supportingContent = { Text(uiState.splitCategory?.name ?: "Выберите категорию") },
+                            leadingContent = {
+                                if (uiState.splitCategory != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = AppIcons.getTransactionIcon(uiState.splitCategory!!.icon),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                } else {
+                                    Icon(Icons.Default.Category, contentDescription = null)
+                                }
+                            },
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
+                                .clickable { showSplitCategorySheet = true }
+                        )
+                    }
+                }
+            }
 
             // Кнопки действий (только при редактировании)
             if (uiState.isEditing) {
