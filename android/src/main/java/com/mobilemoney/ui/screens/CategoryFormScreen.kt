@@ -23,6 +23,7 @@ import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.config.CategoryIconOption
 import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.CategoryFormViewModel
+import kotlinx.coroutines.flow.drop
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,15 +37,16 @@ fun CategoryFormScreen(
     var showIconSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(categoryId) {
+        viewModel.resetState()
         if (categoryId != null) {
             viewModel.loadCategory(categoryId)
         }
     }
 
-    LaunchedEffect(uiState.isSaved) {
-        if (uiState.isSaved) {
-            onNavigateBack()
-        }
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState.isSaved }
+            .drop(1)
+            .collect { if (it) onNavigateBack() }
     }
 
     Scaffold(

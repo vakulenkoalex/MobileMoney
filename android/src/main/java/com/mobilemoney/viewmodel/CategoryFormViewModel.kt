@@ -70,6 +70,10 @@ class CategoryFormViewModel(
         _uiState.value = _uiState.value.copy(isIncome = isIncome)
     }
 
+    fun resetState() {
+        _uiState.value = CategoryFormState()
+    }
+
     fun save(): Boolean {
         val state = _uiState.value
 
