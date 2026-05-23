@@ -27,21 +27,15 @@ class SmsWorker(
         val unprocessed = dbRepo.getUnprocessedMessages()
         if (unprocessed.isEmpty()) return Result.success()
 
-        var processed = 0
-        var errors = 0
-
         for (message in unprocessed) {
             try {
-                val success = processMessage(message, dbRepo, regexDao)
-                if (success) processed++ else errors++
+                processMessage(message, dbRepo, regexDao)
             } catch (e: Exception) {
                 Log.e("SmsWorker", "Error processing message ${message.id}", e)
                 messageDao.markProcessed(message.id, "save_failed")
-                errors++
             }
         }
 
-        showSummaryNotification(processed, errors)
         return Result.success()
     }
 
@@ -124,14 +118,6 @@ class SmsWorker(
 
     private fun showSuccessNotification(message: String) {
         showNotification("SMS", message)
-    }
-
-    private fun showSummaryNotification(processed: Int, errors: Int) {
-        if (errors > 0) {
-            showNotification("SMS", "Обработано $processed, ошибок $errors")
-        } else {
-            showNotification("SMS", "Обработано $processed сообщений")
-        }
     }
 
     private fun showNotification(title: String, message: String) {

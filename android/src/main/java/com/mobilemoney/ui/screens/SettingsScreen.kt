@@ -33,6 +33,8 @@ import androidx.core.content.ContextCompat
 import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.SettingsViewModel
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,21 +71,15 @@ fun SettingsScreen(
         featurePrefs.debugModeEnabled
     ) }
 
-    val smsPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            featurePrefs.smsEnabled = true
-            smsEnabled = true
-        } else {
-            featurePrefs.smsEnabled = false
-            smsEnabled = false
-        }
-    }
-
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { _ -> }
+    ) { granted ->
+        if (!granted) {
+            GlobalScope.launch {
+                com.mobilemoney.ui.common.ErrorHandler.emitError("Уведомления запрещены. Разрешите в настройках, чтобы получать оповещения об обработке SMS")
+            }
+        }
+    }
 
     fun checkNotificationPermission() {
         if (ContextCompat.checkSelfPermission(
@@ -91,6 +87,19 @@ fun SettingsScreen(
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            featurePrefs.smsEnabled = true
+            smsEnabled = true
+            checkNotificationPermission()
+        } else {
+            featurePrefs.smsEnabled = false
+            smsEnabled = false
         }
     }
 
