@@ -6,7 +6,7 @@
 ```powershell
 .\android\build.bat assembleDebug
 ```
-- Output: `android/app/build/outputs/apk/debug/app-debug.apk`
+- Output: `android/app/build/outputs/apk/device/debug/app-device-debug.apk`
 - **Windows**: use `;` or separate lines — do NOT use `&&`
 
 ### Server
