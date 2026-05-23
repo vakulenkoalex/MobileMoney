@@ -20,6 +20,7 @@ data class CategoryFormState(
     val name: String = "",
     val icon: String = "restaurant",
     val isIncome: Boolean = false,
+    val isDefault: Boolean = false,
     val isEditing: Boolean = false,
     val categoryId: UUID? = null,
     val icons: List<CategoryIconOption> = CategoryIcons.all,
@@ -45,6 +46,7 @@ class CategoryFormViewModel(
                     name = category.name,
                     icon = category.icon,
                     isIncome = category.isIncome,
+                    isDefault = category.isDefault,
                     isEditing = true,
                     categoryId = categoryId,
                     isLoading = false
@@ -70,6 +72,10 @@ class CategoryFormViewModel(
         _uiState.value = _uiState.value.copy(isIncome = isIncome)
     }
 
+    fun updateIsDefault(isDefault: Boolean) {
+        _uiState.value = _uiState.value.copy(isDefault = isDefault)
+    }
+
     fun resetState() {
         _uiState.value = CategoryFormState()
     }
@@ -88,10 +94,14 @@ class CategoryFormViewModel(
             id = state.categoryId ?: UUID.randomUUID(),
             name = state.name,
             icon = state.icon,
-            isIncome = state.isIncome
+            isIncome = state.isIncome,
+            isDefault = state.isDefault
         )
 
         viewModelScope.launch {
+            if (state.isDefault) {
+                categoryRepository.clearDefaultCategories(state.isIncome)
+            }
             if (state.isEditing) {
                 categoryRepository.updateCategory(category)
             } else {

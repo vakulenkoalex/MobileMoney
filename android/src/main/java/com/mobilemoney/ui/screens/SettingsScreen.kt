@@ -1,5 +1,7 @@
 package com.mobilemoney.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,8 +27,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.repository.ClipboardPreferences
+import androidx.core.content.ContextCompat
+import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.SettingsViewModel
 
@@ -33,6 +39,8 @@ import com.mobilemoney.viewmodel.SettingsViewModel
 fun SettingsScreen(
     onNavigateToCategories: () -> Unit,
     onNavigateToRegexes: () -> Unit,
+    onNavigateToMessages: () -> Unit = {},
+    onNavigateToSenders: () -> Unit = {},
     viewModel: SettingsViewModel = DI.settingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -49,13 +57,42 @@ fun SettingsScreen(
         uri?.let { viewModel.import(it) }
     }
 
-    val clipboardPrefs = remember { ClipboardPreferences(DI.context) }
+    val context = LocalContext.current
+    val featurePrefs = remember { FeaturePreferences(DI.context) }
     var clipboardEnabled by remember { mutableStateOf(
-        clipboardPrefs.clipboardParsingEnabled
+        featurePrefs.clipboardParsingEnabled
+    ) }
+    var smsEnabled by remember { mutableStateOf(
+        featurePrefs.smsEnabled
     ) }
     var debugMode by remember { mutableStateOf(
-        clipboardPrefs.debugModeEnabled
+        featurePrefs.debugModeEnabled
     ) }
+
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            featurePrefs.smsEnabled = true
+            smsEnabled = true
+        } else {
+            featurePrefs.smsEnabled = false
+            smsEnabled = false
+        }
+    }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    fun checkNotificationPermission() {
+        if (ContextCompat.checkSelfPermission(
+                context, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -72,8 +109,9 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -84,7 +122,34 @@ fun SettingsScreen(
                     checked = clipboardEnabled,
                     onCheckedChange = {
                         clipboardEnabled = it
-                        clipboardPrefs.clipboardParsingEnabled = it
+                        featurePrefs.clipboardParsingEnabled = it
+                    }
+                )
+            }
+
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Чтение SMS")
+                Switch(
+                    checked = smsEnabled,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            val hasSmsPermission = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.RECEIVE_SMS
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasSmsPermission) {
+                                featurePrefs.smsEnabled = true
+                                smsEnabled = true
+                                checkNotificationPermission()
+                            } else {
+                                smsPermissionLauncher.launch(Manifest.permission.RECEIVE_SMS)
+                            }
+                        } else {
+                            featurePrefs.smsEnabled = false
+                            smsEnabled = false
+                        }
                     }
                 )
             }
@@ -98,7 +163,7 @@ fun SettingsScreen(
                     checked = debugMode,
                     onCheckedChange = {
                         debugMode = it
-                        clipboardPrefs.debugModeEnabled = it
+                        featurePrefs.debugModeEnabled = it
                     }
                 )
             }
@@ -115,6 +180,20 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Управление регулярками")
+            }
+
+            Button(
+                onClick = onNavigateToMessages,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Сообщения SMS")
+            }
+
+            Button(
+                onClick = onNavigateToSenders,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Отправители SMS")
             }
 
             Button(

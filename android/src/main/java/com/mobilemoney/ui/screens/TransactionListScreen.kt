@@ -28,10 +28,10 @@ import androidx.compose.ui.unit.dp
 import com.mobilemoney.data.config.AppIcons
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.MessageRegexEntity
-import com.mobilemoney.data.parser.ClipboardParser
-import com.mobilemoney.data.parser.ParsedClipboardData
+import com.mobilemoney.data.parser.TextParser
+import com.mobilemoney.data.parser.ParsedTextData
 import com.mobilemoney.data.repository.AccountBalanceCalculator
-import com.mobilemoney.data.repository.ClipboardPreferences
+import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.data.repository.DatabaseRepository
 import com.mobilemoney.di.DI
 import com.mobilemoney.domain.model.Transaction
@@ -51,7 +51,7 @@ fun TransactionListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val clipboardPrefs = remember { ClipboardPreferences(context) }
+    val featurePrefs = remember { FeaturePreferences(context) }
 
     var showClipboardDialog by remember { mutableStateOf(false) }
     var showDebugDialog by remember { mutableStateOf(false) }
@@ -62,7 +62,7 @@ fun TransactionListScreen(
 
     LaunchedEffect(readTrigger) {
         if (readTrigger == 0) return@LaunchedEffect
-        if (!clipboardPrefs.clipboardParsingEnabled) return@LaunchedEffect
+        if (!featurePrefs.clipboardParsingEnabled) return@LaunchedEffect
 
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = clipboard.primaryClip
@@ -71,7 +71,7 @@ fun TransactionListScreen(
         val text = clip.getItemAt(0).coerceToText(context).toString()
         if (text.isBlank()) return@LaunchedEffect
 
-        val debugMode = clipboardPrefs.debugModeEnabled
+        val debugMode = featurePrefs.debugModeEnabled
 
         val accounts = AppDatabase.getDatabase(context)
             .accountDao().getAllAccountsIncludingArchived().first()
@@ -82,12 +82,12 @@ fun TransactionListScreen(
         val regexList = regexDao.getAll().first()
 
         if (debugMode) {
-            var bestResult: ParsedClipboardData? = null
+            var bestResult: ParsedTextData? = null
             var bestRegex: MessageRegexEntity? = null
             var bestCount = -1
 
             for (re in regexList) {
-                val parsed = ClipboardParser.parse(text, re.pattern) ?: continue
+                val parsed = TextParser.parse(text, re.pattern) ?: continue
                 val filled = listOfNotNull(
                     parsed.amount.takeIf { it.isNotBlank() },
                     parsed.shop.takeIf { it.isNotBlank() },
@@ -110,7 +110,7 @@ fun TransactionListScreen(
 
                 val db = AppDatabase.getDatabase(context)
                 val balanceCalc = AccountBalanceCalculator(db.transactionDao())
-                val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
+                val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao(), db.messageDao(), db.senderDao())
 
                 val comment = if (!bestRegex!!.skipBalanceCheck && bestResult.balance != null) {
                     val currentBalance = balanceCalc.getAccountBalance(matchedAccount.id)
@@ -162,7 +162,7 @@ fun TransactionListScreen(
 
         clipboardText = text
         for (re in regexList) {
-            val parsed = ClipboardParser.parse(text, re.pattern) ?: continue
+            val parsed = TextParser.parse(text, re.pattern) ?: continue
 
             val matchingAccount = enabledAccounts.find { it.cardMask == parsed.cardMask }
             if (matchingAccount == null) continue
@@ -171,7 +171,7 @@ fun TransactionListScreen(
 
             val db = AppDatabase.getDatabase(context)
             val balanceCalc = AccountBalanceCalculator(db.transactionDao())
-            val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao())
+            val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao(), db.messageDao(), db.senderDao())
 
             val comment = if (!re.skipBalanceCheck && parsed.balance != null) {
                 val currentBalance = balanceCalc.getAccountBalance(account.id)
@@ -240,7 +240,7 @@ fun TransactionListScreen(
             TopAppBar(
                 title = { Text("Операции", style = MaterialTheme.typography.titleSmall) },
                 actions = {
-                    if (clipboardPrefs.clipboardParsingEnabled) {
+                    if (featurePrefs.clipboardParsingEnabled) {
                         IconButton(onClick = { readClipboard() }) {
                             Icon(Icons.Default.ContentPaste, contentDescription = "Вставить из буфера")
                         }

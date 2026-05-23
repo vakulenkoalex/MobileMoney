@@ -3,6 +3,10 @@ package com.mobilemoney.data.repository
 import androidx.room.Transaction
 import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.CategoryDao
+import com.mobilemoney.data.local.MessageDao
+import com.mobilemoney.data.local.MessageEntity
+import com.mobilemoney.data.local.SenderDao
+import com.mobilemoney.data.local.SenderEntity
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.local.toEntity
 import com.mobilemoney.data.local.toUiModel
@@ -16,7 +20,9 @@ import kotlinx.coroutines.flow.map
 class DatabaseRepository(
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
-    private val transactionDao: TransactionDao
+    private val transactionDao: TransactionDao,
+    private val messageDao: MessageDao,
+    private val senderDao: SenderDao
 ) {
 
     fun getAccounts(): Flow<List<AccountUi>> {
@@ -141,6 +147,14 @@ class DatabaseRepository(
         accountDao.softDelete(id, System.currentTimeMillis())
     }
 
+    suspend fun getDefaultCategory(isIncome: Boolean): CategoryUi? {
+        return categoryDao.getDefaultCategory(isIncome)?.toUiModel()
+    }
+
+    suspend fun clearDefaultCategories(isIncome: Boolean) {
+        categoryDao.clearDefaultCategories(isIncome)
+    }
+
     suspend fun addCategory(category: CategoryUi) {
         categoryDao.insert(category.toEntity())
     }
@@ -164,5 +178,67 @@ class DatabaseRepository(
         val account = accountDao.getAccountById(entity.accountId)
         val category = entity.categoryId?.let { categoryDao.getCategoryById(it) }
         return entity.toUiModel(account, category)
+    }
+
+    suspend fun insertMessage(message: MessageEntity) {
+        messageDao.insert(message)
+    }
+
+    fun getMessages(): Flow<List<MessageEntity>> {
+        return messageDao.getAll()
+    }
+
+    suspend fun getUnprocessedMessages(): List<MessageEntity> {
+        return messageDao.getUnprocessed()
+    }
+
+    suspend fun markMessageProcessed(id: String, error: String? = null, transactionId: String? = null) {
+        messageDao.markProcessed(id, error, transactionId)
+    }
+
+    suspend fun deleteAllMessages() {
+        messageDao.deleteAll()
+    }
+
+    fun getSenders(): Flow<List<SenderEntity>> {
+        return senderDao.getAll()
+    }
+
+    suspend fun getSenderById(id: String): SenderEntity? {
+        return senderDao.getById(id)
+    }
+
+    suspend fun addSender(sender: SenderEntity) {
+        senderDao.insert(sender)
+    }
+
+    suspend fun updateSender(sender: SenderEntity) {
+        senderDao.update(sender)
+    }
+
+    suspend fun deleteSender(id: String) {
+        senderDao.softDelete(id, System.currentTimeMillis())
+    }
+
+    suspend fun findSenderByNumber(sender: String): SenderEntity? {
+        return senderDao.findBySender(sender)
+    }
+
+    suspend fun getAccountByCardMask(mask: String): AccountUi? {
+        return accountDao.getAccountByCardMask(mask)?.toUiModel()
+    }
+
+    suspend fun transactionExistsBySourceData(sourceData: String): Boolean {
+        val todayStart = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        return transactionDao.countBySourceDataSince(sourceData, todayStart) > 0
+    }
+
+    suspend fun getAccountBalanceValue(accountId: String): Double {
+        return transactionDao.getAccountBalance(accountId) ?: 0.0
     }
 }

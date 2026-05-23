@@ -1,18 +1,18 @@
 package com.mobilemoney.data.parser
 
-data class ParsedClipboardData(
+data class ParsedTextData(
     val amount: String,
     val shop: String,
     val cardMask: String,
     val balance: String? = null
 )
 
-object ClipboardParser {
+object TextParser {
 
     private val REQUIRED_GROUPS = listOf("amount", "shop", "cardMask")
     private val NAMED_GROUP_REGEX = Regex("\\(\\?<([a-zA-Z_]+)>")
 
-    fun parse(text: String, regex: String): ParsedClipboardData? {
+    fun parse(text: String, regex: String): ParsedTextData? {
         if (text.isBlank() || regex.isBlank()) return null
 
         return try {
@@ -31,7 +31,7 @@ object ClipboardParser {
                 if (values[g].isNullOrBlank()) return null
             }
 
-            ParsedClipboardData(
+            ParsedTextData(
                 amount = values["amount"]!!,
                 shop = values["shop"]!!,
                 cardMask = values["cardMask"]!!.replace("*", "").replace("х", ""),

@@ -29,9 +29,11 @@ object DI {
     private val categoryDao by lazy { database.categoryDao() }
     private val transactionDao by lazy { database.transactionDao() }
     private val messageRegexDao by lazy { database.messageRegexDao() }
+    private val senderDao by lazy { database.senderDao() }
+    private val messageDao by lazy { database.messageDao() }
 
     val databaseRepository: DatabaseRepository by lazy {
-        DatabaseRepository(accountDao, categoryDao, transactionDao)
+        DatabaseRepository(accountDao, categoryDao, transactionDao, messageDao, senderDao)
     }
 
     val accountRepository: AccountRepository by lazy {
@@ -50,8 +52,8 @@ object DI {
         SyncRepository.getInstance(context)
     }
 
-    val clipboardPreferences: ClipboardPreferences by lazy {
-        ClipboardPreferences(context)
+    val featurePreferences: FeaturePreferences by lazy {
+        FeaturePreferences(context)
     }
 
     val messageRegexRepository: MessageRegexRepository by lazy {
@@ -135,5 +137,9 @@ object DI {
 
     val messageRegexFormViewModel: MessageRegexFormViewModel by lazy {
         MessageRegexFormViewModel(getMessageRegexesUseCase, saveMessageRegexUseCase)
+    }
+
+    val senderFormViewModel: SenderFormViewModel by lazy {
+        SenderFormViewModel()
     }
 }

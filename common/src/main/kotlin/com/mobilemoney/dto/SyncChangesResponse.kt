@@ -8,5 +8,6 @@ data class SyncChangesResponse(
     val accounts: List<AccountDto> = emptyList(),
     val categories: List<CategoryDto> = emptyList(),
     val transactions: List<TransactionDto> = emptyList(),
-    val messageRegexes: List<MessageRegexDto> = emptyList()
+    val messageRegexes: List<MessageRegexDto> = emptyList(),
+    val senders: List<SenderDto> = emptyList()
 )

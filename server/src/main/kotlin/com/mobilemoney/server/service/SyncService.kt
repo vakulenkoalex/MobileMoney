@@ -6,13 +6,15 @@ import com.mobilemoney.dto.SyncPushResponse
 import com.mobilemoney.server.repository.AccountRepository
 import com.mobilemoney.server.repository.CategoryRepository
 import com.mobilemoney.server.repository.MessageRegexRepository
+import com.mobilemoney.server.repository.SenderRepository
 import com.mobilemoney.server.repository.TransactionRepository
 
 class SyncService(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
-    private val messageRegexRepository: MessageRegexRepository
+    private val messageRegexRepository: MessageRegexRepository,
+    private val senderRepository: SenderRepository
 ) {
 
     fun push(data: SyncPushRequest): SyncPushResponse {
@@ -38,6 +40,11 @@ class SyncService(
             syncedCount++
         }
 
+        data.senders.forEach {
+            senderRepository.upsert(it)
+            syncedCount++
+        }
+
         println("Push: $syncedCount items")
         return SyncPushResponse(success = true, timestamp = System.currentTimeMillis(), synced = syncedCount)
     }
@@ -48,7 +55,8 @@ class SyncService(
             accounts = accountRepository.getUpdatedSince(since),
             categories = categoryRepository.getUpdatedSince(since),
             transactions = transactionRepository.getUpdatedSince(since),
-            messageRegexes = messageRegexRepository.getUpdatedSince(since)
+            messageRegexes = messageRegexRepository.getUpdatedSince(since),
+            senders = senderRepository.getUpdatedSince(since)
         )
     }
 
@@ -58,7 +66,8 @@ class SyncService(
             accounts = accountRepository.getAll(),
             categories = categoryRepository.getAll(),
             transactions = transactionRepository.getAll(),
-            messageRegexes = messageRegexRepository.getAll()
+            messageRegexes = messageRegexRepository.getAll(),
+            senders = senderRepository.getAll()
         )
     }
 }

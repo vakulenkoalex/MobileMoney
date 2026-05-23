@@ -37,6 +37,21 @@ object Database {
 
         if (existingTables.isNotEmpty()) {
             println("Tables already exist: $existingTables")
+            // Ensure senders table exists (might not on existing databases)
+            conn?.createStatement()?.use { stmt ->
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS senders (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        sender TEXT NOT NULL,
+                        label TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        deletedAt INTEGER,
+                        syncedAt INTEGER,
+                        serverReceivedAt INTEGER
+                    )
+                """.trimIndent())
+            }
             return
         }
 
@@ -86,6 +101,7 @@ object Database {
                         isIncome INTEGER NOT NULL,
                         icon TEXT NOT NULL,
                         parentId TEXT,
+                        isDefault INTEGER NOT NULL DEFAULT 0,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -98,6 +114,18 @@ object Database {
                         id TEXT PRIMARY KEY NOT NULL,
                         pattern TEXT NOT NULL,
                         skipBalanceCheck INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        deletedAt INTEGER,
+                        syncedAt INTEGER,
+                        serverReceivedAt INTEGER
+                    )
+                """.trimIndent())
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS senders (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        sender TEXT NOT NULL,
+                        label TEXT,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -182,8 +210,8 @@ object Database {
         val adjustExpenseId = java.util.UUID.randomUUID().toString()
         val adjustIncomeId = java.util.UUID.randomUUID().toString()
         conn.prepareStatement("""
-            INSERT INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, serverReceivedAt)
-            VALUES (?, 'Корректировка', ?, 'more_horiz', NULL, ?, ?, NULL, ?)
+            INSERT INTO categories (id, name, isIncome, icon, parentId, isDefault, createdAt, updatedAt, deletedAt, serverReceivedAt)
+            VALUES (?, 'Корректировка', ?, 'more_horiz', NULL, 1, ?, ?, NULL, ?)
         """).use { stmt ->
             stmt.setString(1, adjustExpenseId)
             stmt.setInt(2, 0)

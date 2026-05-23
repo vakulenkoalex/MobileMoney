@@ -89,13 +89,6 @@ fun AccountFormScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = uiState.name,
-                    onValueChange = { viewModel.updateName(it) },
-                    label = { Text("Название счёта") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -110,6 +103,13 @@ fun AccountFormScreen(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+                OutlinedTextField(
+                    value = uiState.name,
+                    onValueChange = { viewModel.updateName(it) },
+                    label = { Text("Название счёта") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
             }
 
             Row(

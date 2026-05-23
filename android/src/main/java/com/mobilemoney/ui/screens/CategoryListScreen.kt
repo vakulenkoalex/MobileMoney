@@ -10,7 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +42,7 @@ fun CategoryListScreen(
                     if (onNavigateBack != null) {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
-                                imageVector = Icons.Default.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Назад",
                                 tint = MaterialTheme.colorScheme.onPrimary
                             )
@@ -88,8 +88,8 @@ fun CategoryListScreen(
                 }
             }
         } else {
-            val expenseCategories = uiState.categories.filter { !it.isIncome }
-            val incomeCategories = uiState.categories.filter { it.isIncome }
+            val expenseCategories = uiState.categories.filter { !it.isIncome }.sortedBy { it.name }
+            val incomeCategories = uiState.categories.filter { it.isIncome }.sortedBy { it.name }
 
             LazyColumn(
                 modifier = Modifier
@@ -170,8 +170,15 @@ fun CategoryItem(
                 Text(
                     text = category.name,
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = if (category.isDefault) FontWeight.Bold else FontWeight.Medium
                 )
+                if (category.isDefault) {
+                    Text(
+                        text = "По умолчанию",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             Icon(

@@ -3,11 +3,13 @@ package com.mobilemoney.data.repository
 import com.mobilemoney.data.local.AccountEntity
 import com.mobilemoney.data.local.CategoryEntity
 import com.mobilemoney.data.local.MessageRegexEntity
+import com.mobilemoney.data.local.SenderEntity
 import com.mobilemoney.data.local.TransactionEntity
 import com.mobilemoney.data.local.TransactionSource
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto
 import com.mobilemoney.dto.MessageRegexDto
+import com.mobilemoney.dto.SenderDto
 import com.mobilemoney.dto.TransactionDto
 
 fun AccountEntity.toSyncDto(): AccountDto {
@@ -36,6 +38,7 @@ fun CategoryEntity.toSyncDto(): CategoryDto {
         isIncome = isIncome,
         icon = icon,
         parentId = parentId,
+        isDefault = isDefault,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt,
@@ -91,6 +94,7 @@ fun CategoryDto.toEntity(): CategoryEntity {
         isIncome = isIncome,
         icon = icon,
         parentId = parentId,
+        isDefault = isDefault,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt,
@@ -117,6 +121,32 @@ fun MessageRegexDto.toEntity(): MessageRegexEntity {
         id = id,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
+    )
+}
+
+fun SenderEntity.toSyncDto(): SenderDto {
+    return SenderDto(
+        id = id,
+        sender = sender,
+        label = label,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+        syncedAt = syncedAt,
+        serverReceivedAt = serverReceivedAt
+    )
+}
+
+fun SenderDto.toEntity(): SenderEntity {
+    return SenderEntity(
+        id = id,
+        sender = sender,
+        label = label,
         createdAt = createdAt,
         updatedAt = updatedAt,
         deletedAt = deletedAt,

@@ -10,11 +10,13 @@ import com.mobilemoney.data.local.AccountDao
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.CategoryDao
 import com.mobilemoney.data.local.MessageRegexDao
+import com.mobilemoney.data.local.SenderDao
 import com.mobilemoney.data.local.TransactionDao
 import com.mobilemoney.data.remote.SyncApiClient
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto
 import com.mobilemoney.dto.MessageRegexDto
+import com.mobilemoney.dto.SenderDto
 import com.mobilemoney.dto.TransactionDto
 import com.mobilemoney.dto.SyncPushRequest
 import com.mobilemoney.domain.repository.SyncRepository as DomainSyncRepository
@@ -32,6 +34,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
     private val categoryDao: CategoryDao = database.categoryDao()
     private val transactionDao: TransactionDao = database.transactionDao()
     private val messageRegexDao: MessageRegexDao = database.messageRegexDao()
+    private val senderDao: SenderDao = database.senderDao()
     private val apiClient = SyncApiClient(appContext)
 
     private fun createEncryptedSharedPreferences(context: Context): SharedPreferences {
@@ -124,6 +127,10 @@ class SyncRepository(context: Context) : DomainSyncRepository {
         return messageRegexDao.getUnsynced().map { it.toSyncDto() }
     }
 
+    suspend fun getUnsyncedSenders(): List<SenderDto> {
+        return senderDao.getUnsynced().map { it.toSyncDto() }
+    }
+
     override suspend fun sync(): Result<Unit> {
         Log.d("SyncRepository", "=== sync() START ===")
         Log.d("SyncRepository", "deviceToken: ${deviceToken?.take(10)}...")
@@ -187,17 +194,19 @@ class SyncRepository(context: Context) : DomainSyncRepository {
         val categoryDtos = getUnsyncedCategories()
         val transactionDtos = getUnsyncedTransactions()
         val regexDtos = getUnsyncedRegexes()
+        val senderDtos = getUnsyncedSenders()
 
-        Log.d("SyncRepository", "pushChanges: accounts=${accountDtos.size}, categories=${categoryDtos.size}, transactions=${transactionDtos.size}, regexes=${regexDtos.size}")
+        Log.d("SyncRepository", "pushChanges: accounts=${accountDtos.size}, categories=${categoryDtos.size}, transactions=${transactionDtos.size}, regexes=${regexDtos.size}, senders=${senderDtos.size}")
 
         val request = SyncPushRequest(
             accounts = accountDtos,
             categories = categoryDtos,
             transactions = transactionDtos,
-            messageRegexes = regexDtos
+            messageRegexes = regexDtos,
+            senders = senderDtos
         )
 
-        val empty = request.accounts.isEmpty() && request.categories.isEmpty() && request.transactions.isEmpty() && request.messageRegexes.isEmpty()
+        val empty = request.accounts.isEmpty() && request.categories.isEmpty() && request.transactions.isEmpty() && request.messageRegexes.isEmpty() && request.senders.isEmpty()
         return if (empty) {
             Result.success(0)
         } else {
@@ -207,6 +216,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                 categoryDtos.forEach { markCategorySynced(it.id, syncedAt) }
                 transactionDtos.forEach { markTransactionSynced(it.id, syncedAt) }
                 regexDtos.forEach { markRegexSynced(it.id, syncedAt) }
+                senderDtos.forEach { markSenderSynced(it.id, syncedAt) }
                 response.synced
             }
         }
@@ -233,6 +243,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                 response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
                 response.transactions.forEach { dto -> upsertTransaction(dto, syncedAt) }
                 response.messageRegexes.forEach { dto -> upsertRegex(dto, syncedAt) }
+                response.senders.forEach { dto -> upsertSender(dto, syncedAt) }
             }
         } else {
             val result = apiClient.getChanges(since)
@@ -246,6 +257,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
                 response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
                 response.transactions.forEach { dto -> upsertTransaction(dto, syncedAt) }
                 response.messageRegexes.forEach { dto -> upsertRegex(dto, syncedAt) }
+                response.senders.forEach { dto -> upsertSender(dto, syncedAt) }
             }
         }
     }
@@ -278,6 +290,13 @@ class SyncRepository(context: Context) : DomainSyncRepository {
         }
     }
 
+    private suspend fun upsertSender(dto: SenderDto, syncedAt: Long) {
+        val existing = senderDao.getById(dto.id)
+        if (existing == null || existing.syncedAt != null) {
+            senderDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))
+        }
+    }
+
     suspend fun markAccountSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
         accountDao.markSynced(id, syncedAt)
     }
@@ -292,6 +311,10 @@ class SyncRepository(context: Context) : DomainSyncRepository {
 
     suspend fun markRegexSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
         messageRegexDao.markSynced(id, syncedAt)
+    }
+
+    suspend fun markSenderSynced(id: String, syncedAt: Long = System.currentTimeMillis()) {
+        senderDao.markSynced(id, syncedAt)
     }
 
     override fun logout() {

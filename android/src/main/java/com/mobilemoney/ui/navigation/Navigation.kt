@@ -37,6 +37,9 @@ import com.mobilemoney.ui.screens.CategoryFormScreen
 import com.mobilemoney.ui.screens.LoginScreen
 import com.mobilemoney.ui.screens.MessageRegexFormScreen
 import com.mobilemoney.ui.screens.MessageRegexListScreen
+import com.mobilemoney.ui.screens.MessageListScreen
+import com.mobilemoney.ui.screens.SenderFormScreen
+import com.mobilemoney.ui.screens.SenderListScreen
 import com.mobilemoney.ui.screens.SettingsScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
@@ -66,6 +69,12 @@ sealed class Screen(val route: String) {
     data object CreateRegex : Screen("regex/create")
     data object EditRegex : Screen("regex/edit/{regexId}") {
         fun createRoute(regexId: UUID) = "regex/edit/$regexId"
+    }
+    data object Messages : Screen("messages")
+    data object Senders : Screen("senders")
+    data object CreateSender : Screen("sender/create")
+    data object EditSender : Screen("sender/edit/{senderId}") {
+        fun createRoute(senderId: String) = "sender/edit/$senderId"
     }
 }
 
@@ -306,6 +315,12 @@ fun MobileMoneyNavigation() {
                         },
                         onNavigateToRegexes = {
                             navController.navigate(Screen.RegexList.route)
+                        },
+                        onNavigateToMessages = {
+                            navController.navigate(Screen.Messages.route)
+                        },
+                        onNavigateToSenders = {
+                            navController.navigate(Screen.Senders.route)
                         }
                     )
                 }
@@ -340,6 +355,42 @@ fun MobileMoneyNavigation() {
                     }
                     MessageRegexFormScreen(
                         regexId = regexId,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(Screen.Messages.route) {
+                    MessageListScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(Screen.Senders.route) {
+                    SenderListScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onAddClick = { navController.navigate(Screen.CreateSender.route) },
+                        onSenderClick = { senderId ->
+                            navController.navigate(Screen.EditSender.createRoute(senderId))
+                        }
+                    )
+                }
+
+                composable(Screen.CreateSender.route) {
+                    SenderFormScreen(
+                        senderId = null,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = Screen.EditSender.route,
+                    arguments = listOf(
+                        navArgument("senderId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val senderId = backStackEntry.arguments?.getString("senderId")
+                    SenderFormScreen(
+                        senderId = senderId,
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

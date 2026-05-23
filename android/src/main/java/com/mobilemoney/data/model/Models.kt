@@ -31,7 +31,8 @@ data class CategoryUi(
     val id: UUID = UUID.randomUUID(),
     val name: String,
     val icon: String = "category",
-    val isIncome: Boolean = false
+    val isIncome: Boolean = false,
+    val isDefault: Boolean = false
 )
 
 data class TransactionUi(

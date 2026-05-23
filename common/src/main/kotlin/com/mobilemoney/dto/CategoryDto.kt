@@ -9,6 +9,7 @@ data class CategoryDto(
     val isIncome: Boolean,
     val icon: String,
     val parentId: String?,
+    val isDefault: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

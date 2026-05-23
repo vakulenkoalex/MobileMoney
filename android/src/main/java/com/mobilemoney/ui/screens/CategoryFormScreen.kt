@@ -80,13 +80,34 @@ fun CategoryFormScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = uiState.name,
-                onValueChange = { viewModel.updateName(it) },
-                label = { Text("Название категории") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable { showIconSheet = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = AppIcons.getCategoryIcon(uiState.icon),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                OutlinedTextField(
+                    value = uiState.name,
+                    onValueChange = { viewModel.updateName(it) },
+                    label = { Text("Название категории") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -112,31 +133,20 @@ fun CategoryFormScreen(
                 )
             }
 
-            ListItem(
-                headlineContent = { Text("Иконка") },
-                supportingContent = {
-                    Text("")
-                },
-                leadingContent = {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.getCategoryIcon(uiState.icon),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                    .clickable { showIconSheet = true }
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = uiState.isDefault,
+                    onCheckedChange = { viewModel.updateIsDefault(it) }
+                )
+                Text(
+                    text = "По умолчанию для автосозданий",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.clickable { viewModel.updateIsDefault(!uiState.isDefault) }
+                )
+            }
 
             if (showIconSheet) {
                 ModalBottomSheet(

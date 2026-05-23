@@ -8,19 +8,20 @@ class CategoryRepository {
         val serverReceivedAt = System.currentTimeMillis()
         Database.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT OR REPLACE INTO categories (id, name, isIncome, icon, parentId, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO categories (id, name, isIncome, icon, parentId, isDefault, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """).use { stmt ->
                 stmt.setString(1, data.id)
                 stmt.setString(2, data.name)
                 stmt.setInt(3, if (data.isIncome) 1 else 0)
                 stmt.setString(4, data.icon)
                 stmt.setString(5, data.parentId)
-                stmt.setLong(6, data.createdAt)
-                stmt.setLong(7, data.updatedAt)
-                stmt.setString(8, data.deletedAt?.toString())
-                stmt.setString(9, data.syncedAt?.toString())
-                stmt.setLong(10, serverReceivedAt)
+                stmt.setInt(6, if (data.isDefault) 1 else 0)
+                stmt.setLong(7, data.createdAt)
+                stmt.setLong(8, data.updatedAt)
+                stmt.setString(9, data.deletedAt?.toString())
+                stmt.setString(10, data.syncedAt?.toString())
+                stmt.setLong(11, serverReceivedAt)
                 stmt.executeUpdate()
             }
         }
@@ -62,6 +63,7 @@ class CategoryRepository {
             isIncome = rs.getInt("isIncome") == 1,
             icon = rs.getString("icon") ?: "",
             parentId = rs.getString("parentId")?.takeIf { it.isNotEmpty() },
+            isDefault = rs.getInt("isDefault") == 1,
             createdAt = rs.getLong("createdAt"),
             updatedAt = rs.getLong("updatedAt"),
             deletedAt = rs.getString("deletedAt")?.toLongOrNull(),

@@ -21,6 +21,14 @@ class CategoryRepositoryImpl(
         return getCategories().first().find { it.id.toString() == id }
     }
 
+    override suspend fun getDefaultCategory(isIncome: Boolean): Category? {
+        return databaseRepository.getDefaultCategory(isIncome)?.toDomain()
+    }
+
+    override suspend fun clearDefaultCategories(isIncome: Boolean) {
+        databaseRepository.clearDefaultCategories(isIncome)
+    }
+
     override suspend fun addCategory(category: Category) {
         databaseRepository.addCategory(category.toUiModel())
     }
@@ -39,7 +47,8 @@ private fun CategoryUi.toDomain(): Category {
         id = id,
         name = name,
         icon = icon,
-        isIncome = isIncome
+        isIncome = isIncome,
+        isDefault = isDefault
     )
 }
 
@@ -48,6 +57,7 @@ private fun Category.toUiModel(): CategoryUi {
         id = id,
         name = name,
         icon = icon,
-        isIncome = isIncome
+        isIncome = isIncome,
+        isDefault = isDefault
     )
 }

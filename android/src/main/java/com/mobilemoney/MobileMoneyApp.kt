@@ -1,6 +1,8 @@
 package com.mobilemoney
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -26,6 +28,17 @@ class MobileMoneyApp : Application() {
 
         checkAndInitialize()
         enableSync()
+        createNotificationChannels()
+    }
+
+    private fun createNotificationChannels() {
+        val channel = NotificationChannel(
+            "sms_processing",
+            "SMS обработка",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(channel)
     }
 
     private fun createEncryptedSharedPreferences(): SharedPreferences {

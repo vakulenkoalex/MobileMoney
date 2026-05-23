@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.UUID
 
 enum class TransactionSource {
     MANUAL,
@@ -65,6 +66,7 @@ data class CategoryEntity(
     val isIncome: Boolean,
     val icon: String,
     val parentId: String?,
+    val isDefault: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
@@ -97,4 +99,31 @@ data class TransactionEntity(
     val deletedAt: Long? = null,
     val syncedAt: Long? = null,
     val serverReceivedAt: Long? = null
+)
+
+@Entity(
+    tableName = "senders",
+    indices = [Index("sender", unique = true)]
+)
+data class SenderEntity(
+    @PrimaryKey val id: String,
+    val sender: String,
+    val label: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+    val syncedAt: Long? = null,
+    val serverReceivedAt: Long? = null
+)
+
+@Entity(tableName = "messages")
+data class MessageEntity(
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    val sender: String,
+    val body: String,
+    val receivedAt: Long,
+    val processed: Boolean = false,
+    val error: String? = null,
+    val transactionId: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
 )
