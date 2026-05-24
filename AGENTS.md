@@ -11,7 +11,7 @@
 
 ### Server
 ```powershell
-.\buildServer.bat run
+.\server\buildServer.bat run
 ```
 - Serves on `http://localhost:6080`
 
