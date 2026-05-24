@@ -223,6 +223,9 @@ interface MessageDao {
     @Query("UPDATE messages SET processed = 1, error = :error, transactionId = :transactionId WHERE id = :id")
     suspend fun markProcessed(id: String, error: String? = null, transactionId: String? = null)
 
+    @Query("DELETE FROM messages WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     @Query("DELETE FROM messages")
     suspend fun deleteAll()
 }

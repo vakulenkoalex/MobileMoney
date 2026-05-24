@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -74,13 +75,14 @@ fun MessageListScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(messages) { message ->
+            items(messages, key = { it.id }) { message ->
                 MessageItem(
                     message = message,
                     onCopy = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         clipboard.setPrimaryClip(ClipData.newPlainText("sms", message.body))
-                    }
+                    },
+                    onDelete = { viewModel.deleteMessage(message.id) }
                 )
             }
         }
@@ -88,7 +90,7 @@ fun MessageListScreen(
 }
 
 @Composable
-private fun MessageItem(message: MessageEntity, onCopy: () -> Unit) {
+private fun MessageItem(message: MessageEntity, onCopy: () -> Unit, onDelete: () -> Unit) {
     val statusColor = when {
         message.error != null -> MaterialTheme.colorScheme.error
         message.processed -> MaterialTheme.colorScheme.primary
@@ -132,8 +134,17 @@ private fun MessageItem(message: MessageEntity, onCopy: () -> Unit) {
                     color = statusColor
                 )
             }
-            IconButton(onClick = onCopy) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "Копировать")
+            Row {
+                IconButton(onClick = onCopy) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Копировать")
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Удалить",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }

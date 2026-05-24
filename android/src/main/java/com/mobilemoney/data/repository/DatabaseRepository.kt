@@ -196,6 +196,10 @@ class DatabaseRepository(
         messageDao.markProcessed(id, error, transactionId)
     }
 
+    suspend fun deleteMessageById(id: String) {
+        messageDao.deleteById(id)
+    }
+
     suspend fun deleteAllMessages() {
         messageDao.deleteAll()
     }

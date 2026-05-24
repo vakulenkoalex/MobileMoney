@@ -10,6 +10,12 @@ import kotlinx.coroutines.launch
 class MessageListViewModel : ViewModel() {
     val messages: Flow<List<MessageEntity>> = DI.databaseRepository.getMessages()
 
+    fun deleteMessage(id: String) {
+        viewModelScope.launch {
+            DI.databaseRepository.deleteMessageById(id)
+        }
+    }
+
     fun clearMessages() {
         viewModelScope.launch {
             DI.databaseRepository.deleteAllMessages()
