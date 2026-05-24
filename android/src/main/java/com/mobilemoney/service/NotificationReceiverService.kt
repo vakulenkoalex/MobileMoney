@@ -33,8 +33,9 @@ class NotificationReceiverService : NotificationListenerService() {
             try {
                 val extras: Bundle = sbn.notification.extras ?: return@launch
                 val title = extras.getCharSequence(Notification.EXTRA_TITLE, "").toString()
-                val text = extras.getCharSequence(Notification.EXTRA_BIG_TEXT, "").toString()
-                val body = "$title\n$text"
+                val text = extras.getCharSequence(Notification.EXTRA_TEXT, "").toString()
+                val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT, "").toString()
+                val body = "$title\n$text\n$bigText"
 
                 if (featurePrefs.debugModeEnabled) {
                     messageDao.insert(
