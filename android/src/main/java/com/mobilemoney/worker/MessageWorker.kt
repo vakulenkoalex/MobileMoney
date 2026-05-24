@@ -14,7 +14,7 @@ import com.mobilemoney.data.parser.TextParser
 import com.mobilemoney.di.DI
 import kotlinx.coroutines.flow.first
 
-class SmsWorker(
+class MessageWorker(
     context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
@@ -31,7 +31,7 @@ class SmsWorker(
             try {
                 processMessage(message, dbRepo, regexDao)
             } catch (e: Exception) {
-                Log.e("SmsWorker", "Error processing message ${message.id}", e)
+                Log.e("MessageWorker", "Error processing message ${message.id}", e)
                 messageDao.markProcessed(message.id, "save_failed")
             }
         }
@@ -56,14 +56,14 @@ class SmsWorker(
 
         if (parsed == null) {
             messageDao.markProcessed(message.id, "parse_failed")
-            showErrorNotification("Не удалось обработать SMS: не найден формат")
+            showErrorNotification("Не удалось обработать сообщение: не найден формат")
             return false
         }
 
         val account = dbRepo.getAccountByCardMask(parsed.cardMask)
         if (account == null) {
             messageDao.markProcessed(message.id, "account_not_found")
-            showErrorNotification("Не удалось обработать SMS: кошелёк ****${parsed.cardMask} не найден")
+            showErrorNotification("Не удалось обработать сообщение: кошелёк ****${parsed.cardMask} не найден")
             return false
         }
 
@@ -85,6 +85,8 @@ class SmsWorker(
 
         val amount = -parseAmount(parsed.amount)
 
+        val source = if (message.sender.contains(".")) TransactionSource.PUSH else TransactionSource.SMS
+
         val transactionUi = TransactionUi(
             title = lastTx?.title ?: parsed.shop,
             subtitle = account.name,
@@ -97,7 +99,7 @@ class SmsWorker(
             accountId = account.id,
             categoryId = categoryId,
             shop = parsed.shop,
-            source = TransactionSource.SMS,
+            source = source,
             sourceData = message.body
         )
 
@@ -113,22 +115,22 @@ class SmsWorker(
     }
 
     private fun showErrorNotification(message: String) {
-        showNotification("SMS", message)
+        showNotification("Обработка", message)
     }
 
     private fun showSuccessNotification(message: String) {
-        showNotification("SMS", message)
+        showNotification("Обработка", message)
     }
 
     private fun showNotification(title: String, message: String) {
         try {
-            val channelId = "sms_processing"
+            val channelId = "message_processing"
             val notificationManager =
                 applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
             val channel = NotificationChannel(
                 channelId,
-                "SMS обработка",
+                "Обработка сообщений",
                 NotificationManager.IMPORTANCE_DEFAULT
             )
             notificationManager.createNotificationChannel(channel)
@@ -142,7 +144,7 @@ class SmsWorker(
 
             notificationManager.notify(System.currentTimeMillis().toInt(), notification)
         } catch (e: Exception) {
-            Log.e("SmsWorker", "Failed to show notification", e)
+            Log.e("MessageWorker", "Failed to show notification", e)
         }
     }
 }

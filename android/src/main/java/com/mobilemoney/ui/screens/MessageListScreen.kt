@@ -49,7 +49,7 @@ fun MessageListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Сообщения SMS") },
+                title = { Text("Сообщения") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary

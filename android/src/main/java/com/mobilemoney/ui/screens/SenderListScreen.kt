@@ -47,7 +47,7 @@ fun SenderListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Отправители SMS") },
+                title = { Text("Отправители") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary

@@ -30,8 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import android.content.ComponentName
+import android.content.Intent
+import android.provider.Settings
 import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.di.DI
+import com.mobilemoney.service.NotificationReceiverService
 import com.mobilemoney.viewmodel.SettingsViewModel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -70,13 +74,16 @@ fun SettingsScreen(
     var debugMode by remember { mutableStateOf(
         featurePrefs.debugModeEnabled
     ) }
+    var pushEnabled by remember { mutableStateOf(
+        featurePrefs.pushEnabled
+    ) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (!granted) {
             GlobalScope.launch {
-                com.mobilemoney.ui.common.ErrorHandler.emitError("Уведомления запрещены. Разрешите в настройках, чтобы получать оповещения об обработке SMS")
+                com.mobilemoney.ui.common.ErrorHandler.emitError("Уведомления запрещены. Разрешите в настройках, чтобы получать оповещения об обработке")
             }
         }
     }
@@ -167,6 +174,35 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                Text("Push-уведомления")
+                Switch(
+                    checked = pushEnabled,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            val component = ComponentName(context, NotificationReceiverService::class.java)
+                            val listeners = Settings.Secure.getString(
+                                context.contentResolver,
+                                "enabled_notification_listeners"
+                            )
+                            if (listeners == null || !listeners.contains(component.flattenToString())) {
+                                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                            } else {
+                                featurePrefs.pushEnabled = true
+                                pushEnabled = true
+                                checkNotificationPermission()
+                            }
+                        } else {
+                            featurePrefs.pushEnabled = false
+                            pushEnabled = false
+                        }
+                    }
+                )
+            }
+
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text("Режим отладки")
                 Switch(
                     checked = debugMode,
@@ -195,14 +231,14 @@ fun SettingsScreen(
                 onClick = onNavigateToMessages,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Сообщения SMS")
+                Text("Сообщения")
             }
 
             Button(
                 onClick = onNavigateToSenders,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Отправители SMS")
+                Text("Отправители")
             }
 
             Button(

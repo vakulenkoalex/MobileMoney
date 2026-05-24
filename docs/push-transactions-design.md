@@ -59,9 +59,9 @@ MessageWorker.doWork()
 
 | Компонент | Изменения |
 |-----------|-----------|
-| `SmsWorker` | → **`MessageWorker`** (переименование, комментарии: "SMS" → "message" внутри) |
+| `SmsWorker` | → **`MessageWorker`** (переименование, "SMS" → "message" внутри, канал `sms_processing` → `message_processing`) |
 | `FeaturePreferences` | + `pushEnabled: Boolean` (default `false`) |
-| `SettingsScreen` | + toggle "Push-уведомления" + ссылка на Notification Access в системе |
+| `SettingsScreen` | + toggle "Push-уведомления" (аналогично SMS toggle). При включении: открыть `Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS`. `POST_NOTIFICATIONS` — переиспользовать существующий `checkNotificationPermission()` |
 | `AndroidManifest.xml` | + `<service>` для `NotificationReceiverService` |
 
 #### Без изменений
@@ -102,7 +102,12 @@ class NotificationReceiverService : NotificationListenerService() {
 
 - Переименовать файл `SmsWorker.kt` → `MessageWorker.kt`
 - Переименовать класс `SmsWorker` → `MessageWorker`
-- Обновить ссылки в коде (`MobileMoneyApp.kt`, `SmsBroadcastReceiver.kt`, `NotificationReceiverService.kt`)
+- Обновить ссылки в коде (`MobileMoneyApp.kt`, `SmsBroadcastReceiver.kt`)
+- `MobileMoneyApp.kt:36-37`: channelId `"sms_processing"` → `"message_processing"`, name `"SMS обработка"` → `"Обработка сообщений"`
+- `SmsWorker.showNotification()`: channelId `"sms_processing"` → `"message_processing"`, title `"SMS"` → `"Обработка"`
+- `Log.e("SmsWorker", ...)` → `Log.e("MessageWorker", ...)` (2 места)
+- `SmsBroadcastReceiver.kt`: import `SmsWorker` → `MessageWorker`, `OneTimeWorkRequestBuilder<SmsWorker>()` → `OneTimeWorkRequestBuilder<MessageWorker>()`
+- `showErrorNotification()`: текст `"Не удалось обработать SMS"` → `"Не удалось обработать сообщение"`
 - Логика без изменений — уже обрабатывает все `unprocessed` сообщения
 
 #### FeaturePreferences
@@ -113,13 +118,55 @@ var pushEnabled: Boolean
     set(value) = prefs.edit().putBoolean("push_enabled", value).apply()
 ```
 
+#### SettingsScreen
+
+Добавить toggle после "Чтение SMS". Паттерн аналогичный существующему:
+
+```kotlin
+// Новый toggle
+androidx.compose.foundation.layout.Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.SpaceBetween
+) {
+    Text("Push-уведомления")
+    Switch(
+        checked = pushEnabled,
+        onCheckedChange = { enabled ->
+            if (enabled) {
+                // Проверить, есть ли доступ к NotificationListener
+                val component = ComponentName(context, NotificationReceiverService::class.java)
+                val listeners = Settings.Secure.getString(
+                    context.contentResolver,
+                    "enabled_notification_listeners"
+                )
+                if (listeners == null || !listeners.contains(component.flattenToString())) {
+                    // Открыть системные настройки Notification Access
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } else {
+                    featurePrefs.pushEnabled = true
+                    pushEnabled = true
+                    checkNotificationPermission()  // существующий метод
+                }
+            } else {
+                featurePrefs.pushEnabled = false
+                pushEnabled = false
+            }
+        }
+    )
+}
+```
+
+После включения через системные настройки пользователь возвращается в приложение — в `onResume`/при повторном открытии проверить доступ и установить `featurePrefs.pushEnabled = true`.
+
 #### Permission
 
 ```xml
 <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" />
 ```
 
-Пользователь включает доступ вручную: Settings → Notification Access.
+Пользователь включает доступ вручную: `Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS`.
+
+`POST_NOTIFICATIONS` (Android 13+) — уже запрашивается в `SettingsScreen.kt:74-91` для уведомлений от Worker. Push переиспользует существующий `checkNotificationPermission()`.
 
 ### Отличия от SMS-флоу
 
@@ -145,13 +192,6 @@ var pushEnabled: Boolean
 - Парсинг не удался → `markProcessed("parse_failed")`, notification об ошибке
 - Счёт не найден по cardMask → `markProcessed("account_not_found")`, notification об ошибке
 - Ошибки через `ErrorHandler.emitError()` не требуются (это фоновый процесс)
-
-### Testing
-
-Тесты отсутствуют в проекте (см. AGENTS.md). При реализации:
-- Unit тесты для `NotificationReceiverService` (логика фильтрации)
-- Unit тесты для `FeaturePreferences.pushEnabled`
-- Ручное тестирование через Notification Access на Android 14+
 
 ## Decision Log
 

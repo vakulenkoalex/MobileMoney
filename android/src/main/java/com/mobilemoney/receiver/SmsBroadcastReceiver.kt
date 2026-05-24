@@ -9,7 +9,7 @@ import androidx.work.WorkManager
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.MessageEntity
 import com.mobilemoney.data.repository.FeaturePreferences
-import com.mobilemoney.worker.SmsWorker
+import com.mobilemoney.worker.MessageWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -57,7 +57,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
                     MessageEntity(sender = sender, body = body, receivedAt = System.currentTimeMillis())
                 )
 
-                val workRequest = OneTimeWorkRequestBuilder<SmsWorker>().build()
+                val workRequest = OneTimeWorkRequestBuilder<MessageWorker>().build()
                 WorkManager.getInstance(context).enqueue(workRequest)
 
             } finally {

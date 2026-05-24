@@ -16,4 +16,8 @@ class FeaturePreferences(context: Context) {
     var debugModeEnabled: Boolean
         get() = prefs.getBoolean("debug_mode_enabled", false)
         set(value) = prefs.edit().putBoolean("debug_mode_enabled", value).apply()
+
+    var pushEnabled: Boolean
+        get() = prefs.getBoolean("push_enabled", false)
+        set(value) = prefs.edit().putBoolean("push_enabled", value).apply()
 }

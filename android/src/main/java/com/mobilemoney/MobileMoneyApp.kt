@@ -33,8 +33,8 @@ class MobileMoneyApp : Application() {
 
     private fun createNotificationChannels() {
         val channel = NotificationChannel(
-            "sms_processing",
-            "SMS обработка",
+            "message_processing",
+            "Обработка сообщений",
             NotificationManager.IMPORTANCE_DEFAULT
         )
         val nm = getSystemService(NotificationManager::class.java)
