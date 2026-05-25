@@ -5,30 +5,18 @@ import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import com.mobilemoney.data.local.AppDatabase
-import com.mobilemoney.data.local.MessageEntity
 import com.mobilemoney.data.local.SenderType
 import com.mobilemoney.data.repository.FeaturePreferences
-import com.mobilemoney.worker.MessageWorker
+import com.mobilemoney.processor.MessageProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.Calendar
 
 class NotificationReceiverService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val featurePrefs = FeaturePreferences(this)
         if (!featurePrefs.pushEnabled) return
-
-        val packageName = sbn.packageName
-
-        val db = AppDatabase.getDatabase(this)
-        val senderDao = db.senderDao()
-        val messageDao = db.messageDao()
-        val transactionDao = db.transactionDao()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -47,36 +35,19 @@ class NotificationReceiverService : NotificationListenerService() {
                     }
                 }
 
-                if (featurePrefs.debugModeEnabled) {
-                    messageDao.insert(
-                        MessageEntity(sender = packageName, body = body, receivedAt = System.currentTimeMillis())
-                    )
-                    return@launch
+                MessageProcessor.process(
+                    context = this@NotificationReceiverService,
+                    senderId = sbn.packageName,
+                    body = body,
+                    debugMode = featurePrefs.debugModeEnabled,
+                ) { senderDao ->
+                    val knownSender = senderDao.findBySender(sbn.packageName) ?: return@process false
+                    val type = SenderType.valueOf(knownSender.type)
+                    type in listOf(SenderType.PACKAGE_NAME, SenderType.MESSENGER_PACKAGE_NAME) &&
+                        (type != SenderType.MESSENGER_PACKAGE_NAME ||
+                         senderDao.findByType(SenderType.MESSENGER_USERNAME.name)
+                             .any { it.sender.equals(title, ignoreCase = true) })
                 }
-
-                val knownSender = senderDao.findBySender(packageName)
-                if (knownSender == null || SenderType.valueOf(knownSender.type) !in listOf(SenderType.PACKAGE_NAME, SenderType.MESSENGER_PACKAGE_NAME)) return@launch
-
-                if (SenderType.valueOf(knownSender.type) == SenderType.MESSENGER_PACKAGE_NAME) {
-                    val usernameSenders = senderDao.findByType(SenderType.MESSENGER_USERNAME.name)
-                    if (usernameSenders.none { it.sender.equals(title, ignoreCase = true) }) return@launch
-                }
-
-                val todayStart = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }.timeInMillis
-                val exists = transactionDao.countBySourceDataSince(body, todayStart) > 0
-                if (exists) return@launch
-
-                messageDao.insert(
-                    MessageEntity(sender = packageName, body = body, receivedAt = System.currentTimeMillis())
-                )
-
-                val workRequest = OneTimeWorkRequestBuilder<MessageWorker>().build()
-                WorkManager.getInstance(this@NotificationReceiverService).enqueue(workRequest)
 
             } catch (e: Exception) {
                 Log.e("NotificationReceiverService", "Error processing notification", e)

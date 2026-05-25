@@ -172,7 +172,7 @@ interface TransactionDao {
 
 @Dao
 interface SenderDao {
-    @Query("SELECT * FROM senders WHERE deletedAt IS NULL")
+    @Query("SELECT * FROM senders WHERE deletedAt IS NULL ORDER BY label")
     fun getAll(): Flow<List<SenderEntity>>
 
     @Query("SELECT * FROM senders WHERE id = :id AND deletedAt IS NULL")

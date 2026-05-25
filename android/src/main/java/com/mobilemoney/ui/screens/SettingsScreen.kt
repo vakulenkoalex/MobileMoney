@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -76,6 +77,9 @@ fun SettingsScreen(
     ) }
     var pushEnabled by remember { mutableStateOf(
         featurePrefs.pushEnabled
+    ) }
+    var messageProcessingEnabled by remember { mutableStateOf(
+        featurePrefs.messageProcessingEnabled
     ) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -131,7 +135,8 @@ fun SettingsScreen(
         ) {
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Копирование из буфера обмена")
                 Switch(
@@ -145,7 +150,8 @@ fun SettingsScreen(
 
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Чтение SMS")
                 Switch(
@@ -172,9 +178,10 @@ fun SettingsScreen(
 
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Push-уведомления")
+                Text("Чтение PUSH-уведомлений")
                 Switch(
                     checked = pushEnabled,
                     onCheckedChange = { enabled ->
@@ -201,7 +208,8 @@ fun SettingsScreen(
 
             androidx.compose.foundation.layout.Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Режим отладки")
                 Switch(
@@ -209,6 +217,21 @@ fun SettingsScreen(
                     onCheckedChange = {
                         debugMode = it
                         featurePrefs.debugModeEnabled = it
+                    }
+                )
+            }
+
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Автосоздание по сообщениям")
+                Switch(
+                    checked = messageProcessingEnabled,
+                    onCheckedChange = {
+                        messageProcessingEnabled = it
+                        featurePrefs.messageProcessingEnabled = it
                     }
                 )
             }

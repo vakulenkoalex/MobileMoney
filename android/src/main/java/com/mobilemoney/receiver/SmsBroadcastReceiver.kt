@@ -4,13 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import com.mobilemoney.data.local.AppDatabase
-import com.mobilemoney.data.local.MessageEntity
 import com.mobilemoney.data.local.SenderType
 import com.mobilemoney.data.repository.FeaturePreferences
-import com.mobilemoney.worker.MessageWorker
+import com.mobilemoney.processor.MessageProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,36 +26,15 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
                 val sender = messages.firstOrNull()?.originatingAddress ?: return@launch
                 val body = messages.joinToString("") { it.messageBody ?: "" }
 
-                val db = AppDatabase.getDatabase(context)
-                val messageDao = db.messageDao()
-                val senderDao = db.senderDao()
-                val transactionDao = db.transactionDao()
-
-                if (featurePrefs.debugModeEnabled) {
-                    messageDao.insert(
-                        MessageEntity(sender = sender, body = body, receivedAt = System.currentTimeMillis())
-                    )
-                    return@launch
+                MessageProcessor.process(
+                    context = context,
+                    senderId = sender,
+                    body = body,
+                    debugMode = featurePrefs.debugModeEnabled,
+                ) { senderDao ->
+                    val knownSender = senderDao.findBySender(sender)
+                    knownSender != null && SenderType.valueOf(knownSender.type) == SenderType.PHONE_NUMBER
                 }
-
-                val knownSender = senderDao.findBySender(sender)
-                if (knownSender == null || SenderType.valueOf(knownSender.type) != SenderType.PHONE_NUMBER) return@launch
-
-                val todayStart = java.util.Calendar.getInstance().apply {
-                    set(java.util.Calendar.HOUR_OF_DAY, 0)
-                    set(java.util.Calendar.MINUTE, 0)
-                    set(java.util.Calendar.SECOND, 0)
-                    set(java.util.Calendar.MILLISECOND, 0)
-                }.timeInMillis
-                val exists = transactionDao.countBySourceDataSince(body, todayStart) > 0
-                if (exists) return@launch
-
-                messageDao.insert(
-                    MessageEntity(sender = sender, body = body, receivedAt = System.currentTimeMillis())
-                )
-
-                val workRequest = OneTimeWorkRequestBuilder<MessageWorker>().build()
-                WorkManager.getInstance(context).enqueue(workRequest)
 
             } finally {
                 pendingResult.finish()
