@@ -30,6 +30,7 @@ object MessageProcessor {
             return
         }
 
+        if (body.isBlank()) return
         if (!validateSender(db.senderDao())) return
 
         val todayStart = Calendar.getInstance().apply {
