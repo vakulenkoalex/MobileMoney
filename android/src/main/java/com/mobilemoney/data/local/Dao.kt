@@ -163,7 +163,7 @@ interface TransactionDao {
     @Query("UPDATE transactions SET syncedAt = :syncedAt WHERE id = :id")
     suspend fun markSynced(id: String, syncedAt: Long)
 
-    @Query("SELECT * FROM transactions WHERE shop = :shop AND deletedAt IS NULL AND ((:isIncome AND amount > 0) OR (NOT :isIncome AND amount < 0)) ORDER BY date DESC LIMIT 1")
+    @Query("SELECT t.* FROM transactions t INNER JOIN categories c ON t.categoryId = c.id WHERE t.shop = :shop AND t.deletedAt IS NULL AND c.isIncome = :isIncome ORDER BY t.date DESC LIMIT 1")
     suspend fun getLastTransactionByShop(shop: String, isIncome: Boolean): TransactionEntity?
 
     @Query("SELECT COUNT(*) FROM transactions WHERE sourceData = :sourceData AND deletedAt IS NULL AND date >= :since")
