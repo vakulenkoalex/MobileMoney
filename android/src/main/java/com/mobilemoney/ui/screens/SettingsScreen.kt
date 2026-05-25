@@ -34,9 +34,11 @@ import androidx.core.content.ContextCompat
 import android.content.ComponentName
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.runtime.LaunchedEffect
 import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.di.DI
 import com.mobilemoney.service.NotificationReceiverService
+import com.mobilemoney.ui.common.PermissionChecker
 import com.mobilemoney.viewmodel.SettingsViewModel
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -69,14 +71,17 @@ fun SettingsScreen(
     var clipboardEnabled by remember { mutableStateOf(
         featurePrefs.clipboardParsingEnabled
     ) }
+    val hasSms = PermissionChecker.hasSmsPermission(context)
+    val hasNotif = PermissionChecker.hasNotificationPermission(context)
+    val hasListener = PermissionChecker.hasNotificationListenerAccess(context)
     var smsEnabled by remember { mutableStateOf(
-        featurePrefs.smsEnabled
+        featurePrefs.smsEnabled && hasSms && hasNotif
     ) }
     var debugMode by remember { mutableStateOf(
         featurePrefs.debugModeEnabled
     ) }
     var pushEnabled by remember { mutableStateOf(
-        featurePrefs.pushEnabled
+        featurePrefs.pushEnabled && hasListener && hasNotif
     ) }
     var messageProcessingEnabled by remember { mutableStateOf(
         featurePrefs.messageProcessingEnabled
@@ -111,6 +116,23 @@ fun SettingsScreen(
         } else {
             featurePrefs.smsEnabled = false
             smsEnabled = false
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!PermissionChecker.hasNotificationPermission(context)) {
+            featurePrefs.smsEnabled = false
+            smsEnabled = false
+            featurePrefs.pushEnabled = false
+            pushEnabled = false
+        }
+        if (!PermissionChecker.hasSmsPermission(context)) {
+            featurePrefs.smsEnabled = false
+            smsEnabled = false
+        }
+        if (!PermissionChecker.hasNotificationListenerAccess(context)) {
+            featurePrefs.pushEnabled = false
+            pushEnabled = false
         }
     }
 
