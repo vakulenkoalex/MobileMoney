@@ -111,9 +111,15 @@ private fun MessageItem(message: MessageEntity, onCopy: () -> Unit, onDelete: ()
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Удалить",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = message.sender,
@@ -134,17 +140,8 @@ private fun MessageItem(message: MessageEntity, onCopy: () -> Unit, onDelete: ()
                     color = statusColor
                 )
             }
-            Row {
-                IconButton(onClick = onCopy) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Копировать")
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Удалить",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
+            IconButton(onClick = onCopy) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "Копировать")
             }
         }
     }
