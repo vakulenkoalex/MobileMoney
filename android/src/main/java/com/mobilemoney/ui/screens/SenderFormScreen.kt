@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.mobilemoney.data.local.SenderType
 import com.mobilemoney.di.DI
 import com.mobilemoney.viewmodel.SenderFormViewModel
 import kotlinx.coroutines.flow.drop
@@ -48,8 +49,7 @@ fun SenderFormScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { viewModel.save() },
-                        enabled = uiState.senderNumber.isNotBlank()
+                        onClick = { viewModel.save() }
                     ) {
                         Text("Сохранить", color = MaterialTheme.colorScheme.onPrimary)
                     }
@@ -72,17 +72,34 @@ fun SenderFormScreen(
             OutlinedTextField(
                 value = uiState.senderNumber,
                 onValueChange = { viewModel.updateSenderNumber(it) },
-                label = { Text("Номер отправителя") },
+                label = { Text("Идентификатор отправителя") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
                 value = uiState.label,
                 onValueChange = { viewModel.updateLabel(it) },
-                label = { Text("Метка (необязательно)") },
+                label = { Text("Метка") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+            Text(
+                text = "Вид",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SenderType.entries.forEach { type ->
+                    FilterChip(
+                        selected = uiState.senderType == type,
+                        onClick = { viewModel.updateSenderType(type) },
+                        label = { Text(type.displayName) }
+                    )
+                }
+            }
         }
     }
 }

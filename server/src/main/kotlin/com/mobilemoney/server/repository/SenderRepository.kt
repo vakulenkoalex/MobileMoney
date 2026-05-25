@@ -7,17 +7,18 @@ class SenderRepository {
         val serverReceivedAt = System.currentTimeMillis()
         Database.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT OR REPLACE INTO senders (id, sender, label, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO senders (id, sender, label, type, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """).use { stmt ->
                 stmt.setString(1, data.id)
                 stmt.setString(2, data.sender)
-                if (data.label != null) stmt.setString(3, data.label) else stmt.setNull(3, java.sql.Types.VARCHAR)
-                stmt.setLong(4, data.createdAt)
-                stmt.setLong(5, data.updatedAt)
-                if (data.deletedAt != null) stmt.setString(6, data.deletedAt.toString()) else stmt.setNull(6, java.sql.Types.VARCHAR)
-                if (data.syncedAt != null) stmt.setString(7, data.syncedAt.toString()) else stmt.setNull(7, java.sql.Types.VARCHAR)
-                stmt.setLong(8, serverReceivedAt)
+                stmt.setString(3, data.label)
+                stmt.setString(4, data.type)
+                stmt.setLong(5, data.createdAt)
+                stmt.setLong(6, data.updatedAt)
+                if (data.deletedAt != null) stmt.setString(7, data.deletedAt.toString()) else stmt.setNull(7, java.sql.Types.VARCHAR)
+                if (data.syncedAt != null) stmt.setString(8, data.syncedAt.toString()) else stmt.setNull(8, java.sql.Types.VARCHAR)
+                stmt.setLong(9, serverReceivedAt)
                 stmt.executeUpdate()
             }
         }
@@ -53,6 +54,7 @@ class SenderRepository {
             id = rs.getString("id"),
             sender = rs.getString("sender"),
             label = rs.getString("label"),
+            type = rs.getString("type") ?: "",
             createdAt = rs.getLong("createdAt"),
             updatedAt = rs.getLong("updatedAt"),
             deletedAt = rs.getString("deletedAt")?.toLongOrNull(),

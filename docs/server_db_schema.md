@@ -54,6 +54,17 @@
 - syncedAt (INTEGER)
 - serverReceivedAt (INTEGER) — время получения записи сервером
 
+### Отправители (senders)
+- id (PK) — TEXT NOT NULL, UUID
+- sender (TEXT NOT NULL) — идентификатор (номер телефона, имя пакета и т.д.)
+- label (TEXT NOT NULL DEFAULT '') — метка для отображения
+- type (TEXT NOT NULL) — вид: PHONE_NUMBER, PACKAGE_NAME, MESSENGER_PACKAGE_NAME, MESSENGER_USERNAME
+- createdAt (INTEGER NOT NULL)
+- updatedAt (INTEGER NOT NULL)
+- deletedAt (INTEGER)
+- syncedAt (INTEGER)
+- serverReceivedAt (INTEGER) — время получения записи сервером
+
 ### Операции (transactions)
 - id (PK) — TEXT NOT NULL, UUID
 - accountId (TEXT NOT NULL) — FK -> accounts.id

@@ -2,7 +2,7 @@
 
 **Иконки** — название иконки из Material Design Icons (https://fonts.google.com/icons), например `food`, `car`, `account-balance-wallet`
 
-База данных: `mobile_money_database`, версия 7 (Room, миграции — `fallbackToDestructiveMigration`).
+База данных: `mobile_money_database`, версия 11 (Room, миграции — `fallbackToDestructiveMigration`).
 
 ---
 
@@ -93,6 +93,26 @@
 | `serverReceivedAt` | `INTEGER` | YES | — | |
 
 **Индексы:** `accountId`, `categoryId`, `relatedTransactionId`
+
+**Foreign keys:** нет
+
+---
+
+### Отправители (`senders`)
+
+| Колонка | Тип | Nullable | По умолчанию | Описание |
+|---------|-----|----------|-------------|----------|
+| `id` | `TEXT` (PK) | NO | — | UUID |
+| `sender` | `TEXT` | NO | — | Идентификатор (номер телефона, имя пакета и т.д.); **уникальный индекс** |
+| `label` | `TEXT` | NO | `""` | Метка для отображения |
+| `type` | `TEXT` | NO | `"PHONE_NUMBER"` | Вид: `PHONE_NUMBER`, `PACKAGE_NAME`, `MESSENGER_PACKAGE_NAME`, `MESSENGER_USERNAME` |
+| `createdAt` | `INTEGER` | NO | — | Unix timestamp (ms) |
+| `updatedAt` | `INTEGER` | NO | — | |
+| `deletedAt` | `INTEGER` | YES | — | Soft delete |
+| `syncedAt` | `INTEGER` | YES | — | Время последней синхронизации |
+| `serverReceivedAt` | `INTEGER` | YES | — | Время получения сервером |
+
+**Индексы:** `sender` (unique)
 
 **Foreign keys:** нет
 

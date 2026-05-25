@@ -43,7 +43,8 @@ object Database {
                     CREATE TABLE IF NOT EXISTS senders (
                         id TEXT PRIMARY KEY NOT NULL,
                         sender TEXT NOT NULL,
-                        label TEXT,
+                        label TEXT NOT NULL DEFAULT '',
+                        type TEXT NOT NULL,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,
@@ -125,7 +126,8 @@ object Database {
                     CREATE TABLE IF NOT EXISTS senders (
                         id TEXT PRIMARY KEY NOT NULL,
                         sender TEXT NOT NULL,
-                        label TEXT,
+                        label TEXT NOT NULL DEFAULT '',
+                        type TEXT NOT NULL,
                         createdAt INTEGER NOT NULL,
                         updatedAt INTEGER NOT NULL,
                         deletedAt INTEGER,

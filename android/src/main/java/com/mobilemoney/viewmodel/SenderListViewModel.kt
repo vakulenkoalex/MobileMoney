@@ -11,13 +11,13 @@ import java.util.UUID
 class SenderListViewModel : ViewModel() {
     val senders: Flow<List<SenderEntity>> = DI.databaseRepository.getSenders()
 
-    fun addSender(senderNumber: String, label: String?) {
+    fun addSender(senderNumber: String, label: String) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val entity = SenderEntity(
                 id = UUID.randomUUID().toString(),
                 sender = senderNumber,
-                label = label?.takeIf { it.isNotBlank() },
+                label = label,
                 createdAt = now,
                 updatedAt = now
             )

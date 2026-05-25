@@ -8,6 +8,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.MessageEntity
+import com.mobilemoney.data.local.SenderType
 import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.worker.MessageWorker
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +43,7 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
                 }
 
                 val knownSender = senderDao.findBySender(sender)
-                if (knownSender == null) return@launch
+                if (knownSender == null || SenderType.valueOf(knownSender.type) != SenderType.PHONE_NUMBER) return@launch
 
                 val todayStart = java.util.Calendar.getInstance().apply {
                     set(java.util.Calendar.HOUR_OF_DAY, 0)

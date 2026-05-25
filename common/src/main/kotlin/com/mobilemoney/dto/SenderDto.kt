@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 data class SenderDto(
     val id: String,
     val sender: String,
-    val label: String? = null,
+    val label: String = "",
+    val type: String = "",
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

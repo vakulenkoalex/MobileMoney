@@ -9,6 +9,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.mobilemoney.data.local.AppDatabase
 import com.mobilemoney.data.local.MessageEntity
+import com.mobilemoney.data.local.SenderType
 import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.worker.MessageWorker
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +55,7 @@ class NotificationReceiverService : NotificationListenerService() {
                 }
 
                 val knownSender = senderDao.findBySender(packageName)
-                if (knownSender == null) return@launch
+                if (knownSender == null || SenderType.valueOf(knownSender.type) !in listOf(SenderType.PACKAGE_NAME, SenderType.MESSENGER_PACKAGE_NAME)) return@launch
 
                 val todayStart = Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, 0)

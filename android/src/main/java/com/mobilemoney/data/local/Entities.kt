@@ -108,7 +108,8 @@ data class TransactionEntity(
 data class SenderEntity(
     @PrimaryKey val id: String,
     val sender: String,
-    val label: String? = null,
+    val label: String = "",
+    val type: String = SenderType.PHONE_NUMBER.name,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

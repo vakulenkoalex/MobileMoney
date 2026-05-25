@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mobilemoney.data.local.SenderEntity
+import com.mobilemoney.data.local.SenderType
 import com.mobilemoney.viewmodel.SenderListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,9 +107,15 @@ private fun SenderItem(sender: SenderEntity, onClick: () -> Unit, onDelete: () -
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = sender.label.takeIf { !it.isNullOrBlank() } ?: "-",
+                    text = sender.label.ifBlank { "-" },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = SenderType.valueOf(sender.type).displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             IconButton(onClick = onDelete) {
