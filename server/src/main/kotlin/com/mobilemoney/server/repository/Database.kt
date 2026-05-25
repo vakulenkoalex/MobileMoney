@@ -240,6 +240,26 @@ object Database {
             stmt.setLong(4, now)
             stmt.executeUpdate()
         }
+        val transferExpenseId = com.mobilemoney.dto.TransferConstants.EXPENSE_CATEGORY_ID
+        val transferIncomeId = com.mobilemoney.dto.TransferConstants.INCOME_CATEGORY_ID
+        conn.prepareStatement("""
+            INSERT INTO categories (id, name, isIncome, icon, parentId, isDefault, createdAt, updatedAt, deletedAt, serverReceivedAt)
+            VALUES (?, 'Перемещение', ?, 'swap_horiz', NULL, 0, ?, ?, NULL, ?)
+        """).use { stmt ->
+            stmt.setString(1, transferExpenseId)
+            stmt.setInt(2, 0)
+            stmt.setLong(3, now)
+            stmt.setLong(4, now)
+            stmt.setLong(5, now)
+            stmt.executeUpdate()
+            stmt.setString(1, transferIncomeId)
+            stmt.setInt(2, 1)
+            stmt.setLong(3, now)
+            stmt.setLong(4, now)
+            stmt.setLong(5, now)
+            stmt.executeUpdate()
+        }
+
         println("Default data inserted")
     }
 }

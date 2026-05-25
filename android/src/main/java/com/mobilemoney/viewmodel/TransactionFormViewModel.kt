@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.mobilemoney.dto.TransferConstants
 import com.mobilemoney.ui.common.ErrorHandler
 import java.util.UUID
 
@@ -158,8 +159,9 @@ class TransactionFormViewModel(
                 val categories = _uiState.value.categories
 
                 val targetAccount = if (transaction.relatedTransactionId != null) {
-                    val relatedTx = getTransactionsUseCase().first()
-                        .find { it.relatedTransactionId == transactionId && it.id != transaction.id }
+                    val relatedTx = transactionRepository.getRelatedTransaction(
+                        transaction.relatedTransactionId.toString(), transaction.id.toString()
+                    )
                     relatedTx?.accountId?.let { tid -> accounts.find { it.id == tid } }
                 } else null
 
@@ -323,6 +325,17 @@ class TransactionFormViewModel(
         viewModelScope.launch {
             try {
                 if (state.type == TransactionType.TRANSFER) {
+                    if (state.isEditing && state.transactionId != null) {
+                        val oldTx = transactionRepository.getTransactionById(state.transactionId.toString())
+                        if (oldTx?.relatedTransactionId != null) {
+                            val oldPartner = transactionRepository.getRelatedTransaction(
+                                oldTx.relatedTransactionId.toString(), state.transactionId.toString()
+                            )
+                            deleteTransactionUseCase(state.transactionId.toString())
+                            if (oldPartner != null) deleteTransactionUseCase(oldPartner.id.toString())
+                        }
+                    }
+
                     val transferId = UUID.randomUUID()
                     val amount = state.amount.toDouble()
 
@@ -338,7 +351,7 @@ class TransactionFormViewModel(
                         isIncome = false,
                         date = state.date,
                         accountId = state.selectedAccount.id,
-                        categoryId = null,
+                        categoryId = UUID.fromString(TransferConstants.EXPENSE_CATEGORY_ID),
                         relatedTransactionId = transferId
                     )
 
@@ -354,7 +367,7 @@ class TransactionFormViewModel(
                         isIncome = true,
                         date = state.date,
                         accountId = state.targetAccount?.id,
-                        categoryId = null,
+                        categoryId = UUID.fromString(TransferConstants.INCOME_CATEGORY_ID),
                         relatedTransactionId = transferId
                     )
 
