@@ -100,6 +100,18 @@ fun SenderFormScreen(
                     )
                 }
             }
+            if (uiState.isEditing) {
+                Spacer(Modifier.weight(1f))
+                Button(
+                    onClick = { viewModel.deleteSender() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Удалить отправителя")
+                }
+            }
         }
     }
 }

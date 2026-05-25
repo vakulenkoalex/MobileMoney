@@ -13,12 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -79,8 +77,7 @@ fun SenderListScreen(
             items(senders, key = { it.id }) { sender ->
                 SenderItem(
                     sender = sender,
-                    onClick = { onSenderClick(sender.id) },
-                    onDelete = { viewModel.deleteSender(sender.id) }
+                    onClick = { onSenderClick(sender.id) }
                 )
             }
         }
@@ -88,7 +85,7 @@ fun SenderListScreen(
 }
 
 @Composable
-private fun SenderItem(sender: SenderEntity, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun SenderItem(sender: SenderEntity, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -97,7 +94,7 @@ private fun SenderItem(sender: SenderEntity, onClick: () -> Unit, onDelete: () -
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -116,13 +113,6 @@ private fun SenderItem(sender: SenderEntity, onClick: () -> Unit, onDelete: () -
                     text = SenderType.valueOf(sender.type).displayName,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Удалить",
-                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }

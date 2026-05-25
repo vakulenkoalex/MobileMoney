@@ -96,6 +96,14 @@ class SenderFormViewModel : ViewModel() {
         }
     }
 
+    fun deleteSender() {
+        val id = _uiState.value.senderId ?: return
+        viewModelScope.launch {
+            DI.databaseRepository.deleteSender(id)
+            _uiState.value = _uiState.value.copy(isSaved = true)
+        }
+    }
+
     fun resetState() {
         _uiState.value = SenderFormState()
     }
