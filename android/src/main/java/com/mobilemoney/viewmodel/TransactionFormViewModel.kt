@@ -124,6 +124,7 @@ class TransactionFormViewModel(
         val comment: String,
         val shop: String?,
         val categoryId: UUID?,
+        val isIncome: Boolean = false,
         val clipboardText: String
     )
 
@@ -137,7 +138,7 @@ class TransactionFormViewModel(
             selectedCategory = category,
             pendingCategoryId = if (category == null) data.categoryId else null,
             comment = data.comment,
-            type = TransactionType.EXPENSE,
+            type = if (data.isIncome) TransactionType.INCOME else TransactionType.EXPENSE,
             date = System.currentTimeMillis(),
             isEditing = false,
             transactionId = null,

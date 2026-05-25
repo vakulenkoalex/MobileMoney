@@ -23,6 +23,7 @@ data class DebugClipboardResult(
     val cardMaskParsed: String? = null,
     val cardMaskAccount: String? = null,
     val cardMaskMatches: Boolean = false,
+    val isIncome: Boolean? = null,
     val balance: String? = null
 )
 
@@ -47,6 +48,7 @@ fun DebugClipboardDialog(
                 Text("amount: ${result.amount ?: "—"}")
                 Text("shop: ${result.shop ?: "—"}")
                 Text("cardMask: ${result.cardMaskParsed ?: "—"}")
+                Text("isIncome: ${if (result.isIncome == true) "да" else if (result.isIncome == false) "нет" else "—"}")
                 if (result.amount != null) {
                     val accountFound = if (result.cardMaskMatches) "✅ ${result.accountName ?: ""}" else "❌ Счёт не найден"
                     Text("Счёт: $accountFound")

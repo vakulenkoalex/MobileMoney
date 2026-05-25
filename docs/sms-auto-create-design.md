@@ -4,11 +4,11 @@
 
 ## 1. Обзор
 
-Автоматическое создание операций расхода из входящих SMS. Приложение получает SMS от доверенных отправителей, парсит текст, находит кошелёк по маске карты и создаёт транзакцию без подтверждения пользователя.
+Автоматическое создание операций из входящих SMS. Приложение получает SMS от доверенных отправителей, парсит текст, находит кошелёк по маске карты и создаёт транзакцию без подтверждения пользователя. Тип операции (доход/расход) определяется по группе `direction` в regex — если значение содержит ключевые слова дохода, `isIncome=true`, иначе `false`.
 
 **Источник операции:** `source = TransactionSource.SMS`, `sourceData =` оригинальный текст SMS
 
-**Только расход:** income-операции из SMS не создаются.
+**Определение дохода/расхода:** группа `direction` в regex определяет тип операции. Если значение содержит ключевые слова дохода (`поступление`, `зачисление`, `доход`, `приход`, `income`, `credit`) — создаётся income-операция, иначе — expense.
 
 ## 2. Архитектура
 
@@ -27,12 +27,13 @@ SMS_RECEIVED → SmsBroadcastReceiver
          SmsWorker (CoroutineWorker)
            ├─ SELECT * FROM messages WHERE processed = 0
            ├─ для каждой:
-           │   ├─ TextParser.parse(body, регексы из message_regexes)
-           │   │   └─ не спарсилось → error="parse_failed"
-           │   ├─ accountDao.findByCardMask(mask)
-           │   │   └─ не найден → error="account_not_found"
-            │   ├─ getLastTransactionByShop(shop) — подбор категории
-            │   │   └─ если categoryId = null → getDefaultCategory(isIncome=false)
+            │   ├─ TextParser.parse(body, регексы из message_regexes)
+            │   │   ├─ спарсилось → ParsedTextData с isIncome (определяется по direction)
+            │   │   └─ не спарсилось → error="parse_failed"
+            │   ├─ accountDao.findByCardMask(mask)
+            │   │   └─ не найден → error="account_not_found"
+            │   ├─ если isIncome=false → getLastTransactionByShop(shop)
+            │   │   └─ если categoryId = null → getDefaultCategory(isIncome)
             │   ├─ saveTransaction(source=SMS, sourceData=body)
            │   └─ UPDATE processed=1, error, transactionId
            └─ показать Notification
@@ -276,34 +277,37 @@ SMS:
 
 Regex:
 ```
-\*(?<cardMask>\d{4})\s+\S+\s+(?<amount>[\d]+(?:[.,]\d+)?)\s*р\.?\s+(?<shop>[^.]+?)\s*\.?\s*(?:Баланс\s+(?<balance>[\d]+(?:[.,]\d+)?))?
+\*(?<cardMask>\d{4})\s+(?<direction>\S+)\s+(?<amount>[\d]+(?:[.,]\d+)?)\s*р\.?\s+(?<shop>[^.]+?)\s*\.?\s*(?:Баланс\s+(?<balance>[\d]+(?:[.,]\d+)?))?
 ```
 
 ### Обработка
 
 1. sender в senders → да
 2. Дубликат → нет
-3. TextParser: amount=339.98, shop=MAGNIT MK GO, cardMask=1026, balance=1441.81
+3. TextParser: amount=339.98, shop=MAGNIT MK GO, cardMask=1026, direction=покупка, balance=1441.81
 4. findByCardMask("1026") → "Карта Сбер"
-5. getLastTransactionByShop("MAGNIT MK GO") → категория "Продукты"
-6. Проверка баланса:
+5. direction="покупка" → не содержит ключевых слов дохода → isIncome=false
+6. getLastTransactionByShop("MAGNIT MK GO") → категория "Продукты"
+7. getDefaultCategory(isIncome=false) → категория по умолчанию для расходов
+8. Проверка баланса:
    - Текущий баланс счёта: 1000.00 (сумма всех транзакций до)
    - Ожидаемый после операции: 1000.00 - 339.98 = 660.02
    - Баланс из SMS: 1441.81
    - Расхождение: 660.02 - 1441.81 = -781.79 ≠ 0
    - Комментарий: "Баланс расходится: ожидалось 660.02, получено 1441.81"
-7. Создание транзакции: amount=-339.98, account="Карта Сбер", category="Продукты", shop="MAGNIT MK GO", comment="Баланс расходится: ...", source=SMS
-8. Notification: "Создана операция: 339.98р в MAGNIT MK GO"
+10. Создание транзакции: amount=-339.98, isIncome=false, account="Карта Сбер", category="Продукты", shop="MAGNIT MK GO", comment="Баланс расходится: ...", source=SMS
+11. Notification: "Создана операция: 339.98р в MAGNIT MK GO"
 
 ## 11. Категория по умолчанию для автосозданий
 
 ### 11.1 Назначение
 
-Если `SmsWorker` не находит последнюю транзакцию по магазину (`getLastTransactionByShop` вернул null) или у найденной транзакции нет `categoryId`, он подставляет категорию по умолчанию для расходов:
+`ParsedTextData` содержит поле `isIncome`, вычисленное в `TextParser` на основе группы `direction`. Если `isIncome=false` (расход) — `SmsWorker` ищет последнюю транзакцию по магазину для подбора категории. Если `isIncome=true` (доход) — категория берётся только из `getDefaultCategory(isIncome=true)`.
 
 ```kotlin
-val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
-val defaultCategory = dbRepo.getDefaultCategory(isIncome = false)
+val isIncome = parsed.isIncome
+val lastTx = if (isIncome) null else dbRepo.getLastTransactionByShop(parsed.shop)
+val defaultCategory = dbRepo.getDefaultCategory(isIncome = isIncome)
 val categoryId = lastTx?.categoryId ?: defaultCategory?.id
 ```
 

@@ -15,5 +15,5 @@ interface TransactionRepository {
         mainAmount: Double,
         newTransaction: Transaction
     )
-    suspend fun getLastTransactionByShop(shop: String): Transaction?
+    suspend fun getLastTransactionByShop(shop: String, isIncome: Boolean = false): Transaction?
 }

@@ -79,11 +79,11 @@ class MessageRegexFormViewModel(
             val regex = Regex(state.pattern)
             val testText = "*1234 оплата 100.00 р. TEST. Баланс 500.00"
             val match = regex.find(testText)
-            val requiredGroups = listOf("amount", "shop", "cardMask")
+            val requiredGroups = listOf("amount", "shop", "cardMask", "direction")
             val allPresent = requiredGroups.all { match?.groups[it]?.value != null }
             if (!allPresent) {
                 _uiState.value = _uiState.value.copy(
-                    patternError = "Regex должен содержать именованные группы: amount, shop, cardMask"
+                    patternError = "Regex должен содержать именованные группы: amount, shop, cardMask, direction"
                 )
                 return false
             }

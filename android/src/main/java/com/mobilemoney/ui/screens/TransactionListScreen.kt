@@ -125,7 +125,7 @@ fun TransactionListScreen(
 
                 var categoryId: UUID? = null
                 if (bestResult.shop.isNotBlank()) {
-                    val lastTx = dbRepo.getLastTransactionByShop(bestResult.shop)
+                    val lastTx = dbRepo.getLastTransactionByShop(bestResult.shop, bestResult.isIncome)
                     categoryId = lastTx?.categoryId
                 }
 
@@ -135,6 +135,7 @@ fun TransactionListScreen(
                     comment = comment,
                     shop = bestResult.shop,
                     categoryId = categoryId,
+                    isIncome = bestResult.isIncome,
                     clipboardText = text
                 )
             }
@@ -149,6 +150,7 @@ fun TransactionListScreen(
                 cardMaskParsed = bestResult?.cardMask,
                 cardMaskAccount = matchedAccount?.cardMask,
                 cardMaskMatches = matchedAccount != null,
+                isIncome = bestResult?.isIncome,
                 balance = bestResult?.balance
             )
             showDebugDialog = true
@@ -173,6 +175,8 @@ fun TransactionListScreen(
             val balanceCalc = AccountBalanceCalculator(db.transactionDao())
             val dbRepo = DatabaseRepository(db.accountDao(), db.categoryDao(), db.transactionDao(), db.messageDao(), db.senderDao())
 
+            val isIncome = parsed.isIncome
+
             val comment = if (!re.skipBalanceCheck && parsed.balance != null) {
                 val currentBalance = balanceCalc.getAccountBalance(account.id)
                 val expectedBalance = balanceCalc.calculateExpectedBalance(parsed.balance, parsed.amount)
@@ -186,7 +190,7 @@ fun TransactionListScreen(
 
             var categoryId: UUID? = null
             if (parsed.shop.isNotBlank()) {
-                val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
+                val lastTx = dbRepo.getLastTransactionByShop(parsed.shop, isIncome)
                 categoryId = lastTx?.categoryId
             }
 
@@ -196,6 +200,7 @@ fun TransactionListScreen(
                 comment = comment,
                 shop = parsed.shop,
                 categoryId = categoryId,
+                isIncome = isIncome,
                 clipboardText = text
             )
             showClipboardDialog = true

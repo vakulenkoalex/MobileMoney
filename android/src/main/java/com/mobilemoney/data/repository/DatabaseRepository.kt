@@ -173,8 +173,8 @@ class DatabaseRepository(
         categoryDao.permanentDeleteAll()
     }
 
-    suspend fun getLastTransactionByShop(shop: String): TransactionUi? {
-        val entity = transactionDao.getLastTransactionByShop(shop) ?: return null
+    suspend fun getLastTransactionByShop(shop: String, isIncome: Boolean = false): TransactionUi? {
+        val entity = transactionDao.getLastTransactionByShop(shop, isIncome) ?: return null
         val account = accountDao.getAccountById(entity.accountId)
         val category = entity.categoryId?.let { categoryDao.getCategoryById(it) }
         return entity.toUiModel(account, category)

@@ -49,8 +49,8 @@ class TransactionRepositoryImpl(
         )
     }
 
-    override suspend fun getLastTransactionByShop(shop: String): Transaction? {
-        return databaseRepository.getLastTransactionByShop(shop)?.toDomain()
+    override suspend fun getLastTransactionByShop(shop: String, isIncome: Boolean): Transaction? {
+        return databaseRepository.getLastTransactionByShop(shop, isIncome)?.toDomain()
     }
 }
 

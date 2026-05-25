@@ -93,7 +93,7 @@ fun MessageRegexFormScreen(
                     if (uiState.patternError != null) {
                         Text(uiState.patternError!!, color = MaterialTheme.colorScheme.error)
                     } else {
-                        Text("Именованные группы: amount, shop, cardMask (balance опционально)")
+                        Text("Именованные группы: amount, shop, cardMask, direction (balance опционально)")
                     }
                 }
             )

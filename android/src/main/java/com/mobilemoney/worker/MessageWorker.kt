@@ -67,23 +67,25 @@ class MessageWorker(
             return false
         }
 
-        val lastTx = dbRepo.getLastTransactionByShop(parsed.shop)
-        val defaultCategory = dbRepo.getDefaultCategory(isIncome = false)
+        val isIncome = parsed.isIncome
+
+        val lastTx = dbRepo.getLastTransactionByShop(parsed.shop, isIncome)
+        val defaultCategory = dbRepo.getDefaultCategory(isIncome = isIncome)
         val categoryId = lastTx?.categoryId ?: defaultCategory?.id
+
+        val rawAmount = parseAmount(parsed.amount)
+        val amount = if (isIncome) rawAmount else -rawAmount
 
         val balance = parsed.balance
         val comment = if (balance != null) {
             val currentBalance = dbRepo.getAccountBalanceValue(account.id.toString())
-            val amount = parseAmount(parsed.amount)
-            val expectedAfter = currentBalance - amount
+            val expectedAfter = currentBalance - rawAmount
             val parsedBalance = parseAmount(balance)
             val discrepancy = expectedAfter - parsedBalance
             if (kotlin.math.abs(discrepancy) > 0.01) {
                 "Баланс расходится: ожидалось ${"%.2f".format(expectedAfter)}, получено ${"%.2f".format(parsedBalance)}"
             } else ""
         } else ""
-
-        val amount = -parseAmount(parsed.amount)
 
         val source = if (message.sender.contains(".")) TransactionSource.PUSH else TransactionSource.SMS
 
@@ -95,7 +97,7 @@ class MessageWorker(
             currency = account.currency,
             icon = lastTx?.icon ?: "receipt",
             color = lastTx?.color ?: 0xFF4CAF50,
-            isIncome = false,
+            isIncome = isIncome,
             accountId = account.id,
             categoryId = categoryId,
             shop = parsed.shop,
