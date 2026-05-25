@@ -18,6 +18,7 @@ enum class TransactionSource {
 )
 data class MessageRegexEntity(
     @PrimaryKey val id: String,
+    val label: String,
     val pattern: String,
     val skipBalanceCheck: Boolean = false,
     val createdAt: Long,

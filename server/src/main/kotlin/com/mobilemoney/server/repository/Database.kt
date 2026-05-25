@@ -37,7 +37,6 @@ object Database {
 
         if (existingTables.isNotEmpty()) {
             println("Tables already exist: $existingTables")
-            // Ensure senders table exists (might not on existing databases)
             conn?.createStatement()?.use { stmt ->
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS senders (
@@ -113,6 +112,7 @@ object Database {
                 stmt.execute("""
                     CREATE TABLE IF NOT EXISTS message_regexes (
                         id TEXT PRIMARY KEY NOT NULL,
+                        label TEXT NOT NULL,
                         pattern TEXT NOT NULL,
                         skipBalanceCheck INTEGER NOT NULL DEFAULT 0,
                         createdAt INTEGER NOT NULL,

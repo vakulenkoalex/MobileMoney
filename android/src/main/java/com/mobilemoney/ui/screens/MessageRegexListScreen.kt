@@ -101,15 +101,21 @@ private fun RegexItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = regex.pattern,
+                    text = regex.label,
                     style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2
+                    maxLines = 1
+                )
+                Text(
+                    text = regex.pattern,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
                 if (regex.skipBalanceCheck) {
                     Text(
                         text = "Без проверки баланса",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }

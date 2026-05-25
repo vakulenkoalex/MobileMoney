@@ -23,6 +23,7 @@ data class AccountUi(
 
 data class MessageRegexUi(
     val id: UUID = UUID.randomUUID(),
+    val label: String,
     val pattern: String,
     val skipBalanceCheck: Boolean = false
 )

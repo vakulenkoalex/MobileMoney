@@ -38,6 +38,7 @@
 | Колонка | Тип | Nullable | По умолчанию | Описание |
 |---------|-----|----------|-------------|----------|
 | `id` | `TEXT` (PK) | NO | — | UUID |
+| `label` | `TEXT` | NO | — | Название (метка) для отображения в списке |
 | `pattern` | `TEXT` | NO | — | Regex с named groups: amount, shop, cardMask (balance опционально) |
 | `skipBalanceCheck` | `INTEGER` (boolean) | NO | `0` | Не проверять баланс при создании операции |
 | `createdAt` | `INTEGER` | NO | — | Unix timestamp (ms) |

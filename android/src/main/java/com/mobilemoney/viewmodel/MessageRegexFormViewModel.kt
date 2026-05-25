@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 data class MessageRegexFormState(
+    val label: String = "",
+    val labelError: String? = null,
     val pattern: String = "",
     val skipBalanceCheck: Boolean = false,
     val patternError: String? = null,
@@ -34,6 +36,7 @@ class MessageRegexFormViewModel(
                 val regex = regexes.find { it.id == id }
                 if (regex != null) {
                     _uiState.value = _uiState.value.copy(
+                        label = regex.label,
                         pattern = regex.pattern,
                         skipBalanceCheck = regex.skipBalanceCheck,
                         isEditing = true,
@@ -42,6 +45,10 @@ class MessageRegexFormViewModel(
                 }
             }
         }
+    }
+
+    fun updateLabel(label: String) {
+        _uiState.value = _uiState.value.copy(label = label, labelError = null)
     }
 
     fun updatePattern(pattern: String) {
@@ -54,6 +61,10 @@ class MessageRegexFormViewModel(
 
     fun validateAndSave(): Boolean {
         val state = _uiState.value
+        if (state.label.isBlank()) {
+            _uiState.value = state.copy(labelError = "Введите название")
+            return false
+        }
         if (state.pattern.isBlank()) {
             _uiState.value = state.copy(patternError = "Введите regex")
             return false
@@ -90,6 +101,7 @@ class MessageRegexFormViewModel(
             saveRegexUseCase(
                 MessageRegex(
                     id = state.regexId ?: UUID.randomUUID(),
+                    label = state.label,
                     pattern = state.pattern,
                     skipBalanceCheck = state.skipBalanceCheck
                 )

@@ -70,6 +70,20 @@ fun MessageRegexFormScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
+                value = uiState.label,
+                onValueChange = { viewModel.updateLabel(it) },
+                label = { Text("Название (метка) *") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.labelError != null,
+                supportingText = {
+                    if (uiState.labelError != null) {
+                        Text(uiState.labelError!!, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                singleLine = true
+            )
+
+            OutlinedTextField(
                 value = uiState.pattern,
                 onValueChange = { viewModel.updatePattern(it) },
                 label = { Text("Regex pattern") },

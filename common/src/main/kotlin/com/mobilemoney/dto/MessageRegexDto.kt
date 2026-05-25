@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MessageRegexDto(
     val id: String,
+    val label: String,
     val pattern: String,
     val skipBalanceCheck: Boolean = false,
     val createdAt: Long,

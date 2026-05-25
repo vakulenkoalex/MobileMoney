@@ -6,6 +6,7 @@ import java.util.UUID
 fun MessageRegexEntity.toUiModel(): MessageRegexUi {
     return MessageRegexUi(
         id = UUID.fromString(id),
+        label = label,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck
     )
@@ -14,6 +15,7 @@ fun MessageRegexEntity.toUiModel(): MessageRegexUi {
 fun MessageRegexUi.toEntity(): MessageRegexEntity {
     return MessageRegexEntity(
         id = id.toString(),
+        label = label,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck,
         createdAt = System.currentTimeMillis(),

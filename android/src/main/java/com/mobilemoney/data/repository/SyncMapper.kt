@@ -106,6 +106,7 @@ fun CategoryDto.toEntity(): CategoryEntity {
 fun MessageRegexEntity.toSyncDto(): MessageRegexDto {
     return MessageRegexDto(
         id = id,
+        label = label,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck,
         createdAt = createdAt,
@@ -119,6 +120,7 @@ fun MessageRegexEntity.toSyncDto(): MessageRegexDto {
 fun MessageRegexDto.toEntity(): MessageRegexEntity {
     return MessageRegexEntity(
         id = id,
+        label = label,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck,
         createdAt = createdAt,

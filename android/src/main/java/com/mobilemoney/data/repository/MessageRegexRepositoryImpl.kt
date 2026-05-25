@@ -36,6 +36,7 @@ class MessageRegexRepositoryImpl(
 private fun MessageRegexUi.toDomain(): MessageRegex {
     return MessageRegex(
         id = id,
+        label = label,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck
     )
@@ -44,6 +45,7 @@ private fun MessageRegexUi.toDomain(): MessageRegex {
 private fun MessageRegex.toUiModel(): MessageRegexUi {
     return MessageRegexUi(
         id = id,
+        label = label,
         pattern = pattern,
         skipBalanceCheck = skipBalanceCheck
     )

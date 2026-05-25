@@ -8,17 +8,18 @@ class MessageRegexRepository {
         val serverReceivedAt = System.currentTimeMillis()
         Database.getConnection().use { conn ->
             conn.prepareStatement("""
-                INSERT OR REPLACE INTO message_regexes (id, pattern, skipBalanceCheck, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO message_regexes (id, label, pattern, skipBalanceCheck, createdAt, updatedAt, deletedAt, syncedAt, serverReceivedAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """).use { stmt ->
                 stmt.setString(1, data.id)
-                stmt.setString(2, data.pattern)
-                stmt.setInt(3, if (data.skipBalanceCheck) 1 else 0)
-                stmt.setLong(4, data.createdAt)
-                stmt.setLong(5, data.updatedAt)
-                stmt.setString(6, data.deletedAt?.toString())
-                stmt.setString(7, data.syncedAt?.toString())
-                stmt.setLong(8, serverReceivedAt)
+                stmt.setString(2, data.label)
+                stmt.setString(3, data.pattern)
+                stmt.setInt(4, if (data.skipBalanceCheck) 1 else 0)
+                stmt.setLong(5, data.createdAt)
+                stmt.setLong(6, data.updatedAt)
+                stmt.setString(7, data.deletedAt?.toString())
+                stmt.setString(8, data.syncedAt?.toString())
+                stmt.setLong(9, serverReceivedAt)
                 stmt.executeUpdate()
             }
         }
@@ -56,6 +57,7 @@ class MessageRegexRepository {
     private fun mapRow(rs: java.sql.ResultSet): MessageRegexDto {
         return MessageRegexDto(
             id = rs.getString("id"),
+            label = rs.getString("label"),
             pattern = rs.getString("pattern"),
             skipBalanceCheck = rs.getInt("skipBalanceCheck") == 1,
             createdAt = rs.getLong("createdAt"),
