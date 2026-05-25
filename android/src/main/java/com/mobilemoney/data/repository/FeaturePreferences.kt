@@ -22,6 +22,6 @@ class FeaturePreferences(context: Context) {
         set(value) = prefs.edit().putBoolean("push_enabled", value).apply()
 
     var messageProcessingEnabled: Boolean
-        get() = prefs.getBoolean("message_processing_enabled", true)
+        get() = prefs.getBoolean("message_processing_enabled", false)
         set(value) = prefs.edit().putBoolean("message_processing_enabled", value).apply()
 }
