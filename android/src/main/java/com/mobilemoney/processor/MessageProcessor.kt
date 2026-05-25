@@ -33,13 +33,13 @@ object MessageProcessor {
         if (body.isBlank()) return
         if (!validateSender(db.senderDao())) return
 
-        val todayStart = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        if (transactionDao.countBySourceDataSince(body, todayStart) > 0) return
+        // val todayStart = Calendar.getInstance().apply {
+        //     set(Calendar.HOUR_OF_DAY, 0)
+        //     set(Calendar.MINUTE, 0)
+        //     set(Calendar.SECOND, 0)
+        //     set(Calendar.MILLISECOND, 0)
+        // }.timeInMillis
+        // if (transactionDao.countBySourceDataSince(body, todayStart) > 0) return
 
         messageDao.insert(
             MessageEntity(sender = senderId, body = body, receivedAt = System.currentTimeMillis())
