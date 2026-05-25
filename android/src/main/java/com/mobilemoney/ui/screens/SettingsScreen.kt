@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -86,6 +89,7 @@ fun SettingsScreen(
     var messageProcessingEnabled by remember { mutableStateOf(
         featurePrefs.messageProcessingEnabled
     ) }
+    var dataMenuExpanded by remember { mutableStateOf(false) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -286,34 +290,42 @@ fun SettingsScreen(
                 Text("Отправители")
             }
 
-            Button(
-                onClick = { exportLauncher.launch(viewModel.getDefaultFileName()) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading
-            ) {
-                Text("Экспорт базы данных")
-            }
-
-            Button(
-                onClick = { importLauncher.launch(arrayOf("*/*")) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                )
-            ) {
-                Text("Импорт базы данных")
-            }
-
-            Button(
-                onClick = { viewModel.deleteAll() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text("Удалить удалённые записи")
+            Box {
+                Button(
+                    onClick = { dataMenuExpanded = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Управление данными")
+                }
+                DropdownMenu(
+                    expanded = dataMenuExpanded,
+                    onDismissRequest = { dataMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Экспорт базы данных") },
+                        onClick = {
+                            dataMenuExpanded = false
+                            exportLauncher.launch(viewModel.getDefaultFileName())
+                        },
+                        enabled = !uiState.isLoading
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Импорт базы данных") },
+                        onClick = {
+                            dataMenuExpanded = false
+                            importLauncher.launch(arrayOf("*/*"))
+                        },
+                        enabled = !uiState.isLoading
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Удалить удалённые записи") },
+                        onClick = {
+                            dataMenuExpanded = false
+                            viewModel.deleteAll()
+                        },
+                        enabled = !uiState.isLoading
+                    )
+                }
             }
 
             if (uiState.isSyncing) {
