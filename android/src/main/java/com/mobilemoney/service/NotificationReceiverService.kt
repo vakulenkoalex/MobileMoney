@@ -57,6 +57,11 @@ class NotificationReceiverService : NotificationListenerService() {
                 val knownSender = senderDao.findBySender(packageName)
                 if (knownSender == null || SenderType.valueOf(knownSender.type) !in listOf(SenderType.PACKAGE_NAME, SenderType.MESSENGER_PACKAGE_NAME)) return@launch
 
+                if (SenderType.valueOf(knownSender.type) == SenderType.MESSENGER_PACKAGE_NAME) {
+                    val usernameSenders = senderDao.findByType(SenderType.MESSENGER_USERNAME.name)
+                    if (usernameSenders.none { it.sender.equals(title, ignoreCase = true) }) return@launch
+                }
+
                 val todayStart = Calendar.getInstance().apply {
                     set(Calendar.HOUR_OF_DAY, 0)
                     set(Calendar.MINUTE, 0)
@@ -77,9 +82,5 @@ class NotificationReceiverService : NotificationListenerService() {
                 Log.e("NotificationReceiverService", "Error processing notification", e)
             }
         }
-    }
-
-    override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        // nothing
     }
 }

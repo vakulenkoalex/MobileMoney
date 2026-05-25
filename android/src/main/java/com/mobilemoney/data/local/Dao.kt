@@ -196,6 +196,9 @@ interface SenderDao {
     @Query("DELETE FROM senders WHERE deletedAt IS NOT NULL")
     suspend fun permanentDeleteAll()
 
+    @Query("SELECT * FROM senders WHERE type = :type AND deletedAt IS NULL")
+    suspend fun findByType(type: String): List<SenderEntity>
+
     @Query("SELECT * FROM senders WHERE syncedAt IS NULL")
     suspend fun getUnsynced(): List<SenderEntity>
 
