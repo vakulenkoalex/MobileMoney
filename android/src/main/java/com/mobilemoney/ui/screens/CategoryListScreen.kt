@@ -88,8 +88,8 @@ fun CategoryListScreen(
                 }
             }
         } else {
-            val expenseCategories = uiState.categories.filter { !it.isIncome }.sortedBy { it.name }
-            val incomeCategories = uiState.categories.filter { it.isIncome }.sortedBy { it.name }
+            val expenseCategories = uiState.categories.filter { !it.isIncome }
+            val incomeCategories = uiState.categories.filter { it.isIncome }
 
             LazyColumn(
                 modifier = Modifier
@@ -109,6 +109,7 @@ fun CategoryListScreen(
                 items(expenseCategories, key = { it.id.toString() }) { category ->
                     CategoryItem(
                         category = category,
+                        isChild = category.parentId != null,
                         onClick = { onCategoryClick(category.id) }
                     )
                 }
@@ -125,6 +126,7 @@ fun CategoryListScreen(
                 items(incomeCategories, key = { it.id.toString() }) { category ->
                     CategoryItem(
                         category = category,
+                        isChild = category.parentId != null,
                         onClick = { onCategoryClick(category.id) }
                     )
                 }
@@ -136,6 +138,7 @@ fun CategoryListScreen(
 @Composable
 fun CategoryItem(
     category: Category,
+    isChild: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -146,12 +149,12 @@ fun CategoryItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(start = if (isChild) 32.dp else 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(if (isChild) 28.dp else 36.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
@@ -160,7 +163,7 @@ fun CategoryItem(
                     imageVector = AppIcons.getTransactionIcon(category.icon),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(if (isChild) 16.dp else 20.dp)
                 )
             }
 
@@ -169,7 +172,7 @@ fun CategoryItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = category.name,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = if (isChild) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodySmall,
                     fontWeight = if (category.isDefault) FontWeight.Bold else FontWeight.Medium
                 )
                 if (category.isDefault) {

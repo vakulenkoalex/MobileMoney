@@ -7,5 +7,6 @@ data class Category(
     val name: String,
     val icon: String = "category",
     val isIncome: Boolean = false,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val parentId: UUID? = null
 )

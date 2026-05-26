@@ -35,6 +35,7 @@ fun CategoryFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showIconSheet by remember { mutableStateOf(false) }
+    var parentDropdownExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(categoryId) {
         viewModel.resetState()
@@ -115,7 +116,10 @@ fun CategoryFormScreen(
             ) {
                 FilterChip(
                     selected = !uiState.isIncome,
-                    onClick = { viewModel.updateIsIncome(false) },
+                    onClick = {
+                        viewModel.updateIsIncome(false)
+                        viewModel.updateParentId(null)
+                    },
                     label = { Text("Расход") },
                     leadingIcon = if (!uiState.isIncome) {
                         { Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(18.dp)) }
@@ -124,13 +128,53 @@ fun CategoryFormScreen(
                 )
                 FilterChip(
                     selected = uiState.isIncome,
-                    onClick = { viewModel.updateIsIncome(true) },
+                    onClick = {
+                        viewModel.updateIsIncome(true)
+                        viewModel.updateParentId(null)
+                    },
                     label = { Text("Доход") },
                     leadingIcon = if (uiState.isIncome) {
                         { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = parentDropdownExpanded,
+                onExpandedChange = { parentDropdownExpanded = it }
+            ) {
+                OutlinedTextField(
+                    value = uiState.parentCategories.find { it.id == uiState.parentId }?.name ?: "Нет",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Родительская категория") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = parentDropdownExpanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = parentDropdownExpanded,
+                    onDismissRequest = { parentDropdownExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Нет") },
+                        onClick = {
+                            viewModel.updateParentId(null)
+                            parentDropdownExpanded = false
+                        }
+                    )
+                    uiState.parentCategories.forEach { parent ->
+                        DropdownMenuItem(
+                            text = { Text(parent.name) },
+                            onClick = {
+                                viewModel.updateParentId(parent.id)
+                                parentDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
             }
 
             Row(

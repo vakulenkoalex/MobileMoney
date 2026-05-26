@@ -21,9 +21,11 @@ data class CategoryFormState(
     val icon: String = "restaurant",
     val isIncome: Boolean = false,
     val isDefault: Boolean = false,
+    val parentId: UUID? = null,
     val isEditing: Boolean = false,
     val categoryId: UUID? = null,
     val icons: List<CategoryIconOption> = CategoryIcons.all,
+    val parentCategories: List<Category> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isSaved: Boolean = false
@@ -36,6 +38,21 @@ class CategoryFormViewModel(
     private val _uiState = MutableStateFlow(CategoryFormState())
     val uiState: StateFlow<CategoryFormState> = _uiState.asStateFlow()
 
+    init {
+        loadParentCategories()
+    }
+
+    private fun loadParentCategories() {
+        viewModelScope.launch {
+            categoryRepository.getCategories().collect { categories ->
+                val filtered = categories
+                    .filter { it.parentId == null && it.isIncome == _uiState.value.isIncome }
+                    .sortedBy { it.name }
+                _uiState.value = _uiState.value.copy(parentCategories = filtered)
+            }
+        }
+    }
+
     fun loadCategory(categoryId: UUID) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -47,6 +64,7 @@ class CategoryFormViewModel(
                     icon = category.icon,
                     isIncome = category.isIncome,
                     isDefault = category.isDefault,
+                    parentId = category.parentId,
                     isEditing = true,
                     categoryId = categoryId,
                     isLoading = false
@@ -70,14 +88,22 @@ class CategoryFormViewModel(
 
     fun updateIsIncome(isIncome: Boolean) {
         _uiState.value = _uiState.value.copy(isIncome = isIncome)
+        val filtered = _uiState.value.parentCategories
+            .filter { it.isIncome == isIncome }
+        _uiState.value = _uiState.value.copy(parentCategories = filtered)
     }
 
     fun updateIsDefault(isDefault: Boolean) {
         _uiState.value = _uiState.value.copy(isDefault = isDefault)
     }
 
+    fun updateParentId(parentId: UUID?) {
+        _uiState.value = _uiState.value.copy(parentId = parentId)
+    }
+
     fun resetState() {
         _uiState.value = CategoryFormState()
+        loadParentCategories()
     }
 
     fun save(): Boolean {
@@ -95,7 +121,8 @@ class CategoryFormViewModel(
             name = state.name,
             icon = state.icon,
             isIncome = state.isIncome,
-            isDefault = state.isDefault
+            isDefault = state.isDefault,
+            parentId = state.parentId
         )
 
         viewModelScope.launch {
@@ -112,5 +139,4 @@ class CategoryFormViewModel(
         _uiState.value = state.copy(isSaved = true)
         return true
     }
-
 }

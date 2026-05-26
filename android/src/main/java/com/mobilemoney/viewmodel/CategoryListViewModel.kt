@@ -30,8 +30,16 @@ class CategoryListViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             getCategoriesUseCase().collect { categories ->
+                val sorted = categories.sortedBy { it.name }
+                val roots = sorted.filter { it.parentId == null }
+                val grouped = mutableListOf<Category>()
+                for (root in roots) {
+                    grouped.add(root)
+                    val children = sorted.filter { it.parentId == root.id }
+                    grouped.addAll(children)
+                }
                 _uiState.value = _uiState.value.copy(
-                    categories = categories,
+                    categories = grouped,
                     isLoading = false
                 )
             }

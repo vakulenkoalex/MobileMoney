@@ -9,7 +9,8 @@ fun CategoryEntity.toUiModel(): CategoryUi {
         name = name,
         icon = icon,
         isIncome = isIncome,
-        isDefault = isDefault
+        isDefault = isDefault,
+        parentId = parentId?.let { UUID.fromString(it) }
     )
 }
 
@@ -19,7 +20,7 @@ fun CategoryUi.toEntity(): CategoryEntity {
         name = name,
         isIncome = isIncome,
         icon = icon,
-        parentId = null,
+        parentId = parentId?.toString(),
         isDefault = isDefault,
         createdAt = System.currentTimeMillis(),
         updatedAt = System.currentTimeMillis()

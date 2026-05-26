@@ -11,4 +11,6 @@ interface CategoryRepository {
     suspend fun addCategory(category: Category)
     suspend fun updateCategory(category: Category)
     suspend fun deleteCategory(id: String)
+    fun getRootCategories(isIncome: Boolean): Flow<List<Category>>
+    fun getSubcategories(parentId: String): Flow<List<Category>>
 }

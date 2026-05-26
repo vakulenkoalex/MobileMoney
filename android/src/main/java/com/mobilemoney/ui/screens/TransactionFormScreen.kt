@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -46,6 +48,7 @@ fun TransactionFormScreen(
     var showAccountSheet by remember { mutableStateOf(false) }
     var showTargetAccountSheet by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var selectedRootCategory by remember { mutableStateOf<Category?>(null) }
     var showSplitCategorySheet by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -282,40 +285,108 @@ fun TransactionFormScreen(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
+                    val categoryLabel = uiState.selectedCategory?.let { cat ->
+                        val parent = uiState.categories.find { it.id == cat.parentId }
+                        if (parent != null) "${parent.name} → ${cat.name}" else cat.name
+                    } ?: "Выберите категорию"
                     Text(
-                        text = uiState.selectedCategory?.name ?: "Выберите категорию",
+                        text = categoryLabel,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
 
                 if (showCategorySheet) {
+                    val rootCategories = viewModel.getRootCategories()
                     ModalBottomSheet(
-                        onDismissRequest = { showCategorySheet = false }
+                        onDismissRequest = {
+                            showCategorySheet = false
+                            selectedRootCategory = null
+                        }
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            Text(
-                                text = "Выберите категорию",
-                                style = MaterialTheme.typography.titleLarge,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            )
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(4),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(filteredCategories) { category ->
-                                    CategoryGridItem(
-                                        category = category,
-                                        selected = uiState.selectedCategory?.id == category.id,
-                                        onClick = {
-                                            viewModel.updateCategory(category)
-                                            showCategorySheet = false
+                            if (selectedRootCategory == null) {
+                                Text(
+                                    text = "Выберите категорию",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(4),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                        items(rootCategories) { category ->
+                                            CategoryGridItem(
+                                                category = category,
+                                                selected = uiState.selectedCategory?.id == category.id,
+                                                onClick = {
+                                                    val hasChildren = viewModel.getCategoryWithChildren(category.id).size > 1
+                                                    if (hasChildren) {
+                                                        selectedRootCategory = category
+                                                    } else {
+                                                        viewModel.updateCategory(category)
+                                                        showCategorySheet = false
+                                                    }
+                                                }
+                                            )
                                         }
-                                    )
+                                }
+                            } else {
+                                val categoryList = viewModel.getCategoryWithChildren(selectedRootCategory!!.id)
+                                Text(
+                                    text = selectedRootCategory!!.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier.padding(bottom = 16.dp)
+                                )
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    items(categoryList) { category ->
+                                        val isChild = category.id != selectedRootCategory!!.id
+                                        ListItem(
+                                            headlineContent = {
+                                                Text(
+                                                    text = category.name,
+                                                    style = if (isChild) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleSmall
+                                                )
+                                            },
+                                            leadingContent = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(if (isChild) 32.dp else 40.dp)
+                                                        .clip(CircleShape)
+                                                        .background(
+                                                            if (uiState.selectedCategory?.id == category.id)
+                                                                MaterialTheme.colorScheme.primary
+                                                            else MaterialTheme.colorScheme.surfaceVariant
+                                                        ),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = AppIcons.getTransactionIcon(category.icon),
+                                                        contentDescription = null,
+                                                        tint = if (uiState.selectedCategory?.id == category.id)
+                                                            MaterialTheme.colorScheme.onPrimary
+                                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(if (isChild) 16.dp else 20.dp)
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(start = if (isChild) 32.dp else 0.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    viewModel.updateCategory(category)
+                                                    showCategorySheet = false
+                                                    selectedRootCategory = null
+                                                }
+                                        )
+                                    }
                                 }
                             }
                         }

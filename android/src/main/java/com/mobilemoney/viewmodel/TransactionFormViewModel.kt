@@ -471,6 +471,22 @@ class TransactionFormViewModel(
         return _uiState.value.categories.filter { it.isIncome == isIncome }.sortedBy { it.name }
     }
 
+    fun getRootCategories(): List<Category> {
+        val isIncome = _uiState.value.type == TransactionType.INCOME
+        return _uiState.value.categories
+            .filter { it.isIncome == isIncome && it.parentId == null }
+            .sortedBy { it.name }
+    }
+
+    fun getCategoryWithChildren(parentId: UUID): List<Category> {
+        val isIncome = _uiState.value.type == TransactionType.INCOME
+        val parent = _uiState.value.categories.find { it.id == parentId } ?: return emptyList()
+        val children = _uiState.value.categories
+            .filter { it.parentId == parentId && it.isIncome == isIncome }
+            .sortedBy { it.name }
+        return listOf(parent) + children
+    }
+
     fun delete() {
         val id = _uiState.value.transactionId
         if (id != null) {

@@ -40,6 +40,22 @@ class CategoryRepositoryImpl(
     override suspend fun deleteCategory(id: String) {
         databaseRepository.deleteCategory(id)
     }
+
+    override fun getRootCategories(isIncome: Boolean): Flow<List<Category>> {
+        return databaseRepository.getCategories().map { list ->
+            list.filter { it.parentId == null && it.isIncome == isIncome }
+                .map { it.toDomain() }
+                .sortedBy { it.name }
+        }
+    }
+
+    override fun getSubcategories(parentId: String): Flow<List<Category>> {
+        return databaseRepository.getCategories().map { list ->
+            list.filter { it.parentId?.toString() == parentId }
+                .map { it.toDomain() }
+                .sortedBy { it.name }
+        }
+    }
 }
 
 private fun CategoryUi.toDomain(): Category {
@@ -48,7 +64,8 @@ private fun CategoryUi.toDomain(): Category {
         name = name,
         icon = icon,
         isIncome = isIncome,
-        isDefault = isDefault
+        isDefault = isDefault,
+        parentId = parentId
     )
 }
 
@@ -58,6 +75,7 @@ private fun Category.toUiModel(): CategoryUi {
         name = name,
         icon = icon,
         isIncome = isIncome,
-        isDefault = isDefault
+        isDefault = isDefault,
+        parentId = parentId
     )
 }
