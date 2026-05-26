@@ -110,14 +110,7 @@ class AccountFormViewModel(
     }
 
     fun validateCardMask(): Boolean {
-        val mask = _uiState.value.cardMask
-        if (mask.isBlank()) return true
-        return if (mask.length == 4 && mask.all { it.isDigit() }) {
-            true
-        } else {
-            _uiState.value = _uiState.value.copy(cardMaskError = "Маска должна содержать ровно 4 цифры")
-            false
-        }
+        return !_uiState.value.cardMask.isBlank()
     }
 
     fun save(): Boolean {

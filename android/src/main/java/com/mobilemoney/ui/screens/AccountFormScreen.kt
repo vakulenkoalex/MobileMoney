@@ -300,7 +300,7 @@ fun AccountFormScreen(
                 OutlinedTextField(
                     value = uiState.cardMask,
                     onValueChange = { viewModel.updateCardMask(it) },
-                    label = { Text("Маска карты (последние 4 цифры)") },
+                    label = { Text("Маска карты / идентификатор") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     isError = uiState.cardMaskError != null,
