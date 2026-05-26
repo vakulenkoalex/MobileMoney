@@ -73,6 +73,8 @@ object CategoryIcons {
         CategoryIconOption("favorite"),
         CategoryIconOption("phone"),
         CategoryIconOption("checkroom"),
-        CategoryIconOption("more_horiz")
+        CategoryIconOption("more_horiz"),
+        CategoryIconOption("smartphone"),
+        CategoryIconOption("sensors")
     )
 }

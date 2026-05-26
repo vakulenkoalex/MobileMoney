@@ -3,6 +3,7 @@ package com.mobilemoney.data.config
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 
 object AppIcons {
     fun getTransactionIcon(iconName: String): ImageVector {
@@ -33,7 +34,7 @@ object AppIcons {
             "home" -> Icons.Default.Home
             "icecream" -> Icons.Default.Icecream
             "kitchen" -> Icons.Default.Kitchen
-            "library_books" -> Icons.Default.LibraryBooks
+            "library_books" -> Icons.AutoMirrored.Filled.LibraryBooks
             "liquor" -> Icons.Default.Liquor
             "local_atm" -> Icons.Default.LocalAtm
             "local_cafe" -> Icons.Default.LocalCafe
@@ -76,6 +77,8 @@ object AppIcons {
             "train" -> Icons.Default.Train
             "volunteer_activism" -> Icons.Default.VolunteerActivism
             "work" -> Icons.Default.Work
+            "smartphone" -> Icons.Default.Smartphone
+            "sensors" -> Icons.Default.Sensors
             else -> Icons.Default.Category
         }
     }
