@@ -76,11 +76,13 @@ class MessageRegexFormViewModel(
             return false
         }
         return try {
-            val regex = Regex(state.pattern)
-            val testText = "*1234 оплата 100.00 р. TEST. Баланс 500.00"
-            val match = regex.find(testText)
+            Regex(state.pattern)
+            val namedGroupRegex = Regex("\\(\\?<([a-zA-Z_]+)>")
+            val groupNames = namedGroupRegex.findAll(state.pattern)
+                .map { it.groupValues[1] }
+                .toSet()
             val requiredGroups = listOf("amount", "shop", "cardMask", "direction")
-            val allPresent = requiredGroups.all { match?.groups[it]?.value != null }
+            val allPresent = requiredGroups.all { it in groupNames }
             if (!allPresent) {
                 _uiState.value = _uiState.value.copy(
                     patternError = "Regex должен содержать именованные группы: amount, shop, cardMask, direction"
