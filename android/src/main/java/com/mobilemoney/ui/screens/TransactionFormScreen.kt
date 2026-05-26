@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -342,49 +340,20 @@ fun TransactionFormScreen(
                                     style = MaterialTheme.typography.titleLarge,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 )
-                                LazyColumn(
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(4),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     items(categoryList) { category ->
-                                        val isChild = category.id != selectedRootCategory!!.id
-                                        ListItem(
-                                            headlineContent = {
-                                                Text(
-                                                    text = category.name,
-                                                    style = if (isChild) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleSmall
-                                                )
-                                            },
-                                            leadingContent = {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(if (isChild) 32.dp else 40.dp)
-                                                        .clip(CircleShape)
-                                                        .background(
-                                                            if (uiState.selectedCategory?.id == category.id)
-                                                                MaterialTheme.colorScheme.primary
-                                                            else MaterialTheme.colorScheme.surfaceVariant
-                                                        ),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = AppIcons.getTransactionIcon(category.icon),
-                                                        contentDescription = null,
-                                                        tint = if (uiState.selectedCategory?.id == category.id)
-                                                            MaterialTheme.colorScheme.onPrimary
-                                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.size(if (isChild) 16.dp else 20.dp)
-                                                    )
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(start = if (isChild) 32.dp else 0.dp)
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .clickable {
-                                                    viewModel.updateCategory(category)
-                                                    showCategorySheet = false
-                                                    selectedRootCategory = null
-                                                }
+                                        CategoryGridItem(
+                                            category = category,
+                                            selected = uiState.selectedCategory?.id == category.id,
+                                            onClick = {
+                                                viewModel.updateCategory(category)
+                                                showCategorySheet = false
+                                                selectedRootCategory = null
+                                            }
                                         )
                                     }
                                 }
