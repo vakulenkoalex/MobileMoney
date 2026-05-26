@@ -22,16 +22,15 @@ class NotificationReceiverService : NotificationListenerService() {
             try {
                 val extras: Bundle = sbn.notification.extras ?: return@launch
                 val title = extras.getCharSequence(Notification.EXTRA_TITLE, "").toString()
+                val text = extras.getCharSequence(Notification.EXTRA_TEXT, "").toString()
+                val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT, "").toString()
+
                 val body = buildString {
                     append(title)
-                    listOf(
-                        Notification.EXTRA_TEXT,
-                        Notification.EXTRA_BIG_TEXT
-                    ).forEach { key ->
-                        extras.getCharSequence(key, "")
-                            ?.toString()
-                            ?.takeIf { it.isNotEmpty() }
-                            ?.let { append("\n$it") }
+                    if (bigText.isNotEmpty()) {
+                        append("\n$bigText")
+                    } else if (text.isNotEmpty()) {
+                        append("\n$text")
                     }
                 }
 
