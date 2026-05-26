@@ -475,7 +475,16 @@ class TransactionFormViewModel(
         val id = _uiState.value.transactionId
         if (id != null) {
             viewModelScope.launch {
-                deleteTransactionUseCase(id.toString())
+                val oldTx = transactionRepository.getTransactionById(id.toString())
+                if (oldTx?.relatedTransactionId != null) {
+                    val oldPartner = transactionRepository.getRelatedTransaction(
+                        oldTx.relatedTransactionId.toString(), id.toString()
+                    )
+                    deleteTransactionUseCase(id.toString())
+                    if (oldPartner != null) deleteTransactionUseCase(oldPartner.id.toString())
+                } else {
+                    deleteTransactionUseCase(id.toString())
+                }
                 _uiState.value = _uiState.value.copy(isDeleted = true)
             }
         }
