@@ -238,6 +238,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
             result.onFailure { e -> Log.e("SyncRepository", "pullAll error: ${e.message}") }
             return result.map { response ->
                 val syncedAt = response.timestamp
+                lastSyncTimestamp = syncedAt
                 Log.d("SyncRepository", "pullChanges: accounts=${response.accounts.size}, categories=${response.categories.size}, regexes=${response.messageRegexes.size}, syncedAt=$syncedAt")
                 response.accounts.forEach { dto -> upsertAccount(dto, syncedAt) }
                 response.categories.forEach { dto -> upsertCategory(dto, syncedAt) }
