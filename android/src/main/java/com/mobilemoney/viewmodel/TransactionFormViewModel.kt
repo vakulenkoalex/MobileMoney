@@ -325,22 +325,24 @@ class TransactionFormViewModel(
         viewModelScope.launch {
             try {
                 if (state.type == TransactionType.TRANSFER) {
+                    var oldTx: Transaction? = null
+                    var oldPartner: Transaction? = null
                     if (state.isEditing && state.transactionId != null) {
-                        val oldTx = transactionRepository.getTransactionById(state.transactionId.toString())
+                        oldTx = transactionRepository.getTransactionById(state.transactionId.toString())
                         if (oldTx?.relatedTransactionId != null) {
-                            val oldPartner = transactionRepository.getRelatedTransaction(
+                            oldPartner = transactionRepository.getRelatedTransaction(
                                 oldTx.relatedTransactionId.toString(), state.transactionId.toString()
                             )
-                            deleteTransactionUseCase(state.transactionId.toString())
-                            if (oldPartner != null) deleteTransactionUseCase(oldPartner.id.toString())
                         }
                     }
 
-                    val transferId = UUID.randomUUID()
+                    val transferId = oldTx?.relatedTransactionId ?: UUID.randomUUID()
                     val amount = state.amount.toDouble()
 
                     val expenseTransaction = Transaction(
-                        id = UUID.randomUUID(),
+                        id = oldTx?.takeIf { !it.isIncome }?.id
+                            ?: oldPartner?.takeIf { !it.isIncome }?.id
+                            ?: UUID.randomUUID(),
                         title = title,
                         subtitle = subtitle,
                         comment = state.comment,
@@ -356,7 +358,9 @@ class TransactionFormViewModel(
                     )
 
                     val incomeTransaction = Transaction(
-                        id = UUID.randomUUID(),
+                        id = oldTx?.takeIf { it.isIncome }?.id
+                            ?: oldPartner?.takeIf { it.isIncome }?.id
+                            ?: UUID.randomUUID(),
                         title = title,
                         subtitle = subtitle,
                         comment = state.comment,
@@ -371,8 +375,8 @@ class TransactionFormViewModel(
                         relatedTransactionId = transferId
                     )
 
-                    saveTransactionUseCase(expenseTransaction, false)
-                    saveTransactionUseCase(incomeTransaction, false)
+                    transactionRepository.addTransaction(expenseTransaction)
+                    transactionRepository.addTransaction(incomeTransaction)
                     _uiState.update { it.copy(isSaved = true) }
                 } else if (state.isSplitMode) {
                     val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
@@ -420,6 +424,16 @@ class TransactionFormViewModel(
                     }
                     _uiState.update { it.copy(isSaved = true) }
                 } else {
+                    if (state.isEditing && state.transactionId != null) {
+                        val oldTx = transactionRepository.getTransactionById(state.transactionId.toString())
+                        if (oldTx?.relatedTransactionId != null) {
+                            val oldPartner = transactionRepository.getRelatedTransaction(
+                                oldTx.relatedTransactionId.toString(), state.transactionId.toString()
+                            )
+                            if (oldPartner != null) deleteTransactionUseCase(oldPartner.id.toString())
+                        }
+                    }
+
                     val transactionOrigin = when (state.source) {
                         TransactionSource.CLIPBOARD -> TransactionOrigin.CLIPBOARD
                         TransactionSource.MANUAL, TransactionSource.SMS, TransactionSource.PUSH -> TransactionOrigin.MANUAL
