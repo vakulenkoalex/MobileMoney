@@ -33,10 +33,10 @@ interface AccountDao {
     @Update
     suspend fun update(account: AccountEntity)
 
-    @Query("UPDATE accounts SET archived = :archived WHERE id = :id")
+    @Query("UPDATE accounts SET archived = :archived, syncedAt = NULL WHERE id = :id")
     suspend fun setArchived(id: String, archived: Boolean)
 
-    @Query("UPDATE accounts SET deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE accounts SET deletedAt = :deletedAt, syncedAt = NULL WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 
     @Query("DELETE FROM accounts WHERE deletedAt IS NOT NULL")
@@ -87,7 +87,7 @@ interface CategoryDao {
     @Update
     suspend fun update(category: CategoryEntity)
 
-    @Query("UPDATE categories SET deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE categories SET deletedAt = :deletedAt, syncedAt = NULL WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 
     @Query("DELETE FROM categories WHERE deletedAt IS NOT NULL")
@@ -129,7 +129,7 @@ interface TransactionDao {
     @Update
     suspend fun update(transaction: TransactionEntity)
 
-    @Query("UPDATE transactions SET deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE transactions SET deletedAt = :deletedAt, syncedAt = NULL WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 
     @Query("DELETE FROM transactions WHERE deletedAt IS NOT NULL")
@@ -190,7 +190,7 @@ interface SenderDao {
     @Update
     suspend fun update(sender: SenderEntity)
 
-    @Query("UPDATE senders SET deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE senders SET deletedAt = :deletedAt, syncedAt = NULL WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 
     @Query("DELETE FROM senders WHERE deletedAt IS NOT NULL")
@@ -252,7 +252,7 @@ interface MessageRegexDao {
     @Update
     suspend fun update(regex: MessageRegexEntity)
 
-    @Query("UPDATE message_regexes SET deletedAt = :deletedAt WHERE id = :id")
+    @Query("UPDATE message_regexes SET deletedAt = :deletedAt, syncedAt = NULL WHERE id = :id")
     suspend fun softDelete(id: String, deletedAt: Long)
 
     @Query("DELETE FROM message_regexes WHERE deletedAt IS NOT NULL")
