@@ -102,30 +102,27 @@ fun MessageListScreen(
                     enableDismissFromStartToEnd = true,
                     enableDismissFromEndToStart = !message.processed,
                     backgroundContent = {
-                        when (dismissState.currentValue) {
-                            SwipeToDismissBoxValue.StartToEnd -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color(0xFFD32F2F))
-                                        .padding(start = 20.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = Color.White)
-                                }
+                        Row(modifier = Modifier.fillMaxSize()) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize()
+                                    .background(Color(0xFFD32F2F))
+                                    .padding(start = 20.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = Color.White)
                             }
-                            SwipeToDismissBoxValue.EndToStart -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color(0xFF4CAF50))
-                                        .padding(end = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Icon(Icons.Default.Check, contentDescription = "Обработано", tint = Color.White)
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxSize()
+                                    .background(Color(0xFF4CAF50))
+                                    .padding(end = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = "Обработано", tint = Color.White)
                             }
-                            SwipeToDismissBoxValue.Settled -> {}
                         }
                     }
                 ) {
