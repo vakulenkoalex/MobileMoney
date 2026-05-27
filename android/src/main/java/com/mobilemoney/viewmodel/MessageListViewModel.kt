@@ -10,6 +10,12 @@ import kotlinx.coroutines.launch
 class MessageListViewModel : ViewModel() {
     val messages: Flow<List<MessageEntity>> = DI.databaseRepository.getMessages()
 
+    fun markAsProcessed(id: String) {
+        viewModelScope.launch {
+            DI.databaseRepository.markMessageProcessed(id)
+        }
+    }
+
     fun deleteMessage(id: String) {
         viewModelScope.launch {
             DI.databaseRepository.deleteMessageById(id)

@@ -3,7 +3,9 @@ package com.mobilemoney.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
@@ -22,14 +25,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,26 +79,71 @@ fun MessageListScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
+                .padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages, key = { it.id }) { message ->
-                MessageItem(
-                    message = message,
-                    onCopy = {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("sms", message.body))
-                    },
-                    onDelete = { viewModel.deleteMessage(message.id) }
-                )
+                val dismissState = rememberSwipeToDismissBoxState()
+
+                LaunchedEffect(dismissState.currentValue) {
+                    when (dismissState.currentValue) {
+                        SwipeToDismissBoxValue.StartToEnd -> {
+                            viewModel.deleteMessage(message.id)
+                        }
+                        SwipeToDismissBoxValue.EndToStart -> {
+                            viewModel.markAsProcessed(message.id)
+                        }
+                        else -> {}
+                    }
+                }
+
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromStartToEnd = true,
+                    enableDismissFromEndToStart = !message.processed,
+                    backgroundContent = {
+                        when (dismissState.currentValue) {
+                            SwipeToDismissBoxValue.StartToEnd -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color(0xFFD32F2F))
+                                        .padding(start = 20.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = Color.White)
+                                }
+                            }
+                            SwipeToDismissBoxValue.EndToStart -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color(0xFF4CAF50))
+                                        .padding(end = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = "Обработано", tint = Color.White)
+                                }
+                            }
+                            SwipeToDismissBoxValue.Settled -> {}
+                        }
+                    }
+                ) {
+                    MessageItem(
+                        message = message,
+                        onCopy = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("sms", message.body))
+                        }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MessageItem(message: MessageEntity, onCopy: () -> Unit, onDelete: () -> Unit) {
+private fun MessageItem(message: MessageEntity, onCopy: () -> Unit) {
     val statusColor = when {
         message.error != null -> MaterialTheme.colorScheme.error
         message.processed -> MaterialTheme.colorScheme.primary
@@ -105,7 +158,9 @@ private fun MessageItem(message: MessageEntity, onCopy: () -> Unit, onDelete: ()
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -113,13 +168,6 @@ private fun MessageItem(message: MessageEntity, onCopy: () -> Unit, onDelete: ()
                 .padding(12.dp),
             verticalAlignment = Alignment.Top
         ) {
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Удалить",
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = message.sender,
