@@ -149,7 +149,6 @@ object Database {
 
     fun getConnection(): Connection {
         if (conn == null || conn!!.isClosed) {
-            println("Reconnecting to database...")
             conn = java.sql.DriverManager.getConnection(jdbcUrl)
         }
         return conn!!
