@@ -70,28 +70,26 @@ fun MessageRegexFormScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
-                value = uiState.label,
+                value = uiState.label.value,
                 onValueChange = { viewModel.updateLabel(it) },
-                label = { Text("Название (метка) *") },
+                label = { Text(uiState.label.label) },
                 modifier = Modifier.fillMaxWidth(),
-                isError = uiState.labelError != null,
-                supportingText = {
-                    if (uiState.labelError != null) {
-                        Text(uiState.labelError!!, color = MaterialTheme.colorScheme.error)
-                    }
+                isError = uiState.label.error != null,
+                supportingText = uiState.label.error?.let { err ->
+                    { Text(err, color = MaterialTheme.colorScheme.error) }
                 },
                 singleLine = true
             )
 
             OutlinedTextField(
-                value = uiState.pattern,
+                value = uiState.pattern.value,
                 onValueChange = { viewModel.updatePattern(it) },
-                label = { Text("Regex pattern") },
+                label = { Text(uiState.pattern.label) },
                 modifier = Modifier.fillMaxWidth(),
-                isError = uiState.patternError != null,
+                isError = uiState.pattern.error != null,
                 supportingText = {
-                    if (uiState.patternError != null) {
-                        Text(uiState.patternError!!, color = MaterialTheme.colorScheme.error)
+                    if (uiState.pattern.error != null) {
+                        Text(uiState.pattern.error!!, color = MaterialTheme.colorScheme.error)
                     } else {
                         Text("Именованные группы: amount, shop, cardMask, direction (balance опционально)")
                     }

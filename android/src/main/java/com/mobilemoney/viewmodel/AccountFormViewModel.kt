@@ -13,12 +13,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.GlobalScope
 import com.mobilemoney.ui.common.ErrorHandler
+import com.mobilemoney.ui.common.FormField
 import java.util.UUID
 
 data class AccountFormState(
-    val name: String = "",
+    val name: FormField = FormField(label = "Название счёта"),
     val type: AccountType = AccountType.CASH,
     val currencyCode: String = "RUB",
     val currencySymbol: String = "₽",
@@ -33,8 +33,7 @@ data class AccountFormState(
     val error: String? = null,
     val isSaved: Boolean = false,
     val autoCreateEnabled: Boolean = false,
-    val cardMask: String = "",
-    val cardMaskError: String? = null
+    val cardMask: FormField = FormField(label = "Маска карты / идентификатор")
 )
 
 class AccountFormViewModel(
@@ -56,7 +55,7 @@ class AccountFormViewModel(
             if (account != null) {
                 val currency = uiState.value.currencies.find { it.code == account.currency }
                 _uiState.value = _uiState.value.copy(
-                    name = account.name,
+                    name = _uiState.value.name.withValue(account.name),
                     type = account.type,
                     currencyCode = account.currency,
                     currencySymbol = currency?.symbol ?: "₽",
@@ -65,7 +64,7 @@ class AccountFormViewModel(
                     isEditing = true,
                     accountId = accountId,
                     autoCreateEnabled = account.autoCreateEnabled,
-                    cardMask = account.cardMask ?: "",
+                    cardMask = _uiState.value.cardMask.withValue(account.cardMask ?: ""),
                     isLoading = false
                 )
             } else {
@@ -78,7 +77,9 @@ class AccountFormViewModel(
     }
 
     fun updateName(name: String) {
-        _uiState.value = _uiState.value.copy(name = name)
+        _uiState.value = _uiState.value.copy(
+            name = _uiState.value.name.withValue(name)
+        )
     }
 
     fun updateCurrency(currencyCode: String) {
@@ -106,40 +107,45 @@ class AccountFormViewModel(
     }
 
     fun updateCardMask(mask: String) {
-        _uiState.value = _uiState.value.copy(cardMask = mask, cardMaskError = null)
-    }
-
-    fun validateCardMask(): Boolean {
-        return !_uiState.value.cardMask.isBlank()
+        _uiState.value = _uiState.value.copy(
+            cardMask = _uiState.value.cardMask.withValue(mask)
+        )
     }
 
     fun save(): Boolean {
         val state = _uiState.value
+        var hasError = false
 
-        if (state.name.isBlank()) {
-            GlobalScope.launch {
-                ErrorHandler.emitError("Введите название счёта")
+        val cleanName = state.name.validate()
+        if (!cleanName.isValid) {
+            _uiState.value = state.copy(name = cleanName)
+            hasError = true
+        }
+
+        if (state.autoCreateEnabled) {
+            val cleanCardMask = state.cardMask.validate()
+            if (!cleanCardMask.isValid) {
+                _uiState.value = state.copy(cardMask = cleanCardMask)
+                hasError = true
+            }
+        }
+
+        if (hasError) {
+            viewModelScope.launch {
+                ErrorHandler.emitError("Заполните обязательные поля")
             }
             return false
         }
 
-        if (state.autoCreateEnabled) {
-            if (state.cardMask.isBlank()) {
-                _uiState.value = _uiState.value.copy(cardMaskError = "Заполните маску")
-                return false
-            }
-            if (!validateCardMask()) return false
-        }
-
         val account = Account(
             id = state.accountId ?: UUID.randomUUID(),
-            name = state.name,
+            name = state.name.value,
             type = state.type,
             currency = state.currencyCode,
             icon = state.icon,
             isDefault = state.isDefault,
             autoCreateEnabled = state.autoCreateEnabled,
-            cardMask = state.cardMask.takeIf { it.isNotBlank() }
+            cardMask = state.cardMask.value.takeIf { it.isNotBlank() }
         )
 
         viewModelScope.launch {
@@ -149,5 +155,4 @@ class AccountFormViewModel(
         _uiState.value = state.copy(isSaved = true)
         return true
     }
-
 }

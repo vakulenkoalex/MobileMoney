@@ -70,18 +70,26 @@ fun SenderFormScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
-                value = uiState.senderNumber,
+                value = uiState.senderNumber.value,
                 onValueChange = { viewModel.updateSenderNumber(it) },
-                label = { Text("Идентификатор отправителя") },
+                label = { Text(uiState.senderNumber.label) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.senderNumber.error != null,
+                supportingText = uiState.senderNumber.error?.let { err ->
+                    { Text(err, color = MaterialTheme.colorScheme.error) }
+                }
             )
             OutlinedTextField(
-                value = uiState.label,
+                value = uiState.label.value,
                 onValueChange = { viewModel.updateLabel(it) },
-                label = { Text("Метка") },
+                label = { Text(uiState.label.label) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isError = uiState.label.error != null,
+                supportingText = uiState.label.error?.let { err ->
+                    { Text(err, color = MaterialTheme.colorScheme.error) }
+                }
             )
             Text(
                 text = "Вид",

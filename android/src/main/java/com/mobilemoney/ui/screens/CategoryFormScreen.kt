@@ -102,11 +102,15 @@ fun CategoryFormScreen(
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 OutlinedTextField(
-                    value = uiState.name,
+                    value = uiState.name.value,
                     onValueChange = { viewModel.updateName(it) },
-                    label = { Text("Название категории") },
+                    label = { Text(uiState.name.label) },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    isError = uiState.name.error != null,
+                    supportingText = uiState.name.error?.let { err ->
+                        { Text(err, color = MaterialTheme.colorScheme.error) }
+                    }
                 )
             }
 

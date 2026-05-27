@@ -12,12 +12,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.GlobalScope
 import com.mobilemoney.ui.common.ErrorHandler
+import com.mobilemoney.ui.common.FormField
 import java.util.UUID
 
 data class CategoryFormState(
-    val name: String = "",
+    val name: FormField = FormField(label = "Название категории"),
     val icon: String = "restaurant",
     val isIncome: Boolean = false,
     val isDefault: Boolean = false,
@@ -60,7 +60,7 @@ class CategoryFormViewModel(
             val category = categories.find { it.id == categoryId }
             if (category != null) {
                 _uiState.value = _uiState.value.copy(
-                    name = category.name,
+                    name = _uiState.value.name.withValue(category.name),
                     icon = category.icon,
                     isIncome = category.isIncome,
                     isDefault = category.isDefault,
@@ -79,7 +79,9 @@ class CategoryFormViewModel(
     }
 
     fun updateName(name: String) {
-        _uiState.value = _uiState.value.copy(name = name)
+        _uiState.value = _uiState.value.copy(
+            name = _uiState.value.name.withValue(name)
+        )
     }
 
     fun updateIcon(icon: String) {
@@ -109,16 +111,18 @@ class CategoryFormViewModel(
     fun save(): Boolean {
         val state = _uiState.value
 
-        if (state.name.isBlank()) {
-            GlobalScope.launch {
-                ErrorHandler.emitError("Введите название категории")
+        val cleanName = state.name.validate()
+        if (!cleanName.isValid) {
+            _uiState.value = state.copy(name = cleanName)
+            viewModelScope.launch {
+                ErrorHandler.emitError("Заполните обязательные поля")
             }
             return false
         }
 
         val category = Category(
             id = state.categoryId ?: UUID.randomUUID(),
-            name = state.name,
+            name = state.name.value,
             icon = state.icon,
             isIncome = state.isIncome,
             isDefault = state.isDefault,

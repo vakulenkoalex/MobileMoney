@@ -10,11 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.mobilemoney.ui.common.ErrorHandler
+import com.mobilemoney.ui.common.FormField
 import java.util.UUID
 
 data class SenderFormState(
-    val senderNumber: String = "",
-    val label: String = "",
+    val senderNumber: FormField = FormField(label = "Идентификатор отправителя"),
+    val label: FormField = FormField(label = "Метка"),
     val senderType: SenderType = SenderType.PHONE_NUMBER,
     val isEditing: Boolean = false,
     val senderId: String? = null,
@@ -31,8 +32,8 @@ class SenderFormViewModel : ViewModel() {
             val sender = DI.databaseRepository.getSenderById(id)
             if (sender != null) {
                 _uiState.value = _uiState.value.copy(
-                    senderNumber = sender.sender,
-                    label = sender.label,
+                    senderNumber = _uiState.value.senderNumber.withValue(sender.sender),
+                    label = _uiState.value.label.withValue(sender.label),
                     senderType = SenderType.valueOf(sender.type),
                     isEditing = true,
                     senderId = id
@@ -42,11 +43,15 @@ class SenderFormViewModel : ViewModel() {
     }
 
     fun updateSenderNumber(value: String) {
-        _uiState.value = _uiState.value.copy(senderNumber = value)
+        _uiState.value = _uiState.value.copy(
+            senderNumber = _uiState.value.senderNumber.withValue(value)
+        )
     }
 
     fun updateLabel(value: String) {
-        _uiState.value = _uiState.value.copy(label = value)
+        _uiState.value = _uiState.value.copy(
+            label = _uiState.value.label.withValue(value)
+        )
     }
 
     fun updateSenderType(type: SenderType) {
@@ -55,15 +60,23 @@ class SenderFormViewModel : ViewModel() {
 
     fun save() {
         val state = _uiState.value
-        if (state.senderNumber.isBlank()) {
-            viewModelScope.launch {
-                ErrorHandler.emitError("Введите идентификатор отправителя")
-            }
-            return
+        var hasError = false
+
+        val cleanNumber = state.senderNumber.validate()
+        if (!cleanNumber.isValid) {
+            _uiState.value = state.copy(senderNumber = cleanNumber)
+            hasError = true
         }
-        if (state.label.isBlank()) {
+
+        val cleanLabel = state.label.validate()
+        if (!cleanLabel.isValid) {
+            _uiState.value = state.copy(label = cleanLabel)
+            hasError = true
+        }
+
+        if (hasError) {
             viewModelScope.launch {
-                ErrorHandler.emitError("Введите метку отправителя")
+                ErrorHandler.emitError("Заполните обязательные поля")
             }
             return
         }
@@ -73,8 +86,8 @@ class SenderFormViewModel : ViewModel() {
                 DI.databaseRepository.updateSender(
                     SenderEntity(
                         id = state.senderId,
-                        sender = state.senderNumber,
-                        label = state.label,
+                        sender = state.senderNumber.value,
+                        label = state.label.value,
                         type = state.senderType.name,
                         createdAt = 0,
                         updatedAt = now
@@ -84,8 +97,8 @@ class SenderFormViewModel : ViewModel() {
                 DI.databaseRepository.addSender(
                     SenderEntity(
                         id = UUID.randomUUID().toString(),
-                        sender = state.senderNumber,
-                        label = state.label,
+                        sender = state.senderNumber.value,
+                        label = state.label.value,
                         type = state.senderType.name,
                         createdAt = now,
                         updatedAt = now

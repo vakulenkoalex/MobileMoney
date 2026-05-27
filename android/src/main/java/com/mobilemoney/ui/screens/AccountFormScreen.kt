@@ -104,11 +104,15 @@ fun AccountFormScreen(
                     )
                 }
                 OutlinedTextField(
-                    value = uiState.name,
+                    value = uiState.name.value,
                     onValueChange = { viewModel.updateName(it) },
-                    label = { Text("Название счёта") },
+                    label = { Text(uiState.name.label) },
                     modifier = Modifier.weight(1f),
-                    singleLine = true
+                    singleLine = true,
+                    isError = uiState.name.error != null,
+                    supportingText = uiState.name.error?.let { err ->
+                        { Text(err, color = MaterialTheme.colorScheme.error) }
+                    }
                 )
             }
 
@@ -298,16 +302,14 @@ fun AccountFormScreen(
 
             if (uiState.autoCreateEnabled) {
                 OutlinedTextField(
-                    value = uiState.cardMask,
+                    value = uiState.cardMask.value,
                     onValueChange = { viewModel.updateCardMask(it) },
-                    label = { Text("Маска карты / идентификатор") },
+                    label = { Text(uiState.cardMask.label) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    isError = uiState.cardMaskError != null,
-                    supportingText = {
-                        if (uiState.cardMaskError != null) {
-                            Text(uiState.cardMaskError!!, color = MaterialTheme.colorScheme.error)
-                        }
+                    isError = uiState.cardMask.error != null,
+                    supportingText = uiState.cardMask.error?.let { err ->
+                        { Text(err, color = MaterialTheme.colorScheme.error) }
                     }
                 )
             }

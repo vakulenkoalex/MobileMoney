@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import com.mobilemoney.dto.TransferConstants
 import com.mobilemoney.ui.common.ErrorHandler
+import com.mobilemoney.ui.common.FieldState
+import com.mobilemoney.ui.common.FormField
 import java.util.UUID
 
 enum class TransactionType {
@@ -29,10 +31,10 @@ enum class TransactionType {
 }
 
 data class TransactionFormState(
-    val amount: String = "",
-    val selectedAccount: Account? = null,
-    val targetAccount: Account? = null,
-    val selectedCategory: Category? = null,
+    val amount: FormField = FormField(label = "Сумма"),
+    val selectedAccount: FieldState<Account> = FieldState(),
+    val targetAccount: FieldState<Account> = FieldState(),
+    val selectedCategory: FieldState<Category> = FieldState(),
     val date: Long = System.currentTimeMillis(),
     val comment: String = "",
     val type: TransactionType = TransactionType.EXPENSE,
@@ -84,7 +86,7 @@ class TransactionFormViewModel(
                         val defaultAccount = pendingAccount
                             ?: accounts.find { it.isDefault }
                             ?: accounts.firstOrNull()
-                        _uiState.value = _uiState.value.copy(selectedAccount = defaultAccount)
+                        _uiState.value = _uiState.value.copy(selectedAccount = _uiState.value.selectedAccount.withValue(defaultAccount))
                     }
                 }
         }
@@ -97,7 +99,7 @@ class TransactionFormViewModel(
                         categories.find { it.id == id }
                     }
                     if (pendingCategory != null) {
-                        _uiState.value = _uiState.value.copy(selectedCategory = pendingCategory, pendingCategoryId = null)
+                        _uiState.value = _uiState.value.copy(selectedCategory = _uiState.value.selectedCategory.withValue(pendingCategory), pendingCategoryId = null)
                     }
                 }
         }
@@ -108,7 +110,7 @@ class TransactionFormViewModel(
         _uiState.value = TransactionFormState(
             accounts = _uiState.value.accounts,
             categories = _uiState.value.categories,
-            selectedAccount = defaultAccount,
+            selectedAccount = _uiState.value.selectedAccount.withValue(defaultAccount),
             date = System.currentTimeMillis(),
             pendingAccountId = null,
             pendingCategoryId = null
@@ -133,10 +135,10 @@ class TransactionFormViewModel(
         val account = _uiState.value.accounts.find { it.id == data.accountId }
         val category = _uiState.value.categories.find { it.id == data.categoryId }
         _uiState.value = _uiState.value.copy(
-            amount = data.amount,
-            selectedAccount = account,
+            amount = _uiState.value.amount.withValue(data.amount),
+            selectedAccount = _uiState.value.selectedAccount.withValue(account),
             pendingAccountId = if (account == null) data.accountId else null,
-            selectedCategory = category,
+            selectedCategory = _uiState.value.selectedCategory.withValue(category),
             pendingCategoryId = if (category == null) data.categoryId else null,
             comment = data.comment,
             type = if (data.isIncome) TransactionType.INCOME else TransactionType.EXPENSE,
@@ -171,10 +173,10 @@ class TransactionFormViewModel(
                 }
 
                 _uiState.value = _uiState.value.copy(
-                    amount = transaction.amount.toString(),
-                    selectedAccount = accounts.find { it.id == transaction.accountId },
-                    targetAccount = targetAccount,
-                    selectedCategory = categories.find { it.id == transaction.categoryId },
+                    amount = _uiState.value.amount.withValue(transaction.amount.toString()),
+                    selectedAccount = _uiState.value.selectedAccount.withValue(accounts.find { it.id == transaction.accountId }),
+                    targetAccount = _uiState.value.targetAccount.withValue(targetAccount),
+                    selectedCategory = _uiState.value.selectedCategory.withValue(categories.find { it.id == transaction.categoryId }),
                     date = transaction.date,
                     comment = transaction.comment,
                     type = when {
@@ -193,15 +195,21 @@ class TransactionFormViewModel(
     }
 
     fun updateAmount(value: String) {
-        _uiState.value = _uiState.value.copy(amount = value)
+        _uiState.value = _uiState.value.copy(
+            amount = _uiState.value.amount.withValue(value)
+        )
     }
 
     fun updateAccount(account: Account) {
-        _uiState.value = _uiState.value.copy(selectedAccount = account)
+        _uiState.value = _uiState.value.copy(
+            selectedAccount = _uiState.value.selectedAccount.withValue(account)
+        )
     }
 
     fun updateCategory(category: Category?) {
-        _uiState.value = _uiState.value.copy(selectedCategory = category)
+        _uiState.value = _uiState.value.copy(
+            selectedCategory = _uiState.value.selectedCategory.withValue(category)
+        )
     }
 
     fun updateDate(date: Long) {
@@ -229,7 +237,9 @@ class TransactionFormViewModel(
     }
 
     fun updateTargetAccount(account: Account) {
-        _uiState.value = _uiState.value.copy(targetAccount = account)
+        _uiState.value = _uiState.value.copy(
+            targetAccount = _uiState.value.targetAccount.withValue(account)
+        )
     }
 
     fun enableSplitMode() {
@@ -242,7 +252,7 @@ class TransactionFormViewModel(
 
     fun updateSplitAmount(value: String) {
         val parsed = value.toDoubleOrNull() ?: 0.0
-        val currentAmount = _uiState.value.amount.toDoubleOrNull() ?: 0.0
+        val currentAmount = _uiState.value.amount.value.toDoubleOrNull() ?: 0.0
         if (parsed <= currentAmount) {
             _uiState.value = _uiState.value.copy(splitAmount = value)
         }
@@ -253,7 +263,7 @@ class TransactionFormViewModel(
     }
 
     fun getRemainingAmount(): Double {
-        val total = _uiState.value.amount.toDoubleOrNull() ?: 0.0
+        val total = _uiState.value.amount.value.toDoubleOrNull() ?: 0.0
         val split = _uiState.value.splitAmount.toDoubleOrNull() ?: 0.0
         return total - split
     }
@@ -261,44 +271,66 @@ class TransactionFormViewModel(
     fun save(): Boolean {
         val state = _uiState.value
 
-        if (state.amount.isBlank() || state.amount.toDoubleOrNull() == null || state.amount.toDouble() <= 0) {
-            kotlinx.coroutines.GlobalScope.launch {
+        val cleanAmount = state.amount.validate()
+        if (!cleanAmount.isValid) {
+            _uiState.value = state.copy(amount = cleanAmount)
+            viewModelScope.launch {
+                ErrorHandler.emitError("Введите корректную сумму")
+            }
+            return false
+        }
+        if (state.amount.value.toDoubleOrNull() == null || state.amount.value.toDouble() <= 0) {
+            _uiState.value = state.copy(amount = state.amount.copy(error = "Введите корректную сумму"))
+            viewModelScope.launch {
                 ErrorHandler.emitError("Введите корректную сумму")
             }
             return false
         }
 
-        if (state.selectedAccount == null) {
-            kotlinx.coroutines.GlobalScope.launch {
+        val cleanAccount = state.selectedAccount.validate("Выберите счёт")
+        if (!cleanAccount.isValid) {
+            _uiState.value = state.copy(selectedAccount = cleanAccount)
+            viewModelScope.launch {
                 ErrorHandler.emitError("Выберите счёт")
             }
             return false
         }
 
-        if (state.type == TransactionType.TRANSFER && state.targetAccount == null) {
-            kotlinx.coroutines.GlobalScope.launch {
-                ErrorHandler.emitError("Выберите целевой счёт")
+        if (state.type == TransactionType.TRANSFER) {
+            val cleanTarget = state.targetAccount.validate("Выберите целевой счёт")
+            if (!cleanTarget.isValid) {
+                _uiState.value = state.copy(targetAccount = cleanTarget)
+                viewModelScope.launch {
+                    ErrorHandler.emitError("Выберите целевой счёт")
+                }
+                return false
             }
-            return false
         }
 
-        if (state.type != TransactionType.TRANSFER && state.selectedCategory == null) {
-            kotlinx.coroutines.GlobalScope.launch {
-                ErrorHandler.emitError("Выберите категорию")
+        val account = state.selectedAccount.value!!
+        val targetAccount = state.targetAccount.value
+
+        if (state.type != TransactionType.TRANSFER) {
+            val cleanCategory = state.selectedCategory.validate("Выберите категорию")
+            if (!cleanCategory.isValid) {
+                _uiState.value = state.copy(selectedCategory = cleanCategory)
+                viewModelScope.launch {
+                    ErrorHandler.emitError("Выберите категорию")
+                }
+                return false
             }
-            return false
         }
 
         if (state.isSplitMode) {
             val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
             if (splitAmount <= 0) {
-                kotlinx.coroutines.GlobalScope.launch {
+                viewModelScope.launch {
                     ErrorHandler.emitError("Введите сумму для разделения")
                 }
                 return false
             }
             if (state.splitCategory == null) {
-                kotlinx.coroutines.GlobalScope.launch {
+                viewModelScope.launch {
                     ErrorHandler.emitError("Выберите категорию для новой операции")
                 }
                 return false
@@ -308,18 +340,18 @@ class TransactionFormViewModel(
         val isIncome = state.type == TransactionType.INCOME
         val icon = when (state.type) {
             TransactionType.TRANSFER -> "swap_horiz"
-            TransactionType.INCOME -> state.selectedCategory?.icon ?: "work"
-            TransactionType.EXPENSE -> state.selectedCategory?.icon ?: "shopping_cart"
+            TransactionType.INCOME -> state.selectedCategory.value?.icon ?: "work"
+            TransactionType.EXPENSE -> state.selectedCategory.value?.icon ?: "shopping_cart"
         }
 
         val title = when (state.type) {
             TransactionType.TRANSFER -> "Перевод"
-            else -> state.selectedCategory?.name ?: "Без категории"
+            else -> state.selectedCategory.value?.name ?: "Без категории"
         }
 
         val subtitle = when (state.type) {
-            TransactionType.TRANSFER -> "${state.selectedAccount.name} → ${state.targetAccount?.name}"
-            else -> state.selectedAccount.name
+            TransactionType.TRANSFER -> "${account.name} → ${targetAccount?.name}"
+            else -> account.name
         }
 
         viewModelScope.launch {
@@ -337,7 +369,7 @@ class TransactionFormViewModel(
                     }
 
                     val transferId = oldTx?.relatedTransactionId ?: UUID.randomUUID()
-                    val amount = state.amount.toDouble()
+                    val amount = state.amount.value.toDouble()
 
                     val expenseTransaction = Transaction(
                         id = oldTx?.takeIf { !it.isIncome }?.id
@@ -347,12 +379,12 @@ class TransactionFormViewModel(
                         subtitle = subtitle,
                         comment = state.comment,
                         amount = amount,
-                        currency = state.selectedAccount.currency,
+                        currency = account.currency,
                         icon = icon,
                         color = 0xFF9C27B0,
                         isIncome = false,
                         date = state.date,
-                        accountId = state.selectedAccount.id,
+                        accountId = account.id,
                         categoryId = UUID.fromString(TransferConstants.EXPENSE_CATEGORY_ID),
                         relatedTransactionId = transferId
                     )
@@ -365,12 +397,12 @@ class TransactionFormViewModel(
                         subtitle = subtitle,
                         comment = state.comment,
                         amount = amount,
-                        currency = state.targetAccount?.currency ?: state.selectedAccount.currency,
+                        currency = targetAccount?.currency ?: account.currency,
                         icon = icon,
                         color = 0xFF9C27B0,
                         isIncome = true,
                         date = state.date,
-                        accountId = state.targetAccount?.id,
+                        accountId = targetAccount?.id,
                         categoryId = UUID.fromString(TransferConstants.INCOME_CATEGORY_ID),
                         relatedTransactionId = transferId
                     )
@@ -380,21 +412,21 @@ class TransactionFormViewModel(
                     _uiState.update { it.copy(isSaved = true) }
                 } else if (state.isSplitMode) {
                     val splitAmount = state.splitAmount.toDoubleOrNull() ?: 0.0
-                    val remainingAmount = state.amount.toDoubleOrNull()!! - splitAmount
+                    val remainingAmount = state.amount.value.toDoubleOrNull()!! - splitAmount
 
                     val splitIcon = state.splitCategory?.icon ?: "category"
                     val newTransaction = Transaction(
                         id = UUID.randomUUID(),
                         title = state.splitCategory?.name ?: "Без категории",
-                        subtitle = state.selectedAccount.name,
+                        subtitle = account.name,
                         comment = state.comment,
                         amount = splitAmount,
-                        currency = state.selectedAccount.currency,
+                        currency = account.currency,
                         icon = splitIcon,
                         color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
                         isIncome = isIncome,
                         date = state.date,
-                        accountId = state.selectedAccount.id,
+                        accountId = account.id,
                         categoryId = state.splitCategory?.id
                     )
 
@@ -407,17 +439,17 @@ class TransactionFormViewModel(
                     } else {
                         val mainTransaction = Transaction(
                             id = UUID.randomUUID(),
-                            title = state.selectedCategory?.name ?: "Без категории",
-                            subtitle = state.selectedAccount.name,
+                            title = state.selectedCategory.value?.name ?: "Без категории",
+                            subtitle = account.name,
                             comment = state.comment,
                             amount = remainingAmount,
-                            currency = state.selectedAccount.currency,
-                            icon = state.selectedCategory?.icon ?: "shopping_cart",
+                            currency = account.currency,
+                            icon = state.selectedCategory.value?.icon ?: "shopping_cart",
                             color = if (isIncome) 0xFF2E7D32 else 0xFFD32F2F,
                             isIncome = isIncome,
                             date = state.date,
-                            accountId = state.selectedAccount.id,
-                            categoryId = state.selectedCategory?.id
+                            accountId = account.id,
+                            categoryId = state.selectedCategory.value?.id
                         )
                         transactionRepository.addTransaction(mainTransaction)
                         transactionRepository.addTransaction(newTransaction)
@@ -438,15 +470,15 @@ class TransactionFormViewModel(
                         TransactionSource.CLIPBOARD -> TransactionOrigin.CLIPBOARD
                         TransactionSource.MANUAL, TransactionSource.SMS, TransactionSource.PUSH -> TransactionOrigin.MANUAL
                     }
-                    val transactionTitle = if (state.clipboardText != null && state.selectedCategory == null) state.comment.ifBlank { "Без категории" } else title
+                    val transactionTitle = if (state.clipboardText != null && state.selectedCategory.value == null) state.comment.ifBlank { "Без категории" } else title
 
                     val transaction = Transaction(
                         id = state.transactionId ?: UUID.randomUUID(),
                         title = transactionTitle,
                         subtitle = subtitle,
                         comment = state.comment,
-                        amount = state.amount.toDouble(),
-                        currency = state.selectedAccount.currency,
+                        amount = state.amount.value.toDouble(),
+                        currency = account.currency,
                         icon = icon,
                         color = when (state.type) {
                             TransactionType.TRANSFER -> 0xFF9C27B0
@@ -455,8 +487,8 @@ class TransactionFormViewModel(
                         },
                         isIncome = isIncome,
                         date = state.date,
-                        accountId = state.selectedAccount.id,
-                        categoryId = state.selectedCategory?.id,
+                        accountId = account.id,
+                        categoryId = state.selectedCategory.value?.id,
                         shop = state.shop.takeIf { it.isNotBlank() },
                         origin = transactionOrigin,
                         sourceData = state.sourceData.takeIf { it.isNotBlank() }
@@ -464,17 +496,13 @@ class TransactionFormViewModel(
 
                     val result = saveTransactionUseCase(transaction, state.isEditing)
                     if (result is SaveTransactionUseCase.Result.Error) {
-                        kotlinx.coroutines.GlobalScope.launch {
-                            ErrorHandler.emitError(result.message)
-                        }
+                        ErrorHandler.emitError(result.message)
                         return@launch
                     }
                     _uiState.update { it.copy(isSaved = true) }
                 }
             } catch (e: Exception) {
-                kotlinx.coroutines.GlobalScope.launch {
-                    ErrorHandler.emitError(e.message ?: "Ошибка сохранения")
-                }
+                ErrorHandler.emitError(e.message ?: "Ошибка сохранения")
             }
         }
         return true

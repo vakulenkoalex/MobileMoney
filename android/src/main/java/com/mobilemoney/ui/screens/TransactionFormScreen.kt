@@ -156,18 +156,22 @@ fun TransactionFormScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
-                    value = uiState.amount,
+                    value = uiState.amount.value,
                     onValueChange = { viewModel.updateAmount(it) },
-                    label = { Text("Сумма") },
+                    label = { Text(uiState.amount.label) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(amountFocusRequester),
                     leadingIcon = {
                         Text(
-                            text = uiState.selectedAccount?.currency ?: "₽",
+                            text = uiState.selectedAccount.value?.currency ?: "₽",
                             style = MaterialTheme.typography.titleMedium
                         )
+                    },
+                    isError = uiState.amount.error != null,
+                    supportingText = uiState.amount.error?.let { err ->
+                        { Text(err, color = MaterialTheme.colorScheme.error) }
                     }
                 )
                 Box(
@@ -211,52 +215,18 @@ fun TransactionFormScreen(
             }
 
             // Счёт
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                    .clickable { showAccountSheet = true }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (uiState.selectedAccount != null)
-                                MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (uiState.selectedAccount != null)
-                            AppIcons.getAccountIcon(uiState.selectedAccount!!.icon)
-                        else Icons.Default.AccountBalanceWallet,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = if (uiState.selectedAccount != null)
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = uiState.selectedAccount?.name ?: "Выберите счёт",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
-            // Категория (только для расхода и прихода)
-            if (uiState.type != TransactionType.TRANSFER) {
+            Column {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                        .clickable { showCategorySheet = true }
+                        .border(
+                            1.dp,
+                            if (uiState.selectedAccount.error != null) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.outline,
+                            RoundedCornerShape(8.dp)
+                        )
+                        .clickable { showAccountSheet = true }
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -265,32 +235,96 @@ fun TransactionFormScreen(
                             .size(24.dp)
                             .clip(CircleShape)
                             .background(
-                                if (uiState.selectedCategory != null)
+                                if (uiState.selectedAccount.value != null)
                                     MaterialTheme.colorScheme.primaryContainer
                                 else MaterialTheme.colorScheme.surfaceVariant
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (uiState.selectedCategory != null)
-                                AppIcons.getTransactionIcon(uiState.selectedCategory!!.icon)
-                            else Icons.Default.Category,
+                            imageVector = if (uiState.selectedAccount.value != null)
+                                AppIcons.getAccountIcon(uiState.selectedAccount.value!!.icon)
+                            else Icons.Default.AccountBalanceWallet,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = if (uiState.selectedCategory != null)
+                            tint = if (uiState.selectedAccount.value != null)
                                 MaterialTheme.colorScheme.onPrimaryContainer
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    val categoryLabel = uiState.selectedCategory?.let { cat ->
-                        val parent = uiState.categories.find { it.id == cat.parentId }
-                        if (parent != null) "${parent.name} → ${cat.name}" else cat.name
-                    } ?: "Выберите категорию"
                     Text(
-                        text = categoryLabel,
+                        text = uiState.selectedAccount.value?.name ?: "Выберите счёт",
                         style = MaterialTheme.typography.bodyLarge
                     )
+                }
+                if (uiState.selectedAccount.error != null) {
+                    Text(
+                        text = uiState.selectedAccount.error!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
+            }
+
+            // Категория (только для расхода и прихода)
+            if (uiState.type != TransactionType.TRANSFER) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(
+                                1.dp,
+                                if (uiState.selectedCategory.error != null) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.outline,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable { showCategorySheet = true }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (uiState.selectedCategory.value != null)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (uiState.selectedCategory.value != null)
+                                    AppIcons.getTransactionIcon(uiState.selectedCategory.value!!.icon)
+                                else Icons.Default.Category,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = if (uiState.selectedCategory.value != null)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        val categoryLabel = uiState.selectedCategory.value?.let { cat ->
+                            val parent = uiState.categories.find { it.id == cat.parentId }
+                            if (parent != null) "${parent.name} → ${cat.name}" else cat.name
+                        } ?: "Выберите категорию"
+                        Text(
+                            text = categoryLabel,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    if (uiState.selectedCategory.error != null) {
+                        Text(
+                            text = uiState.selectedCategory.error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
                 }
 
                 if (showCategorySheet) {
@@ -320,7 +354,7 @@ fun TransactionFormScreen(
                                         items(rootCategories) { category ->
                                             CategoryGridItem(
                                                 category = category,
-                                                selected = uiState.selectedCategory?.id == category.id,
+                                                selected = uiState.selectedCategory.value?.id == category.id,
                                                 onClick = {
                                                     val hasChildren = viewModel.getCategoryWithChildren(category.id).size > 1
                                                     if (hasChildren) {
@@ -348,7 +382,7 @@ fun TransactionFormScreen(
                                     items(categoryList) { category ->
                                         CategoryGridItem(
                                             category = category,
-                                            selected = uiState.selectedCategory?.id == category.id,
+                                            selected = uiState.selectedCategory.value?.id == category.id,
                                             onClick = {
                                                 viewModel.updateCategory(category)
                                                 showCategorySheet = false
@@ -365,15 +399,30 @@ fun TransactionFormScreen(
 
             // Целевой счёт (только для перевода)
             if (uiState.type == TransactionType.TRANSFER) {
-                ListItem(
-                    headlineContent = { Text("На счёт") },
-                    supportingContent = { Text(uiState.targetAccount?.name ?: "Выберите целевой счёт") },
-                    leadingContent = { Icon(Icons.Default.SwapHoriz, contentDescription = null) },
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp))
-                        .clickable { showTargetAccountSheet = true }
-                )
+                Column {
+                    ListItem(
+                        headlineContent = { Text("На счёт") },
+                        supportingContent = { Text(uiState.targetAccount.value?.name ?: "Выберите целевой счёт") },
+                        leadingContent = { Icon(Icons.Default.SwapHoriz, contentDescription = null) },
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(
+                                1.dp,
+                                if (uiState.targetAccount.error != null) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.outline,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable { showTargetAccountSheet = true }
+                    )
+                    if (uiState.targetAccount.error != null) {
+                        Text(
+                            text = uiState.targetAccount.error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
+                }
 
                 if (showTargetAccountSheet) {
                     ModalBottomSheet(
@@ -389,7 +438,7 @@ fun TransactionFormScreen(
                                 style = MaterialTheme.typography.titleLarge,
                                 modifier = Modifier.padding(bottom = 16.dp)
                             )
-                            uiState.accounts.filter { it.id != uiState.selectedAccount?.id }.forEach { account ->
+                            uiState.accounts.filter { it.id != uiState.selectedAccount.value?.id }.forEach { account ->
                                 ListItem(
                                     headlineContent = { Text(account.name) },
                                     leadingContent = { Icon(AppIcons.getAccountIcon(account.icon), contentDescription = null) },
@@ -639,21 +688,21 @@ fun TransactionFormScreen(
 
                         // Итоговая сумма
                         Text(
-                            text = "Итого: ${uiState.amount} ${uiState.selectedAccount?.currency ?: "₽"}",
+                            text = "Итого: ${uiState.amount.value} ${uiState.selectedAccount.value?.currency ?: "₽"}",
                             style = MaterialTheme.typography.bodyMedium
                         )
 
                         // Оставшаяся сумма (основная категория)
                         val remainingAmount = viewModel.getRemainingAmount()
                         OutlinedTextField(
-                            value = uiState.amount.toDoubleOrNull()?.let { String.format("%.2f", it - (uiState.splitAmount.toDoubleOrNull() ?: 0.0)).replace(",", ".") } ?: "",
+                            value = uiState.amount.value.toDoubleOrNull()?.let { String.format("%.2f", it - (uiState.splitAmount.toDoubleOrNull() ?: 0.0)).replace(",", ".") } ?: "",
                             onValueChange = { },
-                            label = { Text(uiState.selectedCategory?.name ?: "Основная категория") },
+                            label = { Text(uiState.selectedCategory.value?.name ?: "Основная категория") },
                             readOnly = true,
                             modifier = Modifier.fillMaxWidth(),
                             leadingIcon = {
                                 Text(
-                                    text = uiState.selectedAccount?.currency ?: "₽",
+                                    text = uiState.selectedAccount.value?.currency ?: "₽",
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
@@ -668,7 +717,7 @@ fun TransactionFormScreen(
                             modifier = Modifier.fillMaxWidth(),
                             leadingIcon = {
                                 Text(
-                                    text = uiState.selectedAccount?.currency ?: "₽",
+                                    text = uiState.selectedAccount.value?.currency ?: "₽",
                                     style = MaterialTheme.typography.titleMedium
                                 )
                             }
