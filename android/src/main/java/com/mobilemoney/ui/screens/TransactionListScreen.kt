@@ -66,10 +66,16 @@ fun TransactionListScreen(
 
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = clipboard.primaryClip
-        if (clip == null || clip.itemCount == 0) return@LaunchedEffect
+        if (clip == null || clip.itemCount == 0) {
+            ErrorHandler.emitError("Буфер обмена пуст")
+            return@LaunchedEffect
+        }
 
         val text = clip.getItemAt(0).coerceToText(context).toString()
-        if (text.isBlank()) return@LaunchedEffect
+        if (text.isBlank()) {
+            ErrorHandler.emitError("Не удалось прочитать текст из буфера обмена")
+            return@LaunchedEffect
+        }
 
         val debugMode = featurePrefs.debugModeEnabled
 
