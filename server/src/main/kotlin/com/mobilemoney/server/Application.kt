@@ -7,15 +7,23 @@ import com.mobilemoney.server.route.syncRoutes
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
+import java.util.Properties
 
 fun main() {
     val nettyPort = (System.getenv("NETTY_PORT") ?: "6080").toInt()
 
-    val dbInitialized = Database.init()
-    if (dbInitialized) {
-        println("Database initialized: sync.db")
-    }
+    val resourceStream = Thread.currentThread().contextClassLoader.getResourceAsStream("version.properties")
+    val serverVersion = if (resourceStream != null) {
+        resourceStream.use {
+            val props = Properties()
+            props.load(it.reader())
+            props.getProperty("version", "unknown")
+        }
+    } else "unknown"
+    println("Server version: $serverVersion")
 
+    Database.init()
+    
     embeddedServer(Netty, port = nettyPort) {
         routing {
             healthRoutes()

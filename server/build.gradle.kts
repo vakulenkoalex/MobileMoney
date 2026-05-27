@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.mobilemoney"
-version = "1.0.0"
+
 
 application {
     mainClass.set("com.mobilemoney.server.ApplicationKt")
@@ -42,4 +42,8 @@ dependencies {
     implementation(project(":common"))
 
     testImplementation(kotlin("test"))
+}
+
+tasks.processResources {
+    expand(properties)
 }

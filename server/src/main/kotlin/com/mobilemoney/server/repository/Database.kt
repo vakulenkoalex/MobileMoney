@@ -14,8 +14,6 @@ object Database {
         println("Database path: $dbPath")
 
         jdbcUrl = "jdbc:sqlite:$dbPath"
-        println("Connecting to: $jdbcUrl")
-
         conn = java.sql.DriverManager.getConnection(jdbcUrl)
         conn?.createStatement()?.use { stmt ->
             stmt.execute("PRAGMA journal_mode=WAL")
@@ -36,22 +34,6 @@ object Database {
         }
 
         if (existingTables.isNotEmpty()) {
-            println("Tables already exist: $existingTables")
-            conn?.createStatement()?.use { stmt ->
-                stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS senders (
-                        id TEXT PRIMARY KEY NOT NULL,
-                        sender TEXT NOT NULL,
-                        label TEXT NOT NULL DEFAULT '',
-                        type TEXT NOT NULL,
-                        createdAt INTEGER NOT NULL,
-                        updatedAt INTEGER NOT NULL,
-                        deletedAt INTEGER,
-                        syncedAt INTEGER,
-                        serverReceivedAt INTEGER
-                    )
-                """.trimIndent())
-            }
             return
         }
 
