@@ -290,6 +290,25 @@ fun SettingsScreen(
                 Text("Отправители")
             }
 
+            if (uiState.isSyncing) {
+                Text(
+                    text = "Синхронизация...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Button(
+                    onClick = { viewModel.sync() },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uiState.isLoading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("Синхронизация")
+                }
+            }
+
             Box {
                 Button(
                     onClick = { dataMenuExpanded = true },
@@ -325,25 +344,6 @@ fun SettingsScreen(
                         },
                         enabled = !uiState.isLoading
                     )
-                }
-            }
-
-            if (uiState.isSyncing) {
-                Text(
-                    text = "Синхронизация...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else {
-                Button(
-                    onClick = { viewModel.sync() },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary
-                    )
-                ) {
-                    Text("Синхронизация")
                 }
             }
         }
