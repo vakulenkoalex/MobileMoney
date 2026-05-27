@@ -6,6 +6,14 @@ plugins {
 
 group = "com.mobilemoney"
 
+val rootBuildFile = file("../build.gradle.kts")
+val rootVersion = rootBuildFile.readLines()
+    .find { it.trim().startsWith("version") }
+    ?.let { Regex("""version\s*=\s*"([^"]+)"""").find(it)?.groupValues?.get(1) }
+    ?: "1.0.0"
+
+version = rootVersion
+
 
 application {
     mainClass.set("com.mobilemoney.server.ApplicationKt")
