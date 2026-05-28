@@ -144,11 +144,6 @@ ui/screens/
 
 ---
 
-## 9. База данных (Room Schema)
-
-Баланс кошелька вычисляется из транзакций:
-  SUM(INCOME) - SUM(EXPENSE) по wallet_id
-
 ## 10. API Endpoints
 
 См. [api_scenarios.md](api_scenarios.md)

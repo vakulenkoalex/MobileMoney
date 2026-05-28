@@ -79,7 +79,7 @@
 | `id` | `TEXT` (PK) | NO | — | UUID |
 | `accountId` | `TEXT` | NO | — | ID счёта; **индексировано** (не FK) |
 | `categoryId` | `TEXT` | NO | — | ID категории; **индексировано** (не FK) |
-| `amount` | `REAL` | NO | — | Доход > 0, расход < 0 |
+| `amount` | `REAL` | NO | — | Всегда положительный; доход/расход определяется `categoryId` |
 | `date` | `INTEGER` | NO | — | Unix timestamp (ms) |
 | `comment` | `TEXT` | NO | — | Комментарий |
 | `source` | `TEXT` | NO | `MANUAL` | Источник: `MANUAL`, `SMS`, `PUSH`, `CLIPBOARD` |
@@ -151,5 +151,5 @@ enum class TransactionSource { MANUAL, SMS, PUSH, CLIPBOARD }
 - Категории образуют иерархию через `parentId`
 - Операция привязана к счёту (`accountId`) и категории (`categoryId`) — без FK, с индексами
 - Перевод между счетами — две операции (расход и доход) с общим UUID в `relatedTransactionId`
-- Баланс счёта вычисляется: `SUM(amount WHERE amount > 0) - SUM(amount WHERE amount < 0)` — не хранится в колонке
+- Баланс счёта вычисляется: `SUM(amount WHERE isIncome) - SUM(amount WHERE NOT isIncome)` — `amount` всегда положительный, признак дохода/расхода определяется категорией (`categoryId` → `categories.isIncome`); не хранится в колонке
 - Soft delete: записи не удаляются, а получают timestamp в `deletedAt`

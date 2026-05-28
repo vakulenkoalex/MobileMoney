@@ -69,7 +69,7 @@
 - id (PK) — TEXT NOT NULL, UUID
 - accountId (TEXT NOT NULL) — FK -> accounts.id
 - categoryId (TEXT NOT NULL) — FK -> categories.id
-- amount (REAL NOT NULL)
+- amount (REAL NOT NULL) — всегда положительный
 - date (INTEGER NOT NULL)
 - comment (TEXT)
 - source (TEXT NOT NULL) — источник: MANUAL, SMS, PUSH, CLIPBOARD
