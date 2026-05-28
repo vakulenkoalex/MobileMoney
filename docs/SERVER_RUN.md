@@ -1,23 +1,31 @@
-# Запуск сервера с нуля
+# Запуск сервера
 
-## 1. Запуск сервера
+## 1. Запуск
 
 ```powershell
-.\buildServer.bat run
+.\server\buildServer.bat run
 ```
 
-Сервер запускается из папки проекта server
+Сервер запускается из корня проекта.
 
 Сервер создаст базу данных SQLite при первом запуске: `data/sync.db`
 
 ## 2. Проверка
 
-В браузере (базовая проверка):
+### Браузер
+
 ```
 http://localhost:6080/
 ```
 
 Должно вернуть:
+
 ```json
 {"status":"ok","database":true}
+```
+
+### PowerShell
+
+```powershell
+Invoke-RestMethod http://localhost:6080/
 ```

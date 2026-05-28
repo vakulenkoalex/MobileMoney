@@ -2,18 +2,8 @@
 
 ## Build Commands
 
-### Android
-```powershell
-.\android\build.bat assembleDebug
-```
-- Output: `android/app/build/outputs/apk/device/debug/app-device-debug.apk`
-- **Windows**: use `;` or separate lines — do NOT use `&&`
-
-### Server
-```powershell
-.\server\buildServer.bat run
-```
-- Serves on `http://localhost:6080`
+- Android: [docs/ANDROID_BUILD.md](docs/ANDROID_BUILD.md)
+- Server: [docs/SERVER_RUN.md](docs/SERVER_RUN.md)
 
 ## Architecture
 
@@ -107,9 +97,6 @@ suspend fun verifyToken(): Result<Unit> {
 ```
 
 **Важно:** Функция должна быть `suspend` — иначе `withContext` не скомпилируется.
-
-# Server health check
-Invoke-RestMethod http://localhost:6080/
 
 ## References
 
