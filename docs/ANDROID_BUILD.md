@@ -10,7 +10,7 @@
 
 ## APK
 
-- `android/app/build/outputs/apk/device/debug/app-device-debug.apk`
+- `android/build/outputs/apk/device/debug/app-device-debug.apk`
 
 ## minSDK
 

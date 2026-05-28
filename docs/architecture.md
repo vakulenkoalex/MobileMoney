@@ -11,12 +11,13 @@ common/src/main/kotlin/com/mobilemoney/dto/
 ├── LoginResponse.kt
 ├── SyncPushRequest.kt
 ├── SyncPushResponse.kt
-├── SyncPullResponse.kt
 ├── SyncChangesResponse.kt
 ├── AccountDto.kt
 ├── MessageRegexDto.kt
 ├── CategoryDto.kt
-└── TransactionDto.kt
+├── TransactionDto.kt
+├── SenderDto.kt
+└── TransferConstants.kt
 ```
 
 ## 2. Domain слой (Бизнес-логика)
@@ -48,15 +49,18 @@ android/src/main/java/com/mobilemoney/
 ├── MobileMoneyApp.kt
 ├── data/
 │   ├── config/                # CategoryIcons, AccountIcons, Currencies, Icons
-│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers, Currency (AccountMapper, MessageRegexMapper)
-│   ├── parser/                # ClipboardParser
+│   ├── local/                 # Room Entities, DAOs, AppDatabase, Mappers, Currency, SenderType
+│   ├── model/                 # AccountUi, CategoryUi, TransactionUi (models для UI)
+│   ├── parser/                # TextParser (бывший ClipboardParser)
 │   ├── remote/                # SyncApiClient
-│   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository, SyncMapper, AccountBalanceCalculator, ClipboardPreferences
-├── domain/                    # Domain layer
-│   ├── model/                 # Transaction, Category, Account, MessageRegex (domain models)
+│   └── repository/            # DatabaseRepository, SyncRepository, BackupRepository, SyncMapper, AccountBalanceCalculator, FeaturePreferences и *Impl
+├── di/                        # DI.kt (ручной DI)
+├── domain/
+│   ├── model/                 # Account, Category, MessageRegex, Transaction (domain models)
 │   ├── repository/            # Repository interfaces
 │   │   ├── AccountRepository.kt
 │   │   ├── CategoryRepository.kt
+│   │   ├── MessageRegexRepository.kt
 │   │   ├── TransactionRepository.kt
 │   │   └── SyncRepository.kt
 │   └── usecase/
@@ -73,11 +77,13 @@ android/src/main/java/com/mobilemoney/
 │           ├── DeleteTransactionUseCase.kt
 │           ├── GetTransactionsUseCase.kt
 │           └── SaveTransactionUseCase.kt
-├── di/                        # DI.kt (ручной DI)
+├── processor/                 # MessageProcessor.kt
+├── receiver/                  # SmsBroadcastReceiver.kt
+├── service/                   # NotificationReceiverService.kt
 ├── ui/
-│   ├── common/                # ErrorHandler
+│   ├── common/                # ErrorHandler, FieldState, FormField, PermissionChecker
 │   ├── navigation/            # Navigation.kt
-│   ├── screens/               # Compose UI screens (+ ClipboardDialog, DebugClipboardDialog)
+│   ├── screens/               # Compose UI screens
 │   ├── theme/                 # Theme.kt, Typography.kt
 │   └── utils/                 # FormatUtils
 ├── viewmodel/                 # ViewModels
@@ -86,12 +92,15 @@ android/src/main/java/com/mobilemoney/
 │   ├── AccountFormViewModel.kt
 │   ├── MessageRegexListViewModel.kt
 │   ├── MessageRegexFormViewModel.kt
+│   ├── MessageListViewModel.kt
+│   ├── SenderListViewModel.kt
+│   ├── SenderFormViewModel.kt
 │   ├── CategoryListViewModel.kt
 │   ├── CategoryFormViewModel.kt
 │   ├── TransactionListViewModel.kt
 │   ├── TransactionFormViewModel.kt
 │   └── SettingsViewModel.kt
-└── worker/                    # SyncWorker.kt
+└── worker/                    # SyncWorker.kt, MessageWorker.kt
 ```
 
 ### 4.2 UI Screens
@@ -103,6 +112,9 @@ ui/screens/
 ├── AccountFormScreen.kt       # Add/Edit account
 ├── MessageRegexListScreen.kt # List of clipboard regexes
 ├── MessageRegexFormScreen.kt # Add/Edit clipboard regex
+├── MessageListScreen.kt      # List of SMS/Push messages
+├── SenderListScreen.kt       # List of senders (phones, packages)
+├── SenderFormScreen.kt       # Add/Edit sender
 ├── CategoryListScreen.kt
 ├── CategoryFormScreen.kt      # Add/Edit category
 ├── TransactionListScreen.kt
@@ -118,9 +130,14 @@ ui/screens/
 
 ### 6.1 Требования
 
-- Шифрование данных (EncryptedSharedPreferences, Room с SQLCipher или androidx.security:security-crypto)
+- Шифрование настроек (EncryptedSharedPreferences для sync_prefs и app_prefs)
+- Room БД без шифрования
 - Биометрическая аутентификация
-- Logout с очисткой данных
+- Logout с очисткой данных и сбросом токена
+
+### Валюты
+
+Android — `data/config/Currencies.kt` (RUB, USD, EUR, KZT). Сервер — `server/Currencies.kt` (RUB, USD, EUR).
 
 ## 8. Технологический стек
 

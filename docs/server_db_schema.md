@@ -4,7 +4,7 @@
 
 ### Пользователи (users)
 - login (PK) — TEXT NOT NULL, email пользователя
-- passwordHash — TEXT NOT NULL, SHA-256(password + salt)
+- passwordHash — TEXT NOT NULL, SHA-512(password + salt)
 - salt — TEXT NOT NULL, соль для хеширования
 
 ### Устройства (devices)
@@ -22,8 +22,8 @@
 - typeId (TEXT NOT NULL) — тип счёта: cash, card, account
 - currencyCode (TEXT NOT NULL) — код валюты: RUB, USD, EUR
 - icon (TEXT NOT NULL)
-- isDefault (INTEGER NOT NULL)
-- archived (INTEGER NOT NULL)
+- isDefault (INTEGER NOT NULL DEFAULT 0)
+- archived (INTEGER NOT NULL DEFAULT 0)
 - autoCreateEnabled (INTEGER NOT NULL DEFAULT 0) — автосоздание транзакций
 - cardMask (TEXT) — маска карты (последние 4 цифры, например "1026")
 - createdAt (INTEGER NOT NULL)
@@ -34,6 +34,7 @@
 
 ### Регулярки для буфера обмена (message_regexes)
 - id (PK) — TEXT NOT NULL, UUID
+- label (TEXT NOT NULL) — название (метка) для отображения в списке
 - pattern (TEXT NOT NULL) — regex с named groups: amount, shop, cardMask (balance опционально)
 - skipBalanceCheck (INTEGER NOT NULL DEFAULT 0) — не проверять баланс при создании операции
 - createdAt (INTEGER NOT NULL)
@@ -48,6 +49,7 @@
 - isIncome (INTEGER NOT NULL) — true=приход, false=расход
 - icon (TEXT NOT NULL)
 - parentId (TEXT) — FK -> categories.id
+- isDefault (INTEGER NOT NULL DEFAULT 0) — категория по умолчанию для автосозданий
 - createdAt (INTEGER NOT NULL)
 - updatedAt (INTEGER NOT NULL)
 - deletedAt (INTEGER)

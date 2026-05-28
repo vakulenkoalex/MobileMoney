@@ -119,19 +119,40 @@
 
 ---
 
+### Сообщения (`messages`) — локальная таблица, не синхронизируется
+
+| Колонка | Тип | Nullable | По умолчанию | Описание |
+|---------|-----|----------|-------------|----------|
+| `id` | `TEXT` (PK) | NO | UUID.randomUUID() | UUID |
+| `sender` | `TEXT` | NO | — | Номер телефона или packageName |
+| `body` | `TEXT` | NO | — | Текст SMS/Push-уведомления |
+| `receivedAt` | `INTEGER` | NO | — | Unix timestamp (ms) |
+| `processed` | `INTEGER` (boolean) | NO | `0` | Обработано ли сообщение |
+| `error` | `TEXT` | YES | — | Код ошибки обработки |
+| `transactionId` | `TEXT` | YES | — | ID созданной транзакции |
+| `createdAt` | `INTEGER` | NO | `System.currentTimeMillis()` | |
+
+**Foreign keys:** нет
+
+---
+
 ## Справочники
 
-### Валюты (`Currency`) — enum в коде
+### Валюты — объект в коде
 
 ```kotlin
-enum class Currency(val code: String, val displayName: String, val symbol: String) {
-    RUB("RUB", "Российский рубль", "₽"),
-    USD("USD", "Доллар США", "$"),
-    EUR("EUR", "Евро", "€");
+object Currencies {
+    data class CurrencyConfig(val code: String, val symbol: String, val name: String)
+    val all = listOf(
+        CurrencyConfig("RUB", "₽", "Российский рубль"),
+        CurrencyConfig("USD", "$", "Доллар США"),
+        CurrencyConfig("EUR", "€", "Евро"),
+        CurrencyConfig("KZT", "₸", "Казахстанский тенге")
+    )
 }
 ```
 
-Не хранится в БД, определён в `data/local/Currency.kt`.
+Не хранится в БД, определён в `data/config/Currencies.kt`.
 
 ### Источники операций (`TransactionSource`) — enum в коде
 

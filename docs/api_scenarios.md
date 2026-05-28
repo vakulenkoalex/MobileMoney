@@ -36,7 +36,7 @@
   "login": "user@example.com",
   "password": "secret",
   "device_id": "android_id_xxx",
-  "device_name": "Pixel 8"
+  "deviceName": "Pixel 8"
 }
 ```
 
@@ -92,7 +92,9 @@ SyncWorker            SyncRepository           Сервер                     
 {
   "accounts": [...],
   "categories": [...],
-  "transactions": [...]
+  "transactions": [...],
+  "messageRegexes": [...],
+  "senders": [...]
 }
 ```
 
@@ -155,7 +157,9 @@ Flow:
   "timestamp": 1700000000000,
   "accounts": [...],
   "categories": [...],
-  "transactions": [...]
+  "transactions": [...],
+  "messageRegexes": [...],
+  "senders": [...]
 }
 ```
 
@@ -175,7 +179,9 @@ Flow:
   │◀── {timestamp,          ◀│                        │
   │     accounts:[...],     │                        │
   │     categories:[...],    │                        │
-  │     transactions:[...]}──│                        │
+  │     transactions:[...],  │                        │
+  │     messageRegexes:[...],│                        │
+  │     senders:[...]}───────│                        │
 ```
 
 ## 5. Health Check
