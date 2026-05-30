@@ -285,6 +285,7 @@ class SyncRepository(context: Context) : DomainSyncRepository {
     }
 
     private suspend fun upsertTransaction(dto: TransactionDto, syncedAt: Long) {
+        require(dto.amount > 0) { "Transaction amount must be > 0, got: ${dto.amount}" }
         val existing = transactionDao.getTransactionById(dto.id)
         if (existing == null || existing.syncedAt != null) {
             transactionDao.insert(dto.toEntity().copy(syncedAt = syncedAt, serverReceivedAt = dto.serverReceivedAt))

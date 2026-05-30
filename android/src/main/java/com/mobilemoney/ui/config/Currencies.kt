@@ -1,4 +1,4 @@
-package com.mobilemoney.data.config
+package com.mobilemoney.ui.config
 
 data class CurrencyConfig(
     val code: String,

@@ -7,6 +7,9 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import androidx.work.Configuration
+import androidx.work.WorkManager
+import com.mobilemoney.di.DI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,6 +28,10 @@ class MobileMoneyApp : Application() {
         instance = this
 
         prefs = createEncryptedSharedPreferences()
+
+        WorkManager.initialize(this, Configuration.Builder()
+            .setWorkerFactory(DI.workerFactory)
+            .build())
 
         checkAndInitialize()
         enableSync()

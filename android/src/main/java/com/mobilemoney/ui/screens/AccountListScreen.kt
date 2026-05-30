@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.config.AppIcons
-import com.mobilemoney.di.DI
+import com.mobilemoney.ui.config.AppIcons
+
 import com.mobilemoney.domain.model.Account
 import com.mobilemoney.ui.utils.FormatUtils
 import com.mobilemoney.viewmodel.AccountListViewModel
@@ -27,7 +27,7 @@ import java.util.UUID
 fun AccountListScreen(
     onAddClick: () -> Unit,
     onAccountClick: (UUID) -> Unit,
-    viewModel: AccountListViewModel = DI.accountListViewModel
+    viewModel: AccountListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

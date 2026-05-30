@@ -1,12 +1,6 @@
-package com.mobilemoney.data.parser
+package com.mobilemoney.domain.parser
 
-data class ParsedTextData(
-    val amount: String,
-    val shop: String,
-    val cardMask: String,
-    val isIncome: Boolean = false,
-    val balance: String? = null
-)
+import com.mobilemoney.domain.model.ParsedTransaction
 
 object TextParser {
 
@@ -14,7 +8,7 @@ object TextParser {
     private val NAMED_GROUP_REGEX = Regex("\\(\\?<([a-zA-Z_]+)>")
     private val INCOME_KEYWORDS = setOf("поступление", "зачисление", "доход", "приход")
 
-    fun parse(text: String, regex: String): ParsedTextData? {
+    fun parse(text: String, regex: String): ParsedTransaction? {
         if (text.isBlank() || regex.isBlank()) return null
 
         return try {
@@ -38,7 +32,7 @@ object TextParser {
                 INCOME_KEYWORDS.any { dir.contains(it) }
             }
 
-            ParsedTextData(
+            ParsedTransaction(
                 amount = values["amount"]!!,
                 shop = values["shop"]!!,
                 cardMask = values["cardMask"]!!.replace("*", "").replace("х", ""),

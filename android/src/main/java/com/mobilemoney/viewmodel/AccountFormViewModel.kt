@@ -2,8 +2,10 @@ package com.mobilemoney.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.data.config.AccountIcons
-import com.mobilemoney.data.config.Currencies
+import com.mobilemoney.ui.config.AccountIcons
+import com.mobilemoney.ui.config.Currencies
+import com.mobilemoney.ui.config.CurrencyConfig
+import com.mobilemoney.ui.config.IconOption
 import com.mobilemoney.domain.model.Account
 import com.mobilemoney.domain.model.AccountType
 import com.mobilemoney.domain.usecase.account.CreateAccountUseCase
@@ -26,8 +28,8 @@ data class AccountFormState(
     val isDefault: Boolean = false,
     val isEditing: Boolean = false,
     val accountId: UUID? = null,
-    val currencies: List<com.mobilemoney.data.config.CurrencyConfig> = Currencies.all,
-    val icons: List<com.mobilemoney.data.config.IconOption> = AccountIcons.all,
+    val currencies: List<CurrencyConfig> = Currencies.all,
+    val icons: List<IconOption> = AccountIcons.all,
     val accountTypes: List<AccountType> = AccountType.entries,
     val isLoading: Boolean = false,
     val error: String? = null,

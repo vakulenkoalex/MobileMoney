@@ -29,8 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.local.SenderEntity
-import com.mobilemoney.data.local.SenderType
+import com.mobilemoney.domain.model.Sender
+import com.mobilemoney.domain.model.SenderType
 import com.mobilemoney.viewmodel.SenderListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +39,7 @@ fun SenderListScreen(
     onNavigateBack: () -> Unit,
     onAddClick: () -> Unit,
     onSenderClick: (String) -> Unit,
-    viewModel: SenderListViewModel = SenderListViewModel()
+    viewModel: SenderListViewModel
 ) {
     val senders by viewModel.senders.collectAsState(initial = emptyList())
 
@@ -85,7 +85,7 @@ fun SenderListScreen(
 }
 
 @Composable
-private fun SenderItem(sender: SenderEntity, onClick: () -> Unit) {
+private fun SenderItem(sender: Sender, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -110,7 +110,7 @@ private fun SenderItem(sender: SenderEntity, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = SenderType.valueOf(sender.type).displayName,
+                    text = sender.type.displayName,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )

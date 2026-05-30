@@ -21,9 +21,9 @@ import com.mobilemoney.viewmodel.ServerStatus
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    viewModel: LoginViewModel
 ) {
-    val viewModel: LoginViewModel = remember { LoginViewModel() }
 
     var login by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

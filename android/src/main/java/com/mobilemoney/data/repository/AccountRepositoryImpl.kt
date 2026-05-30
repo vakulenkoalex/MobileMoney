@@ -27,6 +27,14 @@ class AccountRepositoryImpl(
         return databaseRepository.getDefaultAccount()?.toDomain()
     }
 
+    override suspend fun getAccountByCardMask(cardMask: String): Account? {
+        return databaseRepository.getAccountByCardMask(cardMask)?.toDomain()
+    }
+
+    override suspend fun getAccountBalance(accountId: String): Double {
+        return databaseRepository.getAccountBalanceValue(accountId)
+    }
+
     override suspend fun addAccount(account: Account) {
         databaseRepository.addAccount(account.toUiModel())
     }

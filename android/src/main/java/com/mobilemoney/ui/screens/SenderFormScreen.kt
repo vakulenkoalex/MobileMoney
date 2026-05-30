@@ -7,8 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.local.SenderType
-import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.SenderType
+
 import com.mobilemoney.viewmodel.SenderFormViewModel
 import kotlinx.coroutines.flow.drop
 
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.drop
 fun SenderFormScreen(
     senderId: String?,
     onNavigateBack: () -> Unit,
-    viewModel: SenderFormViewModel = DI.senderFormViewModel
+    viewModel: SenderFormViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

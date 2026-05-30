@@ -17,6 +17,10 @@ import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import com.mobilemoney.domain.usecase.clipboard.DeleteMessageRegexUseCase
 import com.mobilemoney.domain.usecase.clipboard.GetMessageRegexesUseCase
 import com.mobilemoney.domain.usecase.clipboard.SaveMessageRegexUseCase
+import com.mobilemoney.domain.usecase.transaction.ProcessSmsTransactionUseCase
+import com.mobilemoney.domain.usecase.transaction.ParseClipboardTransactionUseCase
+import com.mobilemoney.domain.repository.MessageRepository
+import com.mobilemoney.domain.repository.SenderRepository
 import com.mobilemoney.viewmodel.*
 
 object DI {
@@ -58,6 +62,22 @@ object DI {
 
     val messageRegexRepository: MessageRegexRepository by lazy {
         MessageRegexRepositoryImpl(messageRegexDao)
+    }
+
+    val messageRepository: MessageRepository by lazy {
+        MessageRepositoryImpl(databaseRepository)
+    }
+
+    val senderRepository: SenderRepository by lazy {
+        SenderRepositoryImpl(databaseRepository)
+    }
+
+    val processSmsTransactionUseCase: ProcessSmsTransactionUseCase by lazy {
+        ProcessSmsTransactionUseCase(transactionRepository, accountRepository, categoryRepository, messageRepository, messageRegexRepository)
+    }
+
+    val parseClipboardTransactionUseCase: ParseClipboardTransactionUseCase by lazy {
+        ParseClipboardTransactionUseCase(accountRepository, categoryRepository, transactionRepository, messageRegexRepository)
     }
 
     val getAccountsUseCase: GetAccountsUseCase by lazy {
@@ -128,7 +148,7 @@ object DI {
     }
 
     val settingsViewModel: SettingsViewModel by lazy {
-        SettingsViewModel(syncRepository, BackupRepository(context))
+        SettingsViewModel(syncRepository, BackupRepository(context), databaseRepository)
     }
 
     val messageRegexListViewModel: MessageRegexListViewModel by lazy {
@@ -140,6 +160,22 @@ object DI {
     }
 
     val senderFormViewModel: SenderFormViewModel by lazy {
-        SenderFormViewModel()
+        SenderFormViewModel(senderRepository)
+    }
+
+    val messageListViewModel: MessageListViewModel by lazy {
+        MessageListViewModel(messageRepository)
+    }
+
+    val senderListViewModel: SenderListViewModel by lazy {
+        SenderListViewModel(senderRepository)
+    }
+
+    val loginViewModel: LoginViewModel by lazy {
+        LoginViewModel(syncRepository)
+    }
+
+    val workerFactory: MobileMoneyWorkerFactory by lazy {
+        MobileMoneyWorkerFactory(processSmsTransactionUseCase, messageRepository)
     }
 }

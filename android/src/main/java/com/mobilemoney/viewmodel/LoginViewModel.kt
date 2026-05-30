@@ -2,7 +2,7 @@ package com.mobilemoney.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.di.DI
+import com.mobilemoney.domain.repository.SyncRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,15 +22,15 @@ enum class ServerStatus {
     UNAVAILABLE
 }
 
-class LoginViewModel : ViewModel() {
+class LoginViewModel(
+    private val syncRepository: SyncRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun login(login: String, password: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-
-            val syncRepository = DI.syncRepository
 
             val result = syncRepository.login(login, password)
 
@@ -47,8 +47,6 @@ class LoginViewModel : ViewModel() {
     fun checkServerConnection() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(serverStatus = ServerStatus.CHECKING)
-
-            val syncRepository = DI.syncRepository
 
             android.util.Log.d("LoginVM", "Server URL: ${syncRepository.serverUrl}")
             val result = syncRepository.ping()

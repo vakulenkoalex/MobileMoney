@@ -39,7 +39,7 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.compose.runtime.LaunchedEffect
 import com.mobilemoney.data.repository.FeaturePreferences
-import com.mobilemoney.di.DI
+
 import com.mobilemoney.service.NotificationReceiverService
 import com.mobilemoney.ui.common.PermissionChecker
 import com.mobilemoney.viewmodel.SettingsViewModel
@@ -53,7 +53,7 @@ fun SettingsScreen(
     onNavigateToRegexes: () -> Unit,
     onNavigateToMessages: () -> Unit = {},
     onNavigateToSenders: () -> Unit = {},
-    viewModel: SettingsViewModel = DI.settingsViewModel
+    viewModel: SettingsViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -70,7 +70,7 @@ fun SettingsScreen(
     }
 
     val context = LocalContext.current
-    val featurePrefs = remember { FeaturePreferences(DI.context) }
+    val featurePrefs = remember { FeaturePreferences(context) }
     var clipboardEnabled by remember { mutableStateOf(
         featurePrefs.clipboardParsingEnabled
     ) }

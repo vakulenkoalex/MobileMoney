@@ -13,7 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.di.DI
+
 import com.mobilemoney.domain.model.MessageRegex
 import com.mobilemoney.viewmodel.MessageRegexListViewModel
 import java.util.UUID
@@ -24,7 +24,7 @@ fun MessageRegexListScreen(
     onNavigateBack: () -> Unit,
     onAddClick: () -> Unit,
     onRegexClick: (UUID) -> Unit,
-    viewModel: MessageRegexListViewModel = DI.messageRegexListViewModel
+    viewModel: MessageRegexListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mobilemoney.data.repository.BackupRepository
-import com.mobilemoney.di.DI
+import com.mobilemoney.data.repository.DatabaseRepository
 import com.mobilemoney.domain.repository.SyncRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,8 +19,9 @@ data class SettingsUiState(
 )
 
 class SettingsViewModel(
-    private val syncRepository: SyncRepository = DI.syncRepository,
-    private val backupRepository: BackupRepository = BackupRepository(DI.context)
+    private val syncRepository: SyncRepository,
+    private val backupRepository: BackupRepository,
+    private val databaseRepository: DatabaseRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -66,7 +67,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, message = null) }
             try {
-                DI.databaseRepository.permanentlyDeleteAll()
+                databaseRepository.permanentlyDeleteAll()
                 _uiState.update {
                     it.copy(isLoading = false, message = "Удалённые записи удалены", isSuccess = true)
                 }

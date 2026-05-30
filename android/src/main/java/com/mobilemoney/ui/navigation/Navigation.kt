@@ -14,7 +14,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,7 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mobilemoney.MobileMoneyApp
-import com.mobilemoney.di.DI
+import com.mobilemoney.domain.usecase.transaction.ParseClipboardTransactionUseCase
 import com.mobilemoney.ui.screens.AccountFormScreen
 import com.mobilemoney.ui.screens.CategoryFormScreen
 import com.mobilemoney.ui.screens.LoginScreen
@@ -43,6 +41,19 @@ import com.mobilemoney.ui.screens.SenderListScreen
 import com.mobilemoney.ui.screens.SettingsScreen
 import com.mobilemoney.ui.screens.TransactionFormScreen
 import com.mobilemoney.ui.screens.TransactionListScreen
+import com.mobilemoney.viewmodel.AccountFormViewModel
+import com.mobilemoney.viewmodel.AccountListViewModel
+import com.mobilemoney.viewmodel.CategoryFormViewModel
+import com.mobilemoney.viewmodel.CategoryListViewModel
+import com.mobilemoney.viewmodel.LoginViewModel
+import com.mobilemoney.viewmodel.MessageListViewModel
+import com.mobilemoney.viewmodel.MessageRegexFormViewModel
+import com.mobilemoney.viewmodel.MessageRegexListViewModel
+import com.mobilemoney.viewmodel.SenderFormViewModel
+import com.mobilemoney.viewmodel.SenderListViewModel
+import com.mobilemoney.viewmodel.SettingsViewModel
+import com.mobilemoney.viewmodel.TransactionFormViewModel
+import com.mobilemoney.viewmodel.TransactionListViewModel
 import java.util.UUID
 
 sealed class Screen(val route: String) {
@@ -85,19 +96,27 @@ val bottomNavItems = listOf(
 )
 
 @Composable
-fun MobileMoneyNavigation() {
+fun MobileMoneyNavigation(
+    isLoggedIn: Boolean,
+    onLoginSuccess: () -> Unit,
+    transactionListViewModel: TransactionListViewModel,
+    transactionFormViewModel: TransactionFormViewModel,
+    parseClipboardTransactionUseCase: ParseClipboardTransactionUseCase,
+    accountListViewModel: AccountListViewModel,
+    accountFormViewModel: AccountFormViewModel,
+    categoryListViewModel: CategoryListViewModel,
+    categoryFormViewModel: CategoryFormViewModel,
+    settingsViewModel: SettingsViewModel,
+    messageRegexListViewModel: MessageRegexListViewModel,
+    messageRegexFormViewModel: MessageRegexFormViewModel,
+    messageListViewModel: MessageListViewModel,
+    senderListViewModel: SenderListViewModel,
+    senderFormViewModel: SenderFormViewModel,
+    loginViewModel: LoginViewModel
+) {
     val context = LocalContext.current
     val app = context.applicationContext as MobileMoneyApp
     var showLoading by remember { mutableStateOf(app.isFirstRun()) }
-
-    LaunchedEffect(Unit) {
-        if (app.isFirstRun()) {
-            while (!app.isInitialized) {
-                kotlinx.coroutines.delay(500)
-            }
-            showLoading = false
-        }
-    }
 
     if (showLoading) {
         Column(
@@ -111,13 +130,10 @@ fun MobileMoneyNavigation() {
         return
     }
 
-    var loginState by remember { mutableStateOf(DI.syncRepository.isLoggedIn()) }
-
-    if (!loginState) {
+    if (!isLoggedIn) {
         LoginScreen(
-            onLoginSuccess = {
-                loginState = true
-            }
+            onLoginSuccess = onLoginSuccess,
+            viewModel = loginViewModel
         )
         return
     }
@@ -176,29 +192,21 @@ fun MobileMoneyNavigation() {
             startDestination = Screen.TransactionList.route,
             modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
         ) {
-                composable(Screen.Login.route) {
-                    LoginScreen(
-                        onLoginSuccess = {
-                            navController.navigate(Screen.TransactionList.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
-                            }
-                        }
-                    )
-                }
-
                 composable(Screen.TransactionList.route) {
                     TransactionListScreen(
                         onAddClick = {
-                            DI.transactionFormViewModel.resetForNewTransaction()
+                            transactionFormViewModel.resetForNewTransaction()
                             navController.navigate(Screen.CreateTransaction.createRoute())
                         },
                         onTransactionClick = { transactionId ->
                             navController.navigate(Screen.EditTransaction.createRoute(transactionId))
                         },
                         onClipboardPrefill = { prefillData ->
-                            DI.transactionFormViewModel.prefillFromClipboard(prefillData)
+                            transactionFormViewModel.prefillFromClipboard(prefillData)
                             navController.navigate(Screen.CreateTransaction.createRoute())
-                        }
+                        },
+                        viewModel = transactionListViewModel,
+                        parseClipboardTransactionUseCase = parseClipboardTransactionUseCase
                     )
                 }
 
@@ -212,7 +220,8 @@ fun MobileMoneyNavigation() {
                         transactionId = null,
                         onNavigateBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        viewModel = transactionFormViewModel
                     )
                 }
 
@@ -229,7 +238,8 @@ fun MobileMoneyNavigation() {
                         transactionId = transactionId,
                         onNavigateBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        viewModel = transactionFormViewModel
                     )
                 }
 
@@ -240,7 +250,8 @@ fun MobileMoneyNavigation() {
                         },
                         onAccountClick = { accountId ->
                             navController.navigate(Screen.EditAccount.createRoute(accountId))
-                        }
+                        },
+                        viewModel = accountListViewModel
                     )
                 }
 
@@ -249,7 +260,8 @@ fun MobileMoneyNavigation() {
                         accountId = null,
                         onNavigateBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        viewModel = accountFormViewModel
                     )
                 }
 
@@ -266,7 +278,8 @@ fun MobileMoneyNavigation() {
                         accountId = accountId,
                         onNavigateBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        viewModel = accountFormViewModel
                     )
                 }
 
@@ -278,7 +291,8 @@ fun MobileMoneyNavigation() {
                         onCategoryClick = { categoryId ->
                             navController.navigate(Screen.EditCategory.createRoute(categoryId))
                         },
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = categoryListViewModel
                     )
                 }
 
@@ -287,7 +301,8 @@ fun MobileMoneyNavigation() {
                         categoryId = null,
                         onNavigateBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        viewModel = categoryFormViewModel
                     )
                 }
 
@@ -304,7 +319,8 @@ fun MobileMoneyNavigation() {
                         categoryId = categoryId,
                         onNavigateBack = {
                             navController.popBackStack()
-                        }
+                        },
+                        viewModel = categoryFormViewModel
                     )
                 }
 
@@ -321,7 +337,8 @@ fun MobileMoneyNavigation() {
                         },
                         onNavigateToSenders = {
                             navController.navigate(Screen.Senders.route)
-                        }
+                        },
+                        viewModel = settingsViewModel
                     )
                 }
 
@@ -333,14 +350,16 @@ fun MobileMoneyNavigation() {
                         },
                         onRegexClick = { regexId ->
                             navController.navigate(Screen.EditRegex.createRoute(regexId))
-                        }
+                        },
+                        viewModel = messageRegexListViewModel
                     )
                 }
 
                 composable(Screen.CreateRegex.route) {
                     MessageRegexFormScreen(
                         regexId = null,
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = messageRegexFormViewModel
                     )
                 }
 
@@ -355,13 +374,15 @@ fun MobileMoneyNavigation() {
                     }
                     MessageRegexFormScreen(
                         regexId = regexId,
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = messageRegexFormViewModel
                     )
                 }
 
                 composable(Screen.Messages.route) {
                     MessageListScreen(
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = messageListViewModel
                     )
                 }
 
@@ -371,14 +392,16 @@ fun MobileMoneyNavigation() {
                         onAddClick = { navController.navigate(Screen.CreateSender.route) },
                         onSenderClick = { senderId ->
                             navController.navigate(Screen.EditSender.createRoute(senderId))
-                        }
+                        },
+                        viewModel = senderListViewModel
                     )
                 }
 
                 composable(Screen.CreateSender.route) {
                     SenderFormScreen(
                         senderId = null,
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = senderFormViewModel
                     )
                 }
 
@@ -391,7 +414,8 @@ fun MobileMoneyNavigation() {
                     val senderId = backStackEntry.arguments?.getString("senderId")
                     SenderFormScreen(
                         senderId = senderId,
-                        onNavigateBack = { navController.popBackStack() }
+                        onNavigateBack = { navController.popBackStack() },
+                        viewModel = senderFormViewModel
                     )
                 }
             }

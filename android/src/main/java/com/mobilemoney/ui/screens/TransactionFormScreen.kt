@@ -26,9 +26,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.config.AppIcons
+import com.mobilemoney.ui.config.AppIcons
 import com.mobilemoney.data.local.TransactionSource
-import com.mobilemoney.di.DI
+
 import com.mobilemoney.domain.model.Category
 import com.mobilemoney.viewmodel.TransactionFormViewModel
 import com.mobilemoney.viewmodel.TransactionType
@@ -40,7 +40,7 @@ import java.util.*
 fun TransactionFormScreen(
     transactionId: UUID?,
     onNavigateBack: () -> Unit,
-    viewModel: TransactionFormViewModel = DI.transactionFormViewModel
+    viewModel: TransactionFormViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAccountSheet by remember { mutableStateOf(false) }

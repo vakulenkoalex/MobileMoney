@@ -13,6 +13,8 @@ import com.mobilemoney.data.local.toUiModel
 import com.mobilemoney.data.model.AccountUi
 import com.mobilemoney.data.model.CategoryUi
 import com.mobilemoney.data.model.TransactionUi
+import com.mobilemoney.domain.helper.BalanceCalculator
+import com.mobilemoney.domain.helper.TransferMerger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -34,10 +36,17 @@ class DatabaseRepository(
             val categoriesMap = categories.associateBy { it.id }
             accounts.map { account ->
                 val accountTransactions = transactions.filter { it.accountId == account.id }
-                val balance = accountTransactions.sumOf { tx ->
-                    val category = tx.categoryId?.let { categoriesMap[it] }
-                    if (category?.isIncome == true) tx.amount else -tx.amount
-                }
+                val balance = BalanceCalculator.calculateBalance(
+                    transactions = accountTransactions.map { tx ->
+                        BalanceCalculator.TransactionBalanceData(
+                            amount = tx.amount,
+                            categoryId = tx.categoryId
+                        )
+                    },
+                    getIsIncome = { categoryId ->
+                        categoryId?.let { categoriesMap[it]?.isIncome } ?: false
+                    }
+                )
                 account.toUiModel(balance)
             }
         }
@@ -62,30 +71,37 @@ class DatabaseRepository(
                 )
             }
 
-            val regularTransactions = transactions.filter { it.relatedTransactionId == null }
-            val transferTransactions = transactions.filter { it.relatedTransactionId != null }
-
-            val mergedTransfers = mutableListOf<TransactionUi>()
-            if (transferTransactions.isNotEmpty()) {
-                val groupedTransfers = transferTransactions.groupBy { it.relatedTransactionId }
-                for ((_, group) in groupedTransfers) {
-                    if (group.size >= 2) {
-                        val tx1 = group[0]
-                        val tx2 = group[1]
-                        val from = if (!tx1.isIncome) tx1.subtitle else tx2.subtitle
-                        val to = if (tx1.isIncome) tx1.subtitle else tx2.subtitle
-                        mergedTransfers.add(
-                            tx1.copy(
-                                title = to,
-                                subtitle = from,
-                                icon = "swap_horiz",
-                                color = 0xFF9C27B0,
-                                isIncome = true,
-                                amount = tx1.amount
-                            )
-                        )
-                    }
+            val mergedInfo = TransferMerger.identifyMergedTransfers(
+                transactions.map { tx ->
+                    TransferMerger.TransactionInfo(
+                        relatedTransactionId = tx.relatedTransactionId?.toString(),
+                        isIncome = tx.isIncome,
+                        subtitle = tx.subtitle,
+                        amount = tx.amount
+                    )
                 }
+            )
+
+            val mergedIds = mergedInfo.map { it.relatedTransactionId }.toSet()
+            val regularTransactions = transactions.filter { tx ->
+                val rid = tx.relatedTransactionId?.toString()
+                rid == null || rid !in mergedIds
+            }
+
+            val mergedTransfers = mergedInfo.map { info ->
+                val tx = transactions.find { tx ->
+                    tx.relatedTransactionId?.toString() == info.relatedTransactionId && !tx.isIncome
+                } ?: transactions.first { tx ->
+                    tx.relatedTransactionId?.toString() == info.relatedTransactionId
+                }
+                tx.copy(
+                    title = info.title,
+                    subtitle = info.subtitle,
+                    icon = "swap_horiz",
+                    color = 0xFF9C27B0,
+                    isIncome = true,
+                    amount = tx.amount
+                )
             }
 
             (regularTransactions + mergedTransfers).sortedByDescending { it.date }

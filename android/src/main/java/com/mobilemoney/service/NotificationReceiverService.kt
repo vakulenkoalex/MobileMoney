@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import com.mobilemoney.data.local.SenderType
+import com.mobilemoney.domain.model.SenderType
 import com.mobilemoney.data.repository.FeaturePreferences
 import com.mobilemoney.processor.MessageProcessor
 import kotlinx.coroutines.CoroutineScope

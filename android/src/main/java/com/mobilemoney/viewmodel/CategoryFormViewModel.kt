@@ -2,9 +2,8 @@ package com.mobilemoney.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.data.config.CategoryIconOption
-import com.mobilemoney.data.config.CategoryIcons
-import com.mobilemoney.di.DI
+import com.mobilemoney.ui.config.CategoryIconOption
+import com.mobilemoney.ui.config.CategoryIcons
 import com.mobilemoney.domain.model.Category
 import com.mobilemoney.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +31,7 @@ data class CategoryFormState(
 )
 
 class CategoryFormViewModel(
-    private val categoryRepository: CategoryRepository = DI.categoryRepository
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CategoryFormState())

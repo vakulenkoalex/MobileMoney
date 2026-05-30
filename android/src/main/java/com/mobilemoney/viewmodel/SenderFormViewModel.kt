@@ -2,16 +2,14 @@ package com.mobilemoney.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.data.local.SenderEntity
-import com.mobilemoney.data.local.SenderType
-import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.SenderType
+import com.mobilemoney.domain.repository.SenderRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.mobilemoney.ui.common.ErrorHandler
 import com.mobilemoney.ui.common.FormField
-import java.util.UUID
 
 data class SenderFormState(
     val senderNumber: FormField = FormField(label = "Идентификатор отправителя"),
@@ -22,19 +20,21 @@ data class SenderFormState(
     val isSaved: Boolean = false
 )
 
-class SenderFormViewModel : ViewModel() {
+class SenderFormViewModel(
+    private val senderRepository: SenderRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SenderFormState())
     val uiState: StateFlow<SenderFormState> = _uiState.asStateFlow()
 
     fun loadSender(id: String) {
         viewModelScope.launch {
-            val sender = DI.databaseRepository.getSenderById(id)
+            val sender = senderRepository.getSenderById(id)
             if (sender != null) {
                 _uiState.value = _uiState.value.copy(
                     senderNumber = _uiState.value.senderNumber.withValue(sender.sender),
                     label = _uiState.value.label.withValue(sender.label),
-                    senderType = SenderType.valueOf(sender.type),
+                    senderType = sender.type,
                     isEditing = true,
                     senderId = id
                 )
@@ -80,29 +80,20 @@ class SenderFormViewModel : ViewModel() {
             }
             return
         }
+
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
             if (state.isEditing && state.senderId != null) {
-                DI.databaseRepository.updateSender(
-                    SenderEntity(
-                        id = state.senderId,
-                        sender = state.senderNumber.value,
-                        label = state.label.value,
-                        type = state.senderType.name,
-                        createdAt = 0,
-                        updatedAt = now
-                    )
+                senderRepository.updateSender(
+                    id = state.senderId,
+                    sender = state.senderNumber.value,
+                    label = state.label.value,
+                    type = state.senderType
                 )
             } else {
-                DI.databaseRepository.addSender(
-                    SenderEntity(
-                        id = UUID.randomUUID().toString(),
-                        sender = state.senderNumber.value,
-                        label = state.label.value,
-                        type = state.senderType.name,
-                        createdAt = now,
-                        updatedAt = now
-                    )
+                senderRepository.addSender(
+                    sender = state.senderNumber.value,
+                    label = state.label.value,
+                    type = state.senderType
                 )
             }
             _uiState.value = state.copy(isSaved = true)
@@ -112,7 +103,7 @@ class SenderFormViewModel : ViewModel() {
     fun deleteSender() {
         val id = _uiState.value.senderId ?: return
         viewModelScope.launch {
-            DI.databaseRepository.deleteSender(id)
+            senderRepository.deleteSender(id)
             _uiState.value = _uiState.value.copy(isSaved = true)
         }
     }

@@ -110,7 +110,7 @@ data class SenderEntity(
     @PrimaryKey val id: String,
     val sender: String,
     val label: String = "",
-    val type: String = SenderType.PHONE_NUMBER.name,
+    val type: String = com.mobilemoney.domain.model.SenderType.PHONE_NUMBER.name,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.config.AppIcons
-import com.mobilemoney.di.DI
+import com.mobilemoney.ui.config.AppIcons
+
 import com.mobilemoney.domain.model.Category
 import com.mobilemoney.viewmodel.CategoryListViewModel
 import java.util.UUID
@@ -30,7 +30,7 @@ fun CategoryListScreen(
     onAddClick: () -> Unit,
     onCategoryClick: (UUID) -> Unit,
     onNavigateBack: (() -> Unit)? = null,
-    viewModel: CategoryListViewModel = DI.categoryListViewModel
+    viewModel: CategoryListViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

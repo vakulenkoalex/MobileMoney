@@ -42,15 +42,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.data.local.MessageEntity
-import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.Message
 import com.mobilemoney.viewmodel.MessageListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessageListScreen(
     onNavigateBack: () -> Unit,
-    viewModel: MessageListViewModel = MessageListViewModel()
+    viewModel: MessageListViewModel
 ) {
     val messages by viewModel.messages.collectAsState(initial = emptyList())
     val context = LocalContext.current
@@ -140,7 +139,7 @@ fun MessageListScreen(
 }
 
 @Composable
-private fun MessageItem(message: MessageEntity, onCopy: () -> Unit) {
+private fun MessageItem(message: Message, onCopy: () -> Unit) {
     val statusColor = when {
         message.error != null -> MaterialTheme.colorScheme.error
         message.processed -> MaterialTheme.colorScheme.primary

@@ -10,7 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.mobilemoney.di.DI
+
 import com.mobilemoney.viewmodel.MessageRegexFormViewModel
 import kotlinx.coroutines.flow.drop
 import java.util.UUID
@@ -20,7 +20,7 @@ import java.util.UUID
 fun MessageRegexFormScreen(
     regexId: UUID?,
     onNavigateBack: () -> Unit,
-    viewModel: MessageRegexFormViewModel = DI.messageRegexFormViewModel
+    viewModel: MessageRegexFormViewModel
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

@@ -1,4 +1,4 @@
-package com.mobilemoney.data.config
+package com.mobilemoney.ui.config
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.Icons

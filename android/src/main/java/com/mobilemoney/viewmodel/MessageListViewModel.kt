@@ -2,29 +2,31 @@ package com.mobilemoney.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mobilemoney.data.local.MessageEntity
-import com.mobilemoney.di.DI
+import com.mobilemoney.domain.model.Message
+import com.mobilemoney.domain.repository.MessageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-class MessageListViewModel : ViewModel() {
-    val messages: Flow<List<MessageEntity>> = DI.databaseRepository.getMessages()
+class MessageListViewModel(
+    private val messageRepository: MessageRepository
+) : ViewModel() {
+    val messages: Flow<List<Message>> = messageRepository.getMessages()
 
     fun markAsProcessed(id: String) {
         viewModelScope.launch {
-            DI.databaseRepository.markMessageProcessed(id)
+            messageRepository.markProcessed(id)
         }
     }
 
     fun deleteMessage(id: String) {
         viewModelScope.launch {
-            DI.databaseRepository.deleteMessageById(id)
+            messageRepository.deleteById(id)
         }
     }
 
     fun clearMessages() {
         viewModelScope.launch {
-            DI.databaseRepository.deleteAllMessages()
+            messageRepository.deleteAll()
         }
     }
 }
