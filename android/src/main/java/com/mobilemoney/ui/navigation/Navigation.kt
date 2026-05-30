@@ -186,11 +186,10 @@ fun MobileMoneyNavigation(
                 }
             }
         }
-    ) { paddingValues ->
+    ) { _ ->
         NavHost(
             navController = navController,
-            startDestination = Screen.TransactionList.route,
-            modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
+            startDestination = Screen.TransactionList.route
         ) {
                 composable(Screen.TransactionList.route) {
                     TransactionListScreen(
