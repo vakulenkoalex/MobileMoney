@@ -52,6 +52,22 @@
 - `READ_SMS` is a restricted permission on Android 14+; Google Play may reject apps using it
 - Не забывай актуализировать документацию если что то меняешь
 
+### Clean Architecture
+
+**Поток вызовов (строго):**
+```
+ViewModel → UseCase → Repository(domain/) → RepositoryImpl(data/) → DatabaseRepository → DAO → SQLite
+```
+
+**Правила:**
+- **Presentation** (`viewmodel/`, `ui/`) импортирует ТОЛЬКО `domain/`. Запрещён импорт `data/.*`
+- **Domain** (`domain/`) не импортирует `data/.*` и не знает про Android, Room, SQLite
+- **Workers** (`worker/`) получают use case через constructor injection, вызывают use case, не трогают DAO
+- **SyncRepository** пишет транзакции через `TransactionRepositoryImpl.addTransaction()`, а не напрямую в `transactionDao.insert()`
+- **Бизнес-логика** (расчёт баланса, склейка transfer, определение income/expense, валидация суммы) — в domain use cases, не в data-слое
+- **`data/config/`** — конфиги UI (иконки, валюты) должны быть в `ui/config/`
+- **DI** — только в `DI.kt`. ViewModel, Worker, Screen получают зависимости через constructor injection, не через `DI.` глобальный доступ
+
 ## Known Issues & Solutions
 
 ### Error Handling (Toast)
