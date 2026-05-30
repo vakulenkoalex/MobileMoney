@@ -53,5 +53,6 @@ dependencies {
 }
 
 tasks.processResources {
+    inputs.property("version", version)
     expand(properties)
 }
