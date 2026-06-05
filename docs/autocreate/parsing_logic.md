@@ -154,33 +154,6 @@ val isIncome = direction.lowercase().let { dir ->
 
 Если `direction` содержит любое из ключевых слов → **income**. Иначе → **expense**.
 
-## 5. TransactionSource / TransactionOrigin
-
-### TransactionSource — источник операции
-
-**Файл:** `android/.../domain/model/TransactionSource.kt`
-
-```kotlin
-enum class TransactionSource { MANUAL, SMS, PUSH, CLIPBOARD }
-```
-
-### TransactionOrigin — происхождение (для UI фильтрации)
-
-**Файл:** `android/.../domain/model/Transaction.kt`
-
-```kotlin
-enum class TransactionOrigin { MANUAL, SMS, PUSH, CLIPBOARD }
-```
-
-Маппинг `source → origin`:
-
-| TransactionSource | TransactionOrigin |
-|-------------------|-------------------|
-| `MANUAL` | `MANUAL` |
-| `SMS` | `SMS` |
-| `PUSH` | `PUSH` |
-| `CLIPBOARD` | `CLIPBOARD` |
-
 ## 6. Структуры данных транзакции
 
 ### 6.1 accounts — поле autoCreateEnabled
@@ -191,7 +164,7 @@ val autoCreateEnabled: Boolean = false,  // Включить авто-созда
 val cardMask: String                     // Последние 4 цифры карты
 ```
 
-Только счета с `autoCreateEnabled = true` участвуют в матчинге при парсинге из буфера (Clipboard).
+Только счета с `autoCreateEnabled = true` участвуют в матчинге при парсинге.
 
 ### 6.2 Transaction — поля source/sourceData/shop
 

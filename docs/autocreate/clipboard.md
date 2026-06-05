@@ -111,7 +111,7 @@ fun prefillFromClipboard(data: ClipboardPrefillData)
 ### 3.4 Сохранение
 
 При сохранении через `TransactionFormViewModel.save()`:
-- `TransactionSource.CLIPBOARD` → маппится в `TransactionOrigin.CLIPBOARD`
+- `TransactionSource.CLIPBOARD`
 - Вызывается `SaveTransactionUseCase`
 - Транзакция записывается в БД
 
