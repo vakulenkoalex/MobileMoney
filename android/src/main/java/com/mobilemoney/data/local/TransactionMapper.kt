@@ -2,7 +2,7 @@ package com.mobilemoney.data.local
 
 import com.mobilemoney.data.model.TransactionUi
 import com.mobilemoney.domain.model.Transaction
-import com.mobilemoney.domain.model.TransactionOrigin
+import com.mobilemoney.domain.model.TransactionSource
 import java.util.UUID
 
 fun TransactionEntity.toUiModel(account: AccountEntity?, category: CategoryEntity?): TransactionUi {
@@ -27,10 +27,6 @@ fun TransactionEntity.toUiModel(account: AccountEntity?, category: CategoryEntit
 }
 
 fun Transaction.toEntity(): TransactionEntity {
-    val transactionSource = when (origin) {
-        TransactionOrigin.CLIPBOARD -> TransactionSource.CLIPBOARD
-        TransactionOrigin.MANUAL -> TransactionSource.MANUAL
-    }
     return TransactionEntity(
         id = id.toString(),
         accountId = accountId.toString(),
@@ -38,7 +34,7 @@ fun Transaction.toEntity(): TransactionEntity {
         amount = amount,
         date = date,
         comment = comment,
-        source = transactionSource,
+        source = source,
         sourceData = sourceData,
         creatorId = null,
         relatedTransactionId = relatedTransactionId?.toString(),

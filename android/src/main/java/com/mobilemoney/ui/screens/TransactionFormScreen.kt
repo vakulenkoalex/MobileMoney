@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.mobilemoney.ui.config.AppIcons
-import com.mobilemoney.data.local.TransactionSource
+import com.mobilemoney.domain.model.TransactionSource
 
 import com.mobilemoney.domain.model.Category
 import com.mobilemoney.viewmodel.TransactionFormViewModel

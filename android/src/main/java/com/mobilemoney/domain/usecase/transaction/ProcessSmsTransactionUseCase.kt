@@ -4,7 +4,7 @@ import com.mobilemoney.domain.model.Message
 import com.mobilemoney.domain.model.MessageRegex
 import com.mobilemoney.domain.model.ParsedTransaction
 import com.mobilemoney.domain.model.Transaction
-import com.mobilemoney.domain.model.TransactionOrigin
+import com.mobilemoney.domain.model.TransactionSource
 import com.mobilemoney.domain.parser.TextParser
 import com.mobilemoney.domain.repository.AccountRepository
 import com.mobilemoney.domain.repository.CategoryRepository
@@ -69,7 +69,7 @@ class ProcessSmsTransactionUseCase(
                 accountId = account.id,
                 categoryId = categoryId,
                 shop = parsed.shop,
-                origin = TransactionOrigin.MANUAL,
+                source = TransactionSource.SMS,
                 sourceData = message.body
             )
             transactionRepository.addTransaction(transaction)

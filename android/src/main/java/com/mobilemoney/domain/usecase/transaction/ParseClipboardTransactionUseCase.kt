@@ -2,7 +2,6 @@ package com.mobilemoney.domain.usecase.transaction
 
 import com.mobilemoney.domain.model.Account
 import com.mobilemoney.domain.model.ParsedTransaction
-import com.mobilemoney.domain.model.TransactionOrigin
 import com.mobilemoney.domain.parser.TextParser
 import com.mobilemoney.domain.repository.AccountRepository
 import com.mobilemoney.domain.repository.CategoryRepository

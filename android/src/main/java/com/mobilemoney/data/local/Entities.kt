@@ -4,14 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.mobilemoney.domain.model.TransactionSource
 import java.util.UUID
-
-enum class TransactionSource {
-    MANUAL,
-    SMS,
-    PUSH,
-    CLIPBOARD
-}
 
 @Entity(
     tableName = "message_regexes"

@@ -160,7 +160,7 @@ object Currencies {
 enum class TransactionSource { MANUAL, SMS, PUSH, CLIPBOARD }
 ```
 
-Определён в `data/local/Entities.kt`.
+Определён в `domain/model/TransactionSource.kt`.
 
 ---
 

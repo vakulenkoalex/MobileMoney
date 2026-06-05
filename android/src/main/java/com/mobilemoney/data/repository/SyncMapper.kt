@@ -5,7 +5,7 @@ import com.mobilemoney.data.local.CategoryEntity
 import com.mobilemoney.data.local.MessageRegexEntity
 import com.mobilemoney.data.local.SenderEntity
 import com.mobilemoney.data.local.TransactionEntity
-import com.mobilemoney.data.local.TransactionSource
+import com.mobilemoney.domain.model.TransactionSource
 import com.mobilemoney.dto.AccountDto
 import com.mobilemoney.dto.CategoryDto
 import com.mobilemoney.dto.MessageRegexDto

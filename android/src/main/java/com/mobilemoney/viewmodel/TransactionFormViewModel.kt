@@ -11,8 +11,7 @@ import com.mobilemoney.domain.usecase.transaction.DeleteTransactionUseCase
 import com.mobilemoney.domain.usecase.transaction.GetTransactionsUseCase
 import com.mobilemoney.domain.usecase.transaction.SaveTransactionUseCase
 import com.mobilemoney.domain.repository.TransactionRepository
-import com.mobilemoney.domain.model.TransactionOrigin
-import com.mobilemoney.data.local.TransactionSource
+import com.mobilemoney.domain.model.TransactionSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -167,11 +166,6 @@ class TransactionFormViewModel(
                     relatedTx?.accountId?.let { tid -> accounts.find { it.id == tid } }
                 } else null
 
-                val txSource = when (transaction.origin) {
-                    TransactionOrigin.CLIPBOARD -> TransactionSource.CLIPBOARD
-                    TransactionOrigin.MANUAL -> TransactionSource.MANUAL
-                }
-
                 _uiState.value = _uiState.value.copy(
                     amount = _uiState.value.amount.withValue(transaction.amount.toString()),
                     selectedAccount = _uiState.value.selectedAccount.withValue(accounts.find { it.id == transaction.accountId }),
@@ -186,7 +180,7 @@ class TransactionFormViewModel(
                     },
                     isEditing = true,
                     transactionId = transactionId,
-                    source = txSource,
+                    source = transaction.source,
                     sourceData = transaction.sourceData ?: "",
                     shop = transaction.shop ?: ""
                 )
@@ -466,10 +460,6 @@ class TransactionFormViewModel(
                         }
                     }
 
-                    val transactionOrigin = when (state.source) {
-                        TransactionSource.CLIPBOARD -> TransactionOrigin.CLIPBOARD
-                        TransactionSource.MANUAL, TransactionSource.SMS, TransactionSource.PUSH -> TransactionOrigin.MANUAL
-                    }
                     val transactionTitle = if (state.clipboardText != null && state.selectedCategory.value == null) state.comment.ifBlank { "Без категории" } else title
 
                     val transaction = Transaction(
@@ -490,7 +480,7 @@ class TransactionFormViewModel(
                         accountId = account.id,
                         categoryId = state.selectedCategory.value?.id,
                         shop = state.shop.takeIf { it.isNotBlank() },
-                        origin = transactionOrigin,
+                        source = state.source,
                         sourceData = state.sourceData.takeIf { it.isNotBlank() }
                     )
 

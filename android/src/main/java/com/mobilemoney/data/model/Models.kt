@@ -1,6 +1,6 @@
 package com.mobilemoney.data.model
 
-import com.mobilemoney.data.local.TransactionSource
+import com.mobilemoney.domain.model.TransactionSource
 import java.util.UUID
 
 enum class AccountType(val id: String, val displayName: String) {
