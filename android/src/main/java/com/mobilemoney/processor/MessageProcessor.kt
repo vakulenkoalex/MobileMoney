@@ -23,28 +23,14 @@ object MessageProcessor {
         val messageDao = db.messageDao()
         val transactionDao = db.transactionDao()
 
-        if (debugMode) {
-            messageDao.insert(
-                MessageEntity(sender = senderId, body = body, receivedAt = System.currentTimeMillis())
-            )
-            return
-        }
-
         if (body.isBlank()) return
-        if (!validateSender(db.senderDao())) return
-
-        // val todayStart = Calendar.getInstance().apply {
-        //     set(Calendar.HOUR_OF_DAY, 0)
-        //     set(Calendar.MINUTE, 0)
-        //     set(Calendar.SECOND, 0)
-        //     set(Calendar.MILLISECOND, 0)
-        // }.timeInMillis
-        // if (transactionDao.countBySourceDataSince(body, todayStart) > 0) return
+        if (!debugMode) and (!validateSender(db.senderDao())) return
 
         messageDao.insert(
             MessageEntity(sender = senderId, body = body, receivedAt = System.currentTimeMillis())
         )
 
+        if (debugMode) return
         if (!FeaturePreferences(context).messageProcessingEnabled) return
 
         val workRequest = OneTimeWorkRequestBuilder<MessageWorker>().build()
