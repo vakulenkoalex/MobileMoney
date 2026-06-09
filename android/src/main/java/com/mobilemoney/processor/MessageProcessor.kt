@@ -24,7 +24,7 @@ object MessageProcessor {
         val transactionDao = db.transactionDao()
 
         if (body.isBlank()) return
-        if (!debugMode) and (!validateSender(db.senderDao())) return
+        if (!debugMode && !validateSender(db.senderDao())) return
 
         messageDao.insert(
             MessageEntity(sender = senderId, body = body, receivedAt = System.currentTimeMillis())
